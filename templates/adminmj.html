@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/adminmj.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="manage-users-container">
+        <!-- Header with New Users Count -->
+        <header class="header">
+            <h1>Manage Users</h1>
+            <p id="newUsersCount">New Users: <span>0</span></p>
+        </header>
+
+        <!-- Users List -->
+        <div class="users-list">
+            <!-- User Item Template -->
+            <div class="user-item">
+                <h3 class="user-name">John Doe</h3>
+                <p class="user-email">john.doe@example.com</p>
+                <button class="view-resume-btn" onclick="viewResume('john_doe_resume.pdf')">View Resume</button>
+            </div>
+            <div class="user-item">
+                <h3 class="user-name">Jane Smith</h3>
+                <p class="user-email">jane.smith@example.com</p>
+                <button class="view-resume-btn" onclick="viewResume('jane_smith_resume.pdf')">View Resume</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{url_for('static', filename='js/adminmj.js')}}"></script>
+</body>
+</html>

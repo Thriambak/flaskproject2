@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Application History</title>
+    <!-- Link to external CSS file -->
+    <link href="{{ url_for('static', filename='css/applistyle.css') }}" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>Job Portal</h1>
+        <div class="top-actions">
+            <a href="#"><span class="material-icons">person</span> Profile</a>
+            <a href="#"><span class="material-icons">settings</span> Settings</a>
+            <a href="#"><span class="material-icons">logout</span> Log Out</a>
+        </div>
+    </div>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Navigation -->
+        <div class="navigation">
+            <a href="#"><span class="material-icons">home</span> Home</a>
+            <a href="#"><span class="material-icons">history</span> Application History</a>
+            <a href="#"><span class="material-icons">notifications</span> Notifications</a>
+            <a href="#"><span class="material-icons">description</span> Resume & Certifications</a>
+            <a href="#"><span class="material-icons">feedback</span> Feedback & Reviews</a>
+        </div>
+
+        <!-- Application History Section -->
+        <div class="application-history">
+            <h2>Application History</h2>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Application Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Mock data for application history, could be dynamically loaded from backend -->
+                    <tr onclick="openModal('Frontend Developer', 'ABC Technologies', '2024-12-05', 'Accepted', 'Details about the application here.')">
+                        <td>Frontend Developer</td>
+                        <td>ABC Technologies</td>
+                        <td>2024-12-05</td>
+                        <td><span class="status accepted">Accepted</span></td>
+                    </tr>
+                    <tr onclick="openModal('UI/UX Designer', 'XYZ Corp', '2024-11-20', 'Rejected', 'Details about the application here.')">
+                        <td>UI/UX Designer</td>
+                        <td>XYZ Corp</td>
+                        <td>2024-11-20</td>
+                        <td><span class="status rejected">Rejected</span></td>
+                    </tr>
+                    <tr onclick="openModal('Backend Developer', 'DEF Solutions', '2024-10-15', 'Pending', 'Details about the application here.')">
+                        <td>Backend Developer</td>
+                        <td>DEF Solutions</td>
+                        <td>2024-10-15</td>
+                        <td><span class="status pending">Pending</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Application Details -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Application Details</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- Dynamic content for application details will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to external JavaScript file -->
+    <script src="{{ url_for('static', filename='js/applijs.js') }}"></script>
+</body>
+</html>

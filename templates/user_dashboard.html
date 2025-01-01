@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/userstyles.css') }}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-globe"></i>
+            MyWebsite
+        </div>
+        <div>Welcome, {{ session['username'] }}!</div>
+        <div class="profile-settings">
+            <button onclick="window.location.href='/user/profile'">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <a href="{{ url_for('auth.logout') }}">
+                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </a>
+        </div>
+    </header>
+    <main>
+        <div class="navigation">
+            <button><i class="fas fa-home"></i> Home</button>
+            <button onclick="window.location.href='/user/load_application_history'">
+                <i class="fas fa-history"></i> Application History
+            </button>
+            <a href="{{ url_for('user.notifications') }}">
+                <button><i class="fas fa-bell"></i> Notifications</button>
+            </a>
+            <a href="{{ url_for('user.resume_certifications') }}">
+                <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
+            </a>
+            <button><i class="fas fa-star-half-alt"></i> Feedback & Reviews</button>
+        </div>
+        <div class="activity">
+            <div class="top-buttons">
+                <button><i class="fas fa-star"></i> For You</button>
+                <a href="{{ url_for('user.jobsearch') }}">
+                    <button><i class="fas fa-compass"></i> Explore</button>
+                </a>
+                <button><i class="fas fa-heart"></i> Favourites</button>
+            </div>
+
+            <!-- Mock job postings -->
+            <div class="job-postings">
+                <!-- Loop through job listings dynamically -->
+                {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="job-posting">
+                        <h3>{{ job.title }}</h3>
+                        <p><strong>Type:</strong> {{ job.job_type }}</p>
+                        <p><strong>Location:</strong> {{ job.location }}</p>
+                        <p><strong>Salary:</strong> {{ job.salary }}</p>
+                        <p><strong>Deadline:</strong> {{ job.deadline }}</p>
+                        <p>{{ job.description }}</p>
+                        <!-- Apply button (will submit to apply route) -->
+                        <form action="{{ url_for('user.apply_for_job', job_id=job.id) }}" method="POST">
+                            <button type="submit">Apply</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No job listings available at the moment.</p>
+                {% endif %}
+            </div>
+            
+            </div>
+        </div>
+        <div class="side-panel">
+            <div class="graph">
+                <h3>Success Rate</h3>
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="live-feed">
+                <h3>Live Feed</h3>
+                <p>New user signed up!</p>
+                <p>System maintenance scheduled at 5 PM.</p>
+            </div>
+            <div class="calendar">
+                <h3>Upcoming Events</h3>
+                <p>Team Meeting - Dec 15, 2024</p>
+                <p>Project Deadline - Dec 20, 2024</p>
+            </div>
+        </div>
+    </main>
+    <!-- Link to external JavaScript -->
+    <script src="/js/userjs.js"></script>
+    <!-- Chart.js for graph rendering -->
+    <script src="{{ url_for('static', filename='js/userjs.js') }}"></script>
+</body>
+</html>

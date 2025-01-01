@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup/Login Page</title>
+    <link rel="stylesheet" href="{{url_for ('static',filename='css/indexstyle.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="logo-container">
+            <i class="fas fa-fa-university"></i>
+            <h1>CampusRecruit</h1>
+        </div>
+    </div>
+
+    <!-- Main Page with Buttons -->
+    <div class="main-container" id="main-container">
+        <h2>Welcome to MyWebsite!</h2>
+        <p>Choose an option to get started</p>
+        <div class="auth-buttons">
+            <!-- Buttons to navigate to Login or Signup -->
+            <button class="login-btn" onclick="window.location.href='/auth/login'">Log In</button>
+            <button class="signup-btn" onclick="window.location.href='/auth/signup'">Sign Up</button>
+        </div>
+    </div>
+
+    <script src="{{url_for('static',filename='/js/indexjs.js')}}"></script>
+</body>
+</html>

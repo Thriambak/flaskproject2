@@ -1,0 +1,104 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+h1 {
+    margin-top: 20px;
+    color: #fff;
+    font-size: 3em;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Splash Screen */
+.splash-screen {
+    background: linear-gradient(135deg, #11accb, #2525fc);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #fff;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+}
+
+.logo-container {
+    margin-bottom: 30px;
+}
+
+.logo-container i {
+    font-size: 5em;
+}
+
+/* Main Page - Buttons for Login and Signup */
+.main-container {
+    display: none;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.auth-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.auth-buttons button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+    width: 200px;
+}
+
+.auth-buttons .login-btn {
+    background-color: #2575fc;
+    color: #fff;
+}
+
+.auth-buttons .login-btn:hover {
+    background-color: #1e63d7;
+    transform: scale(1.05);
+}
+
+.auth-buttons .signup-btn {
+    background-color: #6a11cb;
+    color: #fff;
+}
+
+.auth-buttons .signup-btn:hover {
+    background-color: #5910a0;
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2em;
+    }
+
+    .auth-buttons button {
+        width: 150px;
+        font-size: 1em;
+    }
+}
+

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Resume & Certifications</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fafafa;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input[type="file"]:hover {
+            border-color: #0a9396;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #005f73;
+        }
+
+        .flash-message {
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .file-list {
+            margin-top: 30px;
+        }
+
+        .file-item {
+            padding: 12px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-item a {
+            color: #0a9396;
+            text-decoration: none;
+        }
+
+        .file-item a:hover {
+            text-decoration: underline;
+        }
+
+        .file-item .file-type {
+            font-size: 14px;
+            color: #777;
+        }
+
+        .file-item i {
+            margin-left: 10px;
+            color: #0a9396;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Your Resume & Certifications</h2>
+    
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    
+        <!-- Upload Form -->
+        <form action="{{ url_for('user.resume_certifications') }}" method="POST" enctype="multipart/form-data">
+            <!-- Resume Upload -->
+            <div class="form-group">
+                <label for="resume">Upload Resume:</label>
+                <input type="file" name="resume" id="resume" required>
+            </div>
+    
+            <!-- Certification Upload (Optional) -->
+            <div class="form-group">
+                <label for="certification">Upload Certification (Optional):</label>
+                <input type="file" name="certification" id="certification">
+            </div>
+    
+            <button type="submit">Upload</button>
+        </form>
+    
+        <!-- Display Uploaded Files -->
+        <div class="file-list">
+            {% if resume_certifications %}
+                <h3>Your Uploaded Files:</h3>
+                <ul>
+                {% for resume_cert in resume_certifications %}
+                    {% if resume_cert.resume_path %}
+                        <li>
+                            <strong>Resume:</strong>
+                            <a href="{{ url_for('static', filename=resume_cert.resume_path) }}" target="_blank">
+                                {{ resume_cert.resume_path.split('/')[-1] }}
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if resume_cert.certification_path %}
+                        <li>
+                            <strong>Certification:</strong>
+                            <a href="{{ url_for('static', filename=resume_cert.certification_path) }}" target="_blank">
+                                {{ resume_cert.certification_path.split('/')[-1] }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No files uploaded yet.</p>
+            {% endif %}
+           
+            
+        </div>
+    </div>
+    
+            
+
+        
+</body>
+</html>

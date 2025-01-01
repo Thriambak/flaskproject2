@@ -1,0 +1,181 @@
+/* General Styles */
+body {
+    font-family: 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to right, #f4f7fb, #ffffff);
+}
+
+/* Container and Header */
+.container {
+    width: 85%;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: #ffffff;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-top: 50px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 3em;
+    color: #1E2A39;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Show Form Button */
+.show-form-button {
+    padding: 15px 25px;
+    background-color: #008CBA;
+    color: white;
+    font-size: 1.3em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.3s;
+    width: 100%;
+    text-align: center;
+}
+
+.show-form-button:hover {
+    background-color: #007B8C;
+}
+
+/* Form Container */
+.form-container {
+    display: none;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Form Field */
+.form-field {
+    margin-bottom: 20px;
+}
+
+.form-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.form-field input, .form-field textarea, .form-field select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    transition: border-color 0.3s;
+}
+
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus {
+    border-color: #007B8C;
+    outline: none;
+}
+
+/* Button */
+button {
+    padding: 15px 25px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Job List Styles */
+.job-list-container {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.job-list-container h2 {
+    margin-bottom: 20px;
+    font-size: 2em;
+    color: #333;
+    font-weight: 600;
+}
+
+.job-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.job-list li {
+    background-color: #f9f9f9;
+    padding: 25px;
+    margin: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: left;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.job-list li:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.job-list li h3 {
+    margin-top: 0;
+    font-size: 1.6em;
+    color: #007B8C;
+    font-weight: bold;
+}
+
+.job-list li p {
+    color: #555;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+/* Animation for form reveal */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .container {
+        width: 95%;
+    }
+
+    .form-container {
+        padding: 20px;
+    }
+
+    .show-form-button {
+        width: 100%;
+    }
+}
