@@ -185,13 +185,30 @@ def resume_certifications():
 @user_blueprint.route('/profile')
 @login_required
 def profile():
-    username = session.get('username')
-    user_info = session.get(username)
+    from app import db
+    from models import User
 
-    if user_info:
-        return render_template('profile.html', user=user_info)
+    # Get the current user's ID from the session
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('You need to log in to access your profile.', 'error')
+        return redirect(url_for('auth.login'))
+
+    # Query the database for the user's information
+    user = User.query.filter_by(id=user_id, role='user').first()
+
+    if user:
+        return render_template(
+            'profile.html',
+            user={
+                'name': user.name,
+                'role': user.role,
+                'email': user.email,
+                
+            }
+        )
     else:
-        flash('User not found', 'error')
+        flash('User not found.', 'error')
         return redirect(url_for('user.user_dashboard'))
 
 

@@ -34,3 +34,38 @@ function addJob() {
     document.getElementById("jobForm").reset(); // Reset the form
     toggleForm(); // Hide the form after submission
 }
+function editJob(id, title, description, jobType, location, salary, deadline) {
+    console.log("Editing Job:", { id, title, description, jobType, location, salary, deadline });
+
+    // Display the form container
+    const formContainer = document.getElementById("jobFormContainer");
+    formContainer.style.display = "block"; // Ensure the form is visible
+
+    // Update form title
+    document.getElementById("formTitle").innerText = "Update Job";
+
+    // Pre-fill the form fields with job details
+    document.getElementById("jobId").value = id; // Hidden field for job ID
+    document.getElementById("jobTitle").value = title;
+    document.getElementById("jobDescription").value = description;
+
+    // Handle the dropdown for job type
+    const jobTypeDropdown = document.getElementById("jobType");
+    for (let i = 0; i < jobTypeDropdown.options.length; i++) {
+        if (jobTypeDropdown.options[i].value === jobType) {
+            jobTypeDropdown.selectedIndex = i;
+            break;
+        }
+    }
+
+    document.getElementById("location").value = location;
+    document.getElementById("salary").value = salary;
+    document.getElementById("deadline").value = deadline;
+
+    // Change the form submit button text to "Update Job"
+    document.getElementById("formSubmitButton").innerText = "Update Job";
+
+    // Scroll to the form for better UX
+    formContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
