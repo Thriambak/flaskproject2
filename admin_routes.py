@@ -40,16 +40,17 @@ def admin_dashboard():
         pending_reports=pending_reports, 
         pending_applications=pending_applications
     )
-
 @admin_blueprint.route('/adminmn', methods=['GET', 'POST'])
 def manage_jobs():
     from app import db
     from models import Job
+
     if 'user_id' not in session or session.get('role') != 'admin':
         return redirect(url_for('auth.login'))  # Ensure only admins can access
 
     if request.method == 'POST':
         # Get form data
+        job_id = request.form.get('jobId')  # Hidden field for job ID
         title = request.form['jobTitle']
         description = request.form['jobDescription']
         job_type = request.form['jobType']
@@ -65,24 +66,51 @@ def manage_jobs():
             flash('Invalid date format for the deadline. Please use YYYY-MM-DD.', 'danger')
             return redirect(url_for('admin_routes.manage_jobs'))
 
-        # Save job to database
-        new_job = Job(
-            title=title,
-            description=description,
-            job_type=job_type,
-            location=location,
-            salary=salary,
-            deadline=deadline,
-            created_by=created_by
-        )
-        db.session.add(new_job)
-        db.session.commit()
-        flash('Job added successfully!', 'success')
-        return redirect(url_for('admin_routes.manage_jobs'))  # Corrected redirect
+        if job_id:  # If jobId is provided, update the job
+            job = Job.query.get(job_id)
+            if job:
+                job.title = title
+                job.description = description
+                job.job_type = job_type
+                job.location = location
+                job.salary = salary
+                job.deadline = deadline
+                db.session.commit()
+                flash('Job updated successfully!', 'success')
+            else:
+                flash('Job not found.', 'danger')
+        else:  # If jobId is not provided, add a new job
+            new_job = Job(
+                title=title,
+                description=description,
+                job_type=job_type,
+                location=location,
+                salary=salary,
+                deadline=deadline,
+                created_by=created_by
+            )
+            db.session.add(new_job)
+            db.session.commit()
+            flash('Job added successfully!', 'success')
+
+        return redirect(url_for('admin_routes.manage_jobs'))
 
     # Retrieve all jobs created by the admin
     jobs = Job.query.all()
     return render_template('adminmn.html', jobs=jobs)
+
+@admin_blueprint.route('/delete_job/<int:job_id>', methods=['POST'])
+def delete_job(job_id):
+    from app import db
+    from models import Job
+
+    job = Job.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    flash('Job deleted successfully!', 'success')
+
+    return redirect(url_for('admin_routes.manage_jobs'))
+
 
 
 @admin_blueprint.route('/adminmj')
