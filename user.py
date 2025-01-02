@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Job, JobApplication, db,User,ResumeCertification
+from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
@@ -96,25 +96,17 @@ def apply_for_job(job_id):
 @user_blueprint.route('/notifications')
 @login_required
 def notifications():
-    # Replace with actual database query
-    mock_notifications = [
-        {"id": 1, "message": "Your application for the Software Engineer position was accepted.", "read": False, "timestamp": datetime(2024, 12, 15, 10, 0)},
-        {"id": 2, "message": "The deadline for 'Project Manager' has been extended.", "read": True, "timestamp": datetime(2024, 12, 12, 15, 45)},
-        {"id": 3, "message": "Your resume has been viewed by the recruiter.", "read": False, "timestamp": datetime(2024, 12, 10, 9, 30)}
-    ]
-    return render_template('notification.html', notifications=mock_notifications)
-@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
-@login_required
-def mark_notification_read(notification_id):
-    # Placeholder for database update logic
-    print(f"Mark notification {notification_id} as read.")
-    return redirect(url_for('user.notifications'))
-@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
-@login_required
-def delete_notification(notification_id):
-    # Placeholder for database delete logic
-    print(f"Deleted notification {notification_id}.")
-    return redirect(url_for('user.notifications'))
+    from models import Notification  # Import the Notification model
+
+    # Fetch notifications for the logged-in user
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You need to log in to view your notifications.", "error")
+        return redirect(url_for('auth.login'))
+
+    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).all()
+    return render_template('notification.html', notifications=notifications)
+
 # Helper function to check file type
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
@@ -221,4 +213,41 @@ def load_application_history():
 def jobsearch():
     # Render the job search page
     return render_template('jobsearch.html')
+
+@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    from models import Notification
+
+    # Fetch the notification
+    notification = Notification.query.get(notification_id)
+    user_id = session.get('user_id')
+
+    if notification and notification.user_id == user_id:
+        notification.read = True
+        db.session.commit()
+        flash("Notification marked as read.", "success")
+    else:
+        flash("Notification not found or unauthorized.", "error")
+    return redirect(url_for('user.notifications'))
+
+
+@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    from models import Notification
+
+    # Fetch the notification
+    notification = Notification.query.get(notification_id)
+    user_id = session.get('user_id')
+
+    if notification and notification.user_id == user_id:
+        db.session.delete(notification)
+        db.session.commit()
+        flash("Notification deleted successfully.", "success")
+    else:
+        flash("Notification not found or unauthorized.", "error")
+    return redirect(url_for('user.notifications'))
+
+
 

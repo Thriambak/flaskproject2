@@ -102,26 +102,27 @@
     <div class="container">
         <h1>Notifications</h1>
         {% if notifications %}
-            {% for notification in notifications %}
-                <div class="notification {% if not notification.read %}unread{% endif %}">
-                    <div class="message">
-                        <i class="fas fa-info-circle"></i> {{ notification.message }}
-                    </div>
-                    <div class="timestamp">
-                        {{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}
-                    </div>
-                    <div class="actions">
-                        {% if not notification.read %}
-                            <form action="{{ url_for('user.mark_notification_read', notification_id=notification.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="mark-read">Mark as Read</button>
-                            </form>
-                        {% endif %}
-                        <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="post" style="display: inline;">
-                            <button type="submit" class="delete">Delete</button>
-                        </form>
-                    </div>
-                </div>
-            {% endfor %}
+        {% for notification in notifications %}
+        <div class="notification {% if not notification.read %}unread{% endif %}">
+            <div class="message">
+                <i class="fas fa-info-circle"></i> {{ notification.message }}
+            </div>
+            <div class="timestamp">
+                {{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}
+            </div>
+            <div class="actions">
+                {% if not notification.read %}
+                <form action="{{ url_for('user.mark_notification_read', notification_id=notification.id) }}" method="post" style="display: inline;">
+                    <button type="submit" class="mark-read">Mark as Read</button>
+                </form>
+                {% endif %}
+                <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="post" style="display: inline;">
+                    <button type="submit" class="delete">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        
         {% else %}
             <div class="empty">You have no notifications at the moment.</div>
         {% endif %}
