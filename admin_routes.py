@@ -151,7 +151,51 @@ def accept_or_reject(application_id):
 
 # Admin dashboard route
 
-@admin_blueprint.route('/adminmj')
-@admin_required
-def adminmj():
-    return render_template('adminmj.html')
+
+
+
+@admin_blueprint.route('/manage_users')
+def manage_users():
+    from models import ResumeCertification
+    from app import db
+    # Fetch users who have resumes in the ResumeCertification table
+    users_with_resumes = db.session.query(
+        User.id, User.name, User.email, User.phone, User.role, ResumeCertification.resume_path
+    ).join(ResumeCertification, User.id == ResumeCertification.user_id).filter(User.role == 'user').all()
+
+    # Transform data into a list of dictionaries for rendering
+    users_data = [
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "role": user.role,
+            "resume_path": user.resume_path,
+        }
+        for user in users_with_resumes
+    ]
+
+    return render_template('adminmj.html', users=users_data)
+
+# Route to delete user
+@admin_blueprint.route('/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    from models import User
+    from app import db
+    user_to_delete = User.query.get(user_id)
+    
+    if not user_to_delete:
+        flash("User not found.", 'danger')
+        return redirect(url_for('admin_routes.manage_users'))
+
+    try:
+        # Delete the user
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash(f"User {user_to_delete.name} has been deleted.", 'success')
+    except Exception as e:
+        flash(f"Error deleting user: {str(e)}", 'danger')
+        db.session.rollback()
+    
+    return redirect(url_for('admin_routes.manage_users'))
