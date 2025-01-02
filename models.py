@@ -4,7 +4,11 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+from enum import Enum
 
+class RoleEnum(Enum):
+    user = "user"
+    admin = "admin"
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)

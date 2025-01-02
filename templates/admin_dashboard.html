@@ -4,36 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{{url_for ('static', filename='/css/admin_dashboardcss.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboardcss.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="#" onclick="showSection('dashboardOverview')" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-                <!-- Manage Jobs Button -->
-                <li>
-                    <button onclick="window.location.href='/admin/adminmn'" class="sidebar-button"><i class="fas fa-briefcase"></i> Manage Jobs</button>
-                </li>
-                <!-- Manage Users Button -->
-                <li>
-                     <button onclick="window.location.href='/admin/adminmj'" class="sidebar-button"><i class="fas fa-users"></i> Manage Users</button>
-                </li>
-                
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-                    </a>
-                </li>
-                                <!-- Add this somewhere in your admin dashboard template for testing -->
-
+                <li><button onclick="window.location.href='/admin/adminmn'" class="sidebar-button"><i class="fas fa-briefcase"></i> Manage Jobs</button></li>
+                <li><button onclick="window.location.href='/admin/adminmj'" class="sidebar-button"><i class="fas fa-users"></i> Manage Users</button></li>
+                <li><a href="{{ url_for('auth.logout') }}"><button><i class="fas fa-sign-out-alt"></i> Logout</button></a></li>
             </ul>
         </aside>
-
-        <!-- Main Content -->
         <main class="main-content">
             <div id="dashboardOverview" class="section">
                 <h1>Welcome to the Admin Dashboard</h1>
@@ -54,7 +46,6 @@
                 </div>
             </div>
         
-            <!-- Replace the existing pendingApplications div in admin_dashboard.html with this updated version -->
             <div id="pendingApplications" class="section">
                 <h2>Pending Job Applications</h2>
                 <div class="table-responsive">
@@ -66,32 +57,47 @@
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Resume</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for application in pending_applications %}
-                            <tr>
-                                <td>{{ application.user.name }}</td>
-                                <td>{{ application.job.title }}</td>
-                                <td>{{ application.user.email }}</td>
-                                <td>{{ application.user.phone }}</td>
-                                <td>
-                                </td>
-                            </tr>
+                            {% if pending_applications %}
+                                {% for application in pending_applications %}
+                                <tr>
+                                    <td>{{ application.user.name }}</td>
+                                    <td>{{ application.job.title }}</td>
+                                    <td>{{ application.user.email }}</td>
+                                    <td>{{ application.user.phone }}</td>
+                                    <td>
+                                        {% if application.resume_path %}
+                                            <a href="{{ application.resume_path }}" target="_blank">Download Resume</a>
+                                        {% else %}
+                                            No Resume
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ application.status.capitalize() }}</td>
+                                    <td>
+                                        <form action="{{ url_for('admin_routes.accept_or_reject', application_id=application.id) }}" method="POST">
+                                            <button type="submit" name="action" value="accept" class="accept-btn">Accept</button>
+                                            <button type="submit" name="action" value="reject" class="reject-btn">Reject</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             {% else %}
-                            <tr>
-                                <td colspan="6" class="no-applications">No pending applications found.</td>
-                            </tr>
-                            {% endfor %}
+                                <tr>
+                                    <td colspan="7" class="no-applications">No pending applications found.</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </main>
+        </main> <!-- Closing main-content div -->
         
-    </div>
+    </div> <!-- Closing dashboard-container div -->
 
-    <script src="{{url_for ('static', filename='/js/admin_dashboardjs.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/admin_dashboardjs.js') }}"></script>
 </body>
 </html>

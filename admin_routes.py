@@ -10,16 +10,21 @@ from models import Job, JobApplication, User
 
 admin_blueprint = Blueprint('admin_routes', __name__)
 
-def login_required(f):
+from functools import wraps
+from flask import session, redirect, url_for, flash
+
+def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            return redirect(url_for('auth.login'))
+        if 'role' not in session or session['role'].lower() != 'admin':
+            flash('You are not authorized to access this page.', 'danger')
+            return redirect(url_for('user.user_dashboard'))  # Redirect non-admin users
         return f(*args, **kwargs)
     return decorated_function
 
+
 @admin_blueprint.route('/admin_dashboard')
-@login_required
+@admin_required
 def admin_dashboard():
     if session.get('role') != 'admin':
         flash("You must be an admin to access this page.", "error")
@@ -27,11 +32,12 @@ def admin_dashboard():
     
     # Fetch job applications (pending ones)
     pending_applications = JobApplication.query.filter_by(status='pending').all()
+    
 
     # Fetch other stats (e.g., total jobs, users)
     total_jobs = Job.query.count()
     total_users = User.query.count()
-    pending_reports = 0  # You can add logic for pending reports if needed
+    pending_reports = JobApplication.query.filter_by(status='pending').count()# You can add logic for pending reports if needed
 
     return render_template(
         'admin_dashboard.html', 
@@ -100,6 +106,7 @@ def manage_jobs():
     return render_template('adminmn.html', jobs=jobs)
 
 @admin_blueprint.route('/delete_job/<int:job_id>', methods=['POST'])
+
 def delete_job(job_id):
     from app import db
     from models import Job
@@ -112,8 +119,39 @@ def delete_job(job_id):
     return redirect(url_for('admin_routes.manage_jobs'))
 
 
+@admin_blueprint.route('/view_pending_applications')
+def view_pending_applications():
+    # Fetch all pending job applications
+    pending_applications = JobApplication.query.filter_by(status='pending').all()
+
+    # Pass the data to the new template
+    return render_template('application.html', pending_applications=pending_applications)
+@admin_blueprint.route('/accept_or_reject/<int:application_id>', methods=['POST'])
+@admin_required
+
+def accept_or_reject(application_id):
+    from models import db
+    action = request.form.get('action')
+    application = JobApplication.query.get(application_id)  # Get the specific application by ID
+
+    if not application:
+        flash("Application not found.", 'error')
+        return redirect(url_for('admin_routes.admin_dashboard'))
+
+    if action == 'accept':
+        application.status = 'accepted'
+    elif action == 'reject':
+        application.status = 'rejected'
+
+    db.session.commit()
+    flash(f"Application {action}ed successfully.", 'success')
+
+    return redirect(url_for('admin_routes.admin_dashboard'))
+
+
+# Admin dashboard route
 
 @admin_blueprint.route('/adminmj')
-@login_required
+@admin_required
 def adminmj():
     return render_template('adminmj.html')

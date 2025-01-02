@@ -14,7 +14,7 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        role = request.form['role']
+        role = request.form.get('role', 'user')  # Default to 'user' if role is not provided
         name = request.form['name']
         email = request.form['email']
         age = request.form['age']
@@ -25,10 +25,15 @@ def signup():
             flash('Username or email already exists.', 'danger')
             return redirect(url_for('auth.signup'))
 
+        # Ensure role is either 'user' or 'admin'
+        if role not in ['user', 'admin']:
+            flash('Invalid role specified.', 'danger')
+            return redirect(url_for('auth.signup'))
+
         # Create a new user
         new_user = User(
             username=username,
-            role=role,
+            role=role,  # Set the specified role
             name=name,
             email=email,
             age=age,
@@ -43,6 +48,7 @@ def signup():
 
     return render_template('signup.html')
 
+
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -51,6 +57,7 @@ def login():
         
         # Find the user by username
         user = User.query.filter_by(username=username).first()
+        
         if not user or not user.check_password(password):
             flash('Invalid username or password.', 'danger')
             return redirect(url_for('auth.login'))
@@ -63,13 +70,12 @@ def login():
         flash(f'Welcome, {user.name}!', 'success')
         
         # Case-insensitive role check
-        if user.role.lower() == 'admin':
+        if user.role == 'admin':
             return redirect(url_for('admin_routes.admin_dashboard'))
         else:
             return redirect(url_for('user.user_dashboard'))
 
     return render_template('login.html')
-
 
 @auth_blueprint.route('/logout')
 def logout():

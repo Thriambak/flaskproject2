@@ -27,6 +27,13 @@
             <label for="jobDescription">Job Description</label>
             <textarea id="jobDescription" name="jobDescription" placeholder="Describe the job..." required></textarea>
         </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
         <div class="form-field">
             <label for="jobType">Job Type</label>
             <select id="jobType" name="jobType">
