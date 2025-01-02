@@ -77,27 +77,6 @@
                                 <td>{{ application.user.email }}</td>
                                 <td>{{ application.user.phone }}</td>
                                 <td>
-                                    {% if application.resume_path %}
-                                    <a href="{{ url_for('static', filename=application.resume_path) }}" target="_blank" class="btn-view">
-                                        <i class="fas fa-file-pdf"></i> View
-                                    </a>
-                                    {% else %}
-                                    <span>No resume</span>
-                                    {% endif %}
-                                </td>
-                                <td class="action-buttons">
-                                    <form action="{{ url_for('admin_routes.update_application_status', application_id=application.id) }}" method="POST" style="display: inline;">
-                                        <input type="hidden" name="status" value="accepted">
-                                        <button type="submit" class="btn-accept">
-                                            <i class="fas fa-check"></i> Accept
-                                        </button>
-                                    </form>
-                                    <form action="{{ url_for('admin_routes.update_application_status', application_id=application.id) }}" method="POST" style="display: inline;">
-                                        <input type="hidden" name="status" value="rejected">
-                                        <button type="submit" class="btn-reject">
-                                            <i class="fas fa-times"></i> Reject
-                                        </button>
-                                    </form>
                                 </td>
                             </tr>
                             {% else %}
