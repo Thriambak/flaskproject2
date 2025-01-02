@@ -28,6 +28,8 @@
                         <button><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </a>
                 </li>
+                                <!-- Add this somewhere in your admin dashboard template for testing -->
+
             </ul>
         </aside>
 
@@ -50,22 +52,66 @@
                         <p id="pendingReports">{{ pending_reports }}</p>
                     </div>
                 </div>
+                <div class="section">
+                    <a href="{{ url_for('admin_routes.add_dummy_applications') }}" class="btn-primary">
+                        Add Dummy Applications (Testing)
+                    </a>
+                </div>
             </div>
         
+            <!-- Replace the existing pendingApplications div in admin_dashboard.html with this updated version -->
             <div id="pendingApplications" class="section">
-                <h2>Pending Applications</h2>
-                <div class="application-list">
-                    {% for application in pending_applications %}
-                    <div class="application-item">
-                        <h3>{{ application.job.title }}</h3>
-                        <p><strong>Applicant:</strong> {{ application.user.username }}</p>
-                        <p><strong>Status:</strong> {{ application.status }}</p>
-                        <p><strong>Resume:</strong> <a href="{{ url_for('static', filename=application.resume_path) }}" target="_blank">View Resume</a></p>
-                        <!-- Add other application actions (e.g., accept/reject) here -->
-                    </div>
-                    {% else %}
-                    <p>No pending applications.</p>
-                    {% endfor %}
+                <h2>Pending Job Applications</h2>
+                <div class="table-responsive">
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant Name</th>
+                                <th>Job Title</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Resume</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in pending_applications %}
+                            <tr>
+                                <td>{{ application.user.name }}</td>
+                                <td>{{ application.job.title }}</td>
+                                <td>{{ application.user.email }}</td>
+                                <td>{{ application.user.phone }}</td>
+                                <td>
+                                    {% if application.resume_path %}
+                                    <a href="{{ url_for('static', filename=application.resume_path) }}" target="_blank" class="btn-view">
+                                        <i class="fas fa-file-pdf"></i> View
+                                    </a>
+                                    {% else %}
+                                    <span>No resume</span>
+                                    {% endif %}
+                                </td>
+                                <td class="action-buttons">
+                                    <form action="{{ url_for('admin_routes.update_application_status', application_id=application.id) }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="status" value="accepted">
+                                        <button type="submit" class="btn-accept">
+                                            <i class="fas fa-check"></i> Accept
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('admin_routes.update_application_status', application_id=application.id) }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="status" value="rejected">
+                                        <button type="submit" class="btn-reject">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="no-applications">No pending applications found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
