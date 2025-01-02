@@ -71,6 +71,7 @@ def apply_for_job(job_id):
     resume_certification = ResumeCertification.query.filter_by(user_id=user.id).first()
     if resume_certification:
         print("Debugging: resume_certification.resume_path:", resume_certification.resume_path)
+        flash("Application Successfull")
     if not resume_certification or not resume_certification.resume_path:
         flash("You must upload a resume to apply for a job.", 'error')
         return redirect(url_for('user.resume_certifications'))
@@ -114,54 +115,51 @@ def delete_notification(notification_id):
     # Placeholder for database delete logic
     print(f"Deleted notification {notification_id}.")
     return redirect(url_for('user.notifications'))
-
-
-
+# Helper function to check file type
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
 
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
 def resume_certifications():
-    # Ensure the user is logged in by checking session
+    # Ensure the user is logged in
     user_id = session.get('user_id')
     if not user_id:
         flash('You need to log in to access this page.', 'error')
         return redirect(url_for('login'))  # Adjust as needed
 
-    # Fetch user data and related certifications
+    # Fetch user data
     user = User.query.get(user_id)
     if not user:
         flash('User not found.', 'error')
         return redirect(url_for('login'))  # Adjust as needed
 
     if request.method == 'POST':
-        # Ensure that files are provided
-        if 'resume' not in request.files and 'certification' not in request.files:
-            flash('No file part', 'error')
-            return redirect(url_for('user.resume_certifications'))
+        # Ensure the upload folder exists
+        upload_folder = os.path.join('static', 'uploads')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
 
+        # Get files from the form
         resume = request.files.get('resume')
         certification = request.files.get('certification')
 
-        # Ensure the upload folder exists
-        if not os.path.exists('uploads'):
-            os.makedirs('uploads')
+        # Initialize paths
+        resume_path = None
+        certification_path = None
 
         # Handle Resume Upload
         if resume and allowed_file(resume.filename):
             resume_filename = secure_filename(resume.filename)
-            resume_path = os.path.join('uploads', f"resume_{user.username}_{resume_filename}")
+            resume_path = os.path.join(upload_folder, f"resume_{user.username}_{resume_filename}")
             resume.save(resume_path)
-        else:
-            resume_path = None
+            resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
 
         # Handle Certification Upload
         if certification and allowed_file(certification.filename):
             cert_filename = secure_filename(certification.filename)
-            certification_path = os.path.join('uploads', f"certification_{user.username}_{cert_filename}")
+            certification_path = os.path.join(upload_folder, f"certification_{user.username}_{cert_filename}")
             certification.save(certification_path)
-        else:
-            certification_path = None
+            certification_path = certification_path.replace('\\', '/')  # Normalize path for web use
 
         # Save to Database
         resume_certification = ResumeCertification(
@@ -182,6 +180,7 @@ def resume_certifications():
         'resume_certifications.html',
         resume_certifications=resume_certifications
     )
+
 @user_blueprint.route('/profile')
 @login_required
 def profile():

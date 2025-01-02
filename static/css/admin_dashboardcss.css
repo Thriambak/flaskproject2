@@ -286,4 +286,73 @@ tbody tr:hover {
         padding: 5px 10px;
     }
 }
+.table-responsive {
+    overflow-x: auto;
+    margin: 20px 0;
+}
 
+.applications-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.applications-table th,
+.applications-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.applications-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.view-link {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.view-link:hover {
+    text-decoration: underline;
+}
+
+.btn-accept,
+.btn-reject {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-accept {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-reject {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-accept:hover {
+    background-color: #218838;
+}
+
+.btn-reject:hover {
+    background-color: #c82333;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: #6c757d;
+}

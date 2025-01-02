@@ -140,7 +140,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    
+        
         <!-- Upload Form -->
         <form action="{{ url_for('user.resume_certifications') }}" method="POST" enctype="multipart/form-data">
             <!-- Resume Upload -->
@@ -148,50 +148,41 @@
                 <label for="resume">Upload Resume:</label>
                 <input type="file" name="resume" id="resume" required>
             </div>
-    
+        
             <!-- Certification Upload (Optional) -->
             <div class="form-group">
                 <label for="certification">Upload Certification (Optional):</label>
                 <input type="file" name="certification" id="certification">
             </div>
-    
+        
             <button type="submit">Upload</button>
         </form>
-    
-        <!-- Display Uploaded Files -->
         <div class="file-list">
             {% if resume_certifications %}
                 <h3>Your Uploaded Files:</h3>
                 <ul>
-                {% for resume_cert in resume_certifications %}
-                    {% if resume_cert.resume_path %}
-                        <li>
-                            <strong>Resume:</strong>
-                            <a href="{{ url_for('static', filename=resume_cert.resume_path) }}" target="_blank">
-                                {{ resume_cert.resume_path.split('/')[-1] }}
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if resume_cert.certification_path %}
-                        <li>
-                            <strong>Certification:</strong>
-                            <a href="{{ url_for('static', filename=resume_cert.certification_path) }}" target="_blank">
-                                {{ resume_cert.certification_path.split('/')[-1] }}
-                            </a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
+                    {% for resume_cert in resume_certifications %}
+                        {% if resume_cert.resume_path %}
+                            <li>
+                                <strong>Resume:</strong>
+                                <a href="{{ url_for('static', filename=resume_cert.resume_path.split('static/')[1]) }}" target="_blank">
+                                    {{ resume_cert.resume_path.split('/')[-1] }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if resume_cert.certification_path %}
+                            <li>
+                                <strong>Certification:</strong>
+                                <a href="{{ url_for('static', filename=resume_cert.certification_path.split('static/')[1]) }}" target="_blank">
+                                    {{ resume_cert.certification_path.split('/')[-1] }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
                 </ul>
             {% else %}
                 <p>No files uploaded yet.</p>
             {% endif %}
-           
-            
-        </div>
-    </div>
-    
-            
-
-        
+        </div>        
 </body>
 </html>
