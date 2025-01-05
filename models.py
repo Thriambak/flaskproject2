@@ -9,12 +9,13 @@ from enum import Enum
 class RoleEnum(Enum):
     user = "user"
     admin = "admin"
+    company = "company"
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum('user', 'admin'), nullable=False)
+    role = db.Column(db.Enum('user', 'company', 'admin'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     age = db.Column(db.Integer, nullable=False)
