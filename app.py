@@ -6,6 +6,7 @@ from config import Config
 from models import db, User,Job
 from auth import auth_blueprint
 from user import user_blueprint
+from company import company_blueprint
 from flask_migrate import Migrate
 from admin_routes import admin_blueprint
 import os
@@ -23,6 +24,7 @@ app.config.from_object(Config)
 # Register blueprints with URL prefixes
 app.register_blueprint(auth_blueprint, url_prefix='/auth')
 app.register_blueprint(user_blueprint, url_prefix='/user')
+app.register_blueprint(company_blueprint, url_prefix='/company')
 app.register_blueprint(admin_blueprint, url_prefix='/admin')
 db.init_app(app)
 

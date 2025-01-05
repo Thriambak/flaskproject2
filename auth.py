@@ -4,9 +4,6 @@ from models import db, User,Job
 
 auth_blueprint = Blueprint('auth', __name__)
 
-
-
-
 auth_blueprint = Blueprint('auth', __name__)
 
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
@@ -26,7 +23,7 @@ def signup():
             return redirect(url_for('auth.signup'))
 
         # Ensure role is either 'user' or 'admin'
-        if role not in ['user', 'admin']:
+        if role not in ['user', 'admin', 'company']:
             flash('Invalid role specified.', 'danger')
             return redirect(url_for('auth.signup'))
 
@@ -72,6 +69,8 @@ def login():
         # Case-insensitive role check
         if user.role == 'admin':
             return redirect(url_for('admin_routes.admin_dashboard'))
+        elif user.role == 'company':
+            return redirect(url_for('company.company_dashboard'))
         else:
             return redirect(url_for('user.user_dashboard'))
 

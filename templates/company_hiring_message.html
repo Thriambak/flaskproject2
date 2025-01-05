@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            color: #333;
+            background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: linear-gradient(90deg, #005f73, #0a9396);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            display: flex;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            gap: 10px;
+        }
+
+        header .profile-settings {
+            display: flex;
+            gap: 15px;
+        }
+
+        header .profile-settings button {
+            background-color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #005f73;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header .profile-settings button i {
+            color: #0a9396;
+        }
+
+        header .profile-settings button:hover {
+            background-color: #e6e6e6;
+            color: #0a9396;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+        }
+
+        .navigation {
+            width: 20%;
+            background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid #ccc;
+            box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navigation button {
+            padding: 12px 20px;
+            border: none;
+            background: linear-gradient(90deg, #f0f4ff, #ffffff);
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .navigation button i {
+            font-size: 18px;
+            color: #005f73;
+        }
+
+        .navigation button:hover {
+            background: linear-gradient(90deg, #dce4ff, #f9faff);
+            transform: scale(1.05);
+        }
+
+        .activity {
+            width: 60%;
+            padding: 20px;
+            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .top-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .activity h2 {
+            color: #005f73;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .page-main {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 60px);
+            padding: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-bar input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 250px;
+        }
+
+        .search-bar i {
+            position: relative;
+            left: -30px;
+            cursor: pointer;
+        }
+
+        .search-bar .select-btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            background-color: #0a9396;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .search-bar .select-btn:hover {
+            background-color: #007f8c;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 135px;
+            left: 735px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 200px;
+            padding: 10px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .dropdown-menu label {
+            display: flex;
+            align-items: left;
+            margin: 5px 0;
+        }
+
+        .dropdown-menu input {
+            margin: 5px;
+            width: 20%;
+        }
+
+        .message-history {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background: #fff;
+        }
+
+        .message-entry {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e6f7ff;
+            border: 1px solid #ddd;
+        }
+
+        .message-entry strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .message-box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            min-height: 100px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            gap: 10px;
+        }
+
+        .controls select, .controls button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .controls button {
+            background: #0a9396;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .controls button:hover {
+            background: #007f8c;
+        }
+
+        .side-panel {
+            width: 20%;
+            background: linear-gradient(to bottom, #ffffff, #f3f5f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
+            background: linear-gradient(135deg, #ffffff, #f7f7f7);
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+
+        .side-panel .graph {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .side-panel p {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="logo.jpg" height="35px" style="border-radius: 50%;" alt="Company Logo">
+            <h4>Code Fusion</h4>
+        </div>
+        <div class="profile-settings">
+            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
+                <button><i class="fas fa-user"></i> Profile</button>
+            </a>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
+                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </a>
+        </div>
+    </header>
+    <main>
+        <div class="navigation">
+            <a href="{{ url_for('company.company_dashboard') }}" style="position: sticky;top: 14.1%; text-decoration: none;">
+                <button><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            </a>
+            <a href="{{ url_for('company.company_jobposting') }}" style="position: sticky;top: 23.5%; text-decoration: none;">
+                <button><i class="fas fa-briefcase"></i> Job Posting</button>
+            </a>
+            <button style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
+            <a href="{{ url_for('company.company_application_review') }}" style="position: sticky;top: 42.3%; text-decoration: none;">
+                <button><i class="fas fa-check-circle"></i> Application Review</button>
+            </a>
+            <button style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        </div>
+
+        <div class="activity">  
+            <h2>Candidate Communication</h2>
+            <div class="search-bar">
+                <input type="text" placeholder="Search candidates..." id="search-input">
+                <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
+                <div class="dropdown-menu" id="dropdown-menu">
+                    <label><input type="checkbox" value="John Doe" onclick="updateSearchText()"> John Doe</label>
+                    <label><input type="checkbox" value="Jane Smith" onclick="updateSearchText()"> Jane Smith</label>
+                    <label><input type="checkbox" value="Robert Brown" onclick="updateSearchText()"> Robert Brown</label>
+                </div>
+            </div>
+            <div class="message-history">
+                <div class="message-entry"><strong>John Doe - 12 Dec 2024</strong>Thank you for applying. We will review your profile.</div>
+                <div class="message-entry"><strong>Jane Smith - 10 Dec 2024</strong>We would like to schedule an interview. Please let us know your availability.</div>
+                <div class="message-entry"><strong>Robert Brown - 8 Dec 2024</strong>Congratulations! We are pleased to offer you the position.</div>
+            </div>
+            <textarea id="message-box" class="message-box" placeholder="Type your message here..."></textarea>
+            <div class="controls">
+                <select id="template-dropdown" onchange="populateTemplate()">
+                    <option value="">Select Template</option>
+                    <option value="Thank you for applying. We will review your profile.">Thank You</option>
+                    <option value="We would like to schedule an interview. Please let us know your availability.">Interview Scheduling</option>
+                    <option value="Congratulations! We are pleased to offer you the position.">Offer Letter</option>
+                    <option value="Sorry for the inconvenience. Your application has been rejected.">Reject Letter</option>
+                </select>
+                <button onclick="sendMessage()">Send Message</button>
+            </div>             
+        </div> 
+
+        <div class="side-panel">
+            <div class="graph">
+                <h3>Success Rate</h3>
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="live-feed">
+                <h3>Live Feed</h3>
+                <p>New candidate applied for UI/UX Designer role!</p>
+            </div>
+            <div class="calendar">
+                <h3>Upcoming Events</h3>
+                <ul style="padding-left: 20px;">
+                    <li><p>Host Interview - Dec 15, 2024</p></li> 
+                    <li><p>Send reject messages - Dec 20, 2024</p></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <script>
+        function toggleDropdown() {
+            const dropdownMenu = document.getElementById("dropdown-menu");
+            dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+        }
+
+        function updateSearchText() {
+            const selectedCandidates = [];
+            const checkboxes = document.querySelectorAll(".dropdown-menu input[type='checkbox']:checked");
+            checkboxes.forEach(checkbox => {
+                selectedCandidates.push(checkbox.value);
+            });
+            document.getElementById("search-input").value = selectedCandidates.join(", ");
+        }
+
+        function populateTemplate() {
+            const templateDropdown = document.getElementById('template-dropdown');
+            const messageBox = document.getElementById('message-box');
+            messageBox.value = templateDropdown.value;
+        }
+
+        function sendMessage() {
+            const messageBox = document.getElementById('message-box');
+            alert('Message sent: ' + messageBox.value);
+            messageBox.value = '';
+        }
+
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Successful Applications', 'Unsuccessful Applications'],
+                datasets: [{
+                    label: 'Success Rate',
+                    data: [30, 70],
+                    backgroundColor: ['#f4a261', '#0a9396'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

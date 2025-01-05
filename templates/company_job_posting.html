@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
+            color: #333;
+            background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: linear-gradient(90deg, #005f73, #0a9396);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            display: flex;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            gap: 10px;
+        }
+
+        header .logo i {
+            font-size: 32px;
+            color: white;
+        }
+
+        header .profile-settings {
+            display: flex;
+            gap: 15px;
+        }
+
+        header .profile-settings button {
+            background-color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #005f73;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header .profile-settings button i {
+            color: #0a9396;
+        }
+
+        header .profile-settings button:hover {
+            background-color: #e6e6e6;
+            color: #0a9396;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+        }
+
+        .navigation {
+            width: 20%;
+            background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid #ccc;
+            box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navigation button {
+            padding: 12px 20px;
+            border: none;
+            background: linear-gradient(90deg, #f0f4ff, #ffffff);
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .navigation button i {
+            font-size: 18px;
+            color: #005f73;
+        }
+
+        .navigation button:hover {
+            background: linear-gradient(90deg, #dce4ff, #f9faff);
+            transform: scale(1.05);
+        }
+
+        .activity {
+            width: 60%;
+            padding: 20px;
+            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .activity .top-buttons {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .activity .top-buttons button {
+            padding: 12px 25px;
+            border: none;
+            background: linear-gradient(90deg, #0a9396, #005f73);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .activity .top-buttons button i {
+            font-size: 18px;
+        }
+
+        .activity .top-buttons button:hover {
+            background: linear-gradient(90deg, #005f73, #003f8f);
+            transform: translateY(-3px);
+        }
+
+        .activity {
+            width: 60%;
+            padding: 20px;
+            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .activity .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .activity .top-header h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #005f73;
+        }
+
+        .post-job-btn {
+            background: linear-gradient(90deg, #0a9396, #005f73);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .post-job-btn:hover {
+            background: linear-gradient(90deg, #005f73, #003f8f);
+            transform: translateY(-3px);
+        }
+
+        .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .job-card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f9f9f9, #ffffff);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .job-card:hover {
+            background: linear-gradient(135deg, #f0f0f0, #ffffff);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .job-header h3 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status.vacant {
+            background-color: #2a9d8f;
+        }
+
+        .status.filled {
+            background-color: #f4a261;
+        }
+
+        .job-details {
+            margin: 10px 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .job-details li {
+            font-size: 14px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .job-details li i {
+            color: #0a9396;
+        }
+
+        .application-status {
+            margin-top: 20px;
+        }
+
+        .application-status h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background-color: #ddd;
+            border-radius: 25px;
+            overflow: hidden;
+            height: 20px;
+            width: 100%;
+        }
+
+        .progress-bar div {
+            height: 100%;
+            background-color: #0a9396;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+
+
+        .side-panel {
+            width: 20%;
+            background: linear-gradient(to bottom, #ffffff, #f3f5f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
+            background: linear-gradient(135deg, #ffffff, #f7f7f7);
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+
+        .side-panel .graph {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .side-panel p {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 100%; /*this controls the width of the bar graph(canvas) relative to the info-box*/
+            height: auto;
+            display: block;
+        }
+
+        .progress-bar {
+            background-color: #ddd;
+            border-radius: 25px;
+            overflow: hidden;
+            height: 20px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .progress-bar div {
+            height: 100%;
+            background-color: #0a9396;
+            width: 70%;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="logo.jpg" height="35px" style="border-radius: 50%;" alt="Company Logo">
+            <h4>Code Fusion</h4>
+        </div>
+        <div class="profile-settings">
+            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
+                <button><i class="fas fa-user"></i> Profile</button>
+            </a>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
+                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </a>
+        </div>
+    </header>
+    <main>
+        <div class="navigation"> <!--sticky = 14.1% or 86px-->
+            <a href="{{ url_for('company.company_dashboard') }}" style="position: sticky;top: 14.1%; text-decoration: none;">
+                <button><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            </a>
+            <button style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
+            <a href="{{ url_for('company.company_application_review') }}" style="position: sticky;top: 42.3%; text-decoration: none;">
+                <button><i class="fas fa-check-circle"></i> Application Review</button>
+            </a>
+            <a href="{{ url_for('company.company_hiring_communication') }}" style="position: sticky;top: 51.7%; text-decoration: none;">
+                <button><i class="fas fa-comments"></i> Hiring Communication</button>
+            </a>
+        </div>
+        <div class="activity">
+            <div class="top-header">
+                <h2>Recently Posted Jobs</h2>
+                <a href="{{ url_for('company.company_post_new_job') }}" style="text-decoration: none;">
+                    <button class="post-job-btn"><i class="fas fa-plus"></i> Post New Job</button>
+                </a>
+            </div>
+            <div class="job-list">
+                <div class="job-card">
+                    <div class="job-header">
+                        <h3>Software Engineer</h3>
+                        <span class="status filled">Closed</span>
+                    </div>
+                    <p>Responsible for backend development, API integration, and database management.</p>
+                    <ul class="job-details">
+                        <li><i class="fas fa-map-marker-alt"></i> Location: Remote</li>
+                        <li><i class="fas fa-dollar-sign"></i> Salary: $90,000 - $120,000</li>
+                        <li><i class="fas fa-tools"></i> Required Skillsets: Python, JavaScript, SQL</li>
+                        <li><i class="fas fa-calendar"></i> Posted: Dec 15, 2024</li>
+                    </ul>
+                    <div class="application-status">
+                        <h4>Application Status</h4>
+                        <div class="progress-bar">
+                            <div style="width: 33%;">33% (Shortlisted)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="job-card">
+                    <div class="job-header">
+                        <h3>Data Scientist</h3>
+                        <span class="status vacant">Open</span>
+                    </div>
+                    <p>Analyze large datasets to extract insights and inform business decisions 
+                        using statistical methods and programming.</p>
+                    <ul class="job-details">
+                        <li><i class="fas fa-map-marker-alt"></i> Location: London</li>
+                        <li><i class="fas fa-dollar-sign"></i> Salary: $110,000 - $150,000</li>
+                        <li><i class="fas fa-tools"></i> Required Skillsets: Python, R, Machine Learning</li>
+                        <li><i class="fas fa-calendar"></i> Posted: Nov 30, 2024</li>
+                    </ul>
+                    <div class="application-status">
+                        <h4>Application Status</h4>
+                        <div class="progress-bar">
+                            <div style="width: 50%;">50% (Filled)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="job-card">
+                    <div class="job-header">
+                        <h3>Product Manager</h3>
+                        <span class="status filled">Closed</span>
+                    </div>
+                    <p>Lead product development, aligning customer needs with business goals.</p>
+                    <ul class="job-details">
+                        <li><i class="fas fa-map-marker-alt"></i> Location: Remote</li>
+                        <li><i class="fas fa-dollar-sign"></i> Salary: $150,000 - $200,000</li>
+                        <li><i class="fas fa-tools"></i> Required Skillsets: Agile, Product Roadmaps, Team Leadership</li>
+                        <li><i class="fas fa-calendar"></i> Posted: Oct 25, 2024</li>
+                    </ul>
+                    <div class="application-status">
+                        <h4>Application Status</h4>
+                        <div class="progress-bar">
+                            <div style="width: 20%;">20% (Shortlisted)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="job-card">
+                    <div class="job-header">
+                        <h3>UI/UX Designer</h3>
+                        <span class="status vacant">Open</span>
+                    </div>
+                    <p>Focus on designing user-friendly interfaces and improving user experience.</p>
+                    <ul class="job-details">
+                        <li><i class="fas fa-map-marker-alt"></i> Location: New York, NY</li>
+                        <li><i class="fas fa-dollar-sign"></i> Salary: $75,000 - $100,000</li>
+                        <li><i class="fas fa-tools"></i> Required Skillsets: Adobe XD, Figma, User Research</li>
+                        <li><i class="fas fa-calendar"></i> Posted: Sep 17, 2024</li>
+                    </ul>
+                    <div class="application-status">
+                        <h4>Application Status</h4>
+                        <div class="progress-bar">
+                            <div style="width: 80%;">80% (Filled)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="graph"> <!-- style="position: sticky;top: 86px;" -->
+                <h3>Success Rate</h3>
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="live-feed"> <!-- style="position: sticky;top: 362px;" -->
+                <h3>Live Feed</h3>
+                <p>New candidate applied for UI/UX Designer role!</p>
+                <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
+            </div>
+            <div class="calendar"> <!-- style="position: sticky;top: 530px;" -->
+                <h3>Upcoming Events</h3>
+                <ul style="padding-left: 20px;">
+                    <li><p>Host Interview - Dec 15, 2024</p></li> 
+                    <li><p>Send reject messages - Dec 20, 2024</p></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <script>
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Successful Applications', 'Unsuccessful Applications'],
+                datasets: [{
+                    label: 'Success Rate',
+                    data: [30, 70],
+                    backgroundColor: ['#f4a261', '#0a9396'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        const ctx1 = document.getElementById('applicationBarGraph').getContext('2d');
+        const applicationBarGraph = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'],
+                datasets: [
+                    {
+                        label: 'Applications',
+                        data: [60, 30, 10, 50],
+                        backgroundColor: [
+                            '#264653',
+                            '#2a9d8f',
+                            '#e76f51',
+                            '#f4a261'
+                        ],
+                        borderColor: [
+                            '#264653',
+                            '#2a9d8f',
+                            '#e76f51',
+                            '#f4a261'
+                        ],
+                        borderWidth: 1,
+                    },
+                    {
+                        label: 'Shortlisted',
+                        data: [20, 8, 2, 15],
+                        backgroundColor: [
+                            '#e9c46a',
+                            '#f4a261',
+                            '#2a9d8f',
+                            '#264653'
+                        ],
+                        borderColor: [
+                            '#e9c46a',
+                            '#f4a261',
+                            '#2a9d8f',
+                            '#264653'
+                        ],
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true,
+                    },
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                    },
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    </script>
+</body>
+</html>
