@@ -29,7 +29,7 @@ def admin_dashboard():
 
     # Fetch other stats
     total_jobs = Job.query.count()
-    total_users = User.query.count()
+    total_users = User.query.filter_by(role='user').count()
     pending_reports = JobApplication.query.filter_by(status='pending').count()
 
     return render_template(
