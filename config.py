@@ -6,16 +6,14 @@ class Config:
     ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'png'}
     
     basedir = os.path.abspath(os.path.dirname(__file__))
-
+    DATABASE = os.path.join(basedir, 'your_database.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'your_secret_key'  # For session management and CSRF protection
     
-    # For SQLite
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///your_database.db'  # SQLite URI (local file-based database)
-
+    # Connection string for MySQL
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:root123*@localhost:3306/your_database'
 
     @staticmethod
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
-
