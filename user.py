@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Job, JobApplication, db,User,ResumeCertification, Notification
+from models import Job, db,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os

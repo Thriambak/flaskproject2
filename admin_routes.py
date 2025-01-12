@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify
 from functools import wraps
-from models import Job, JobApplication, User, Notification
+from models import Job, User, Notification #, JobApplication
 
 # Define the admin blueprint
 admin_blueprint = Blueprint('admin_routes', __name__)
