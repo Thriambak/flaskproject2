@@ -201,6 +201,10 @@ canvas {
     max-width: 180px;
     height: auto;
 }
+a{
+ text-decoration: none;
+
+}
 /* Flash Message Container */
 .flash-container {
     position: fixed;

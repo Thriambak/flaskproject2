@@ -10,18 +10,19 @@ from company import company_blueprint
 from flask_migrate import Migrate
 from admin_routes import admin_blueprint
 from flask import jsonify, request
-from flask_mysqldb import MySQL
+
 from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
+app.secret_key = 'your_secret_key'  # Required for session pip install mysql-connector-python
+
 
 # Ensure upload folder exists
 if not os.path.exists(Config.UPLOAD_FOLDER):
     os.makedirs(Config.UPLOAD_FOLDER)
 
-# Load configuration from Config object
+# Load configuration from Config object          
 app.config.from_object(Config)
 
 # Register blueprints with URL prefixes
