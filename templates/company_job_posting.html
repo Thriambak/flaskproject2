@@ -382,9 +382,8 @@
         <div class="activity">
             <div class="top-header">
                 <h2>Recently Posted Jobs</h2>
-                <a href="{{ url_for('company.company_post_new_job') }}" style="text-decoration: none;">
-                    <button class="post-job-btn"><i class="fas fa-plus"></i> Post New Job</button>
-                </a>
+                <button class="post-job-btn" onclick="window.location.href='/company/company_post_new_job'" style="text-decoration: none;">
+                    <i class="fas fa-plus"></i> Post New Job</button>
             </div>
             <div class="job-list">
                 <div class="job-card">

@@ -10,6 +10,43 @@ class RoleEnum(Enum):
     user = "user"
     admin = "admin"
     company = "company"
+
+"""
+COMPANY
+"""
+class Job(db.Model):
+    __tablename__ = 'jobs'
+
+    job_id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
+    # company_id = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract
+    skills = db.Column(db.Text)
+    certifications = db.Column(db.Text)
+    location = db.Column(db.String(100), nullable=False)
+    salary = db.Column(db.String(50), nullable=False)
+    deadline = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Relationship with User (if needed)
+    user = db.relationship('User', backref=db.backref('jobs', lazy=True))
+
+    def __init__(self, title, description, job_type, skills, certifications, location, salary, deadline, created_by, job_id=None):
+        self.title = title
+        self.description = description
+        self.job_type = job_type
+        self.skills = skills
+        self.certifications = certifications
+        self.location = location
+        self.salary = salary
+        self.deadline = deadline
+        self.created_by = created_by
+        if job_id is not None:
+            self.job_id = job_id
+
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -31,31 +68,6 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-class Job(db.Model):
-    __tablename__ = 'jobs'
-
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract
-    location = db.Column(db.String(100), nullable=False)
-    salary = db.Column(db.String(50), nullable=False)
-    deadline = db.Column(db.Date, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    # Relationship with User (if needed)
-    user = db.relationship('User', backref=db.backref('jobs', lazy=True))
-
-    def __init__(self, title, description, job_type, location, salary, deadline, created_by):
-        self.title = title
-        self.description = description
-        self.job_type = job_type
-        self.location = location
-        self.salary = salary
-        self.deadline = deadline
-        self.created_by = created_by
-
 
 class ResumeCertification(db.Model):
     __tablename__ = 'resume_certifications'
@@ -70,7 +82,7 @@ class ResumeCertification(db.Model):
 
     def __repr__(self):
         return f'<ResumeCertification User ID: {self.user_id}>'
-class JobApplication(db.Model):
+'''class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -87,7 +99,7 @@ class JobApplication(db.Model):
         self.user_id = user_id
         self.job_id = job_id
         self.status = status
-        self.resume_path = resume_path
+        self.resume_path = resume_path'''
 class Notification(db.Model):
     __tablename__ = 'notifications'
     

@@ -24,16 +24,22 @@ CREATE TABLE admins (
 
 -- Jobs table stores details of jobs created by admins
 CREATE TABLE jobs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_id INT AUTO_INCREMENT PRIMARY KEY,
+    -- company_id INT,
     title VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
-    company_name VARCHAR(100),
+    job_type VARCHAR(20) NOT NULL,
+    skills TEXT,
+    certifications TEXT,
+    salary INT NOT NULL,
     location VARCHAR(100),
+    joining_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 -- Applications table stores user applications for jobs, with status and resume path
-CREATE TABLE applications (
+/*CREATE TABLE applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     job_id INT,
@@ -42,7 +48,7 @@ CREATE TABLE applications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (job_id) REFERENCES jobs(id)
-);
+);*/
 
 -- Notifications table stores notifications for users regarding their applications
 CREATE TABLE notifications (

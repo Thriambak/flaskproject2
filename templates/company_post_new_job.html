@@ -325,15 +325,38 @@
                 
                 <h2>Post a New Job</h2>
             </div>
-            <form class="job-posting-form">
+            <form class="job-posting-form" action="/company/company_post_new_job" method="POST">
+                {% if job_id %}
+                    <input type="hidden" id="jobId" name="jobId" value="{{ job_id }}">
+                {% endif %}
                 <div class="form-group">
                     <label for="job-title">Job Title:</label>
                     <input type="text" id="job-title" name="job-title" placeholder="Enter job title" style="font-family: monospace;font-size: 14.5px;" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="description">Job Description:</label>
+                    <textarea id="description" name="description" placeholder="Enter job description" rows="3" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="job-title">Job Type:</label>
+                    <input type="text" id="job-type" name="job-type" placeholder="Enter job type" style="font-family: monospace;font-size: 14.5px;" required>
+                </div>
         
                 <div class="form-group">
-                    <label for="skill-sets">Expected Certifications or Skill Sets:</label>
+                    <label for="skill-sets">Expected Skill Sets:</label>
                     <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="certifications">Required Certifications:</label>
+                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="salary">Salary:</label>
+                    <input type="text" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" required>
                 </div>
         
                 <div class="form-group">
@@ -342,17 +365,12 @@
                 </div>
         
                 <div class="form-group">
-                    <label for="ctc">Expected CTC:</label>
-                    <input type="text" id="ctc" name="ctc" placeholder="Enter expected CTC" style="font-family: monospace;font-size: 14.5px;" required>
+                    <label for="deadline">Joining Timeline (in days):</label>
+                    <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace;font-size: 14.5px;" required>
                 </div>
-        
-                <div class="form-group">
-                    <label for="joining-days">Joining Timeline (in days):</label>
-                    <input type="number" id="joining-days" name="joining-days" placeholder="Enter joining timeline" style="font-family: monospace;font-size: 14.5px;" required>
-                </div>
-                <a href="{{ url_for('company.company_jobposting') }}" style="text-decoration: none;">
-                    <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
-                </a>
+
+                <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
+
             </form>
         </div>
                 

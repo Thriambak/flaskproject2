@@ -13,6 +13,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
   # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
+from models import Job
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -55,9 +56,71 @@ def company_jobposting():
     return render_template('company_job_posting.html')
 
 # Post New Job
-@company_blueprint.route('/company_post_new_job')
+@company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
 def company_post_new_job():
-    return render_template('company_post_new_job.html')
+    from app import db
+
+    if 'user_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only admins can access
+
+    if request.method == 'POST':
+        # Get form data
+        job_id = request.form.get('jobId')
+        title = request.form['job-title']
+        description = request.form['description']
+        skills = request.form['skill-sets']
+        certifications = request.form['certifications']
+        job_type = request.form['job-type']
+        locations = request.form['locations']
+        salary = request.form['salary']
+        deadline_str = request.form['deadline']
+        created_by = session['user_id']  # Get admin's user ID from session
+
+        # Convert the deadline string to a Python date object
+        try:
+            deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format for the deadline. Please use YYYY-MM-DD.', 'danger')
+            return redirect(url_for('company.company_post_new_job'))
+
+        if job_id:  # Update the job
+            job = Job.query.get(job_id)
+            if job:
+                job.title = title
+                job.description = description
+                job.job_type = job_type
+                job.skills = skills
+                job.certifications = certifications
+                job.locations = locations
+                job.salary = salary
+                job.deadline = deadline
+                db.session.commit()
+                flash('Job updated successfully!', 'success')
+                
+            else:
+                flash('Job not found.', 'danger')
+        else:  # Add a new job
+            new_job = Job(
+                title=title,
+                description=description,
+                job_type=job_type,
+                skills = skills,
+                certifications = certifications,
+                location=locations,
+                salary=salary,
+                deadline=deadline,
+                created_by=created_by
+            )
+            print(title)
+            db.session.add(new_job)
+            db.session.commit()
+            #flash('Job added successfully!', 'success')
+
+        return redirect(url_for('company.company_post_new_job'))
+
+    # Retrieve all jobs
+    jobs = Job.query.all()
+    return render_template('company_job_posting.html', jobs=jobs)
 
 # Application Review
 @company_blueprint.route('/company_application_review')
@@ -73,6 +136,10 @@ def company_hiring_communication():
 @company_blueprint.route('/company_profile')
 def company_profile():
     return render_template('company_profile.html')
+
+
+
+
 
 '''
 # Handle job application
