@@ -120,7 +120,7 @@ def company_post_new_job():
 
     # Retrieve all jobs
     jobs = Job.query.all()
-    return render_template('company_job_posting.html', jobs=jobs)
+    return render_template('company_post_new_job.html', jobs=jobs)
 
 # Application Review
 @company_blueprint.route('/company_application_review')

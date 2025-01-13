@@ -1,32 +1,57 @@
 // Initialize the chart
-const ctx = document.getElementById('chart').getContext('2d');
-new Chart(ctx, {
-    type: 'pie',
-    data: {
-        labels: ['Successful Applications', 'Unsuccessful Applications'],
-        datasets: [{
-            label: 'Success Rate',
-            data: [70, 30], // Adjust these values as necessary
-            backgroundColor: ['#0a9396', '#f4a261'],
-            hoverOffset: 4
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'bottom'
+document.addEventListener('DOMContentLoaded', () => {
+    // Success Rate Chart
+    const successRateCtx = document.getElementById('successRateChart').getContext('2d');
+    new Chart(successRateCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Successful', 'Unsuccessful'],
+            datasets: [{
+                data: [60, 40], // Replace with dynamic data if needed
+                backgroundColor: ['#4caf50', '#f44336'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
             }
         }
-    }
+    });
+
+    // Applications Overview Chart
+    const applicationsCtx = document.getElementById('applicationsChart').getContext('2d');
+    new Chart(applicationsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Job A', 'Job B', 'Job C'], // Replace with dynamic data if needed
+            datasets: [
+                {
+                    label: 'Applications',
+                    data: [30, 50, 20],
+                    backgroundColor: '#2196f3',
+                },
+                {
+                    label: 'Shortlisted',
+                    data: [10, 25, 5],
+                    backgroundColor: '#4caf50',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { beginAtZero: true },
+                y: { beginAtZero: true },
+            }
+        }
+    });
 });
-document.getElementById('application-history-btn').addEventListener('click', function() {
-    fetch('/load_application_history') // Request to load application history page
-        .then(response => response.text()) // Parse the response as text (HTML)
-        .then(data => {
-            document.getElementById('content').innerHTML = data; // Inject the page content
-        })
-        .catch(error => {
-            console.error('Error loading application history:', error);
-        });
-});
+
+
+
+    setTimeout(() => {
+        const messages = document.querySelectorAll('.flash-message');
+        messages.forEach(message => message.style.display = 'none');
+    }, 5000); // Adjust timing if needed
+
