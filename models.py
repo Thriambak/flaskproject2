@@ -54,6 +54,8 @@ class Job(db.Model):
             self.job_id = job_id
 
 
+
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)

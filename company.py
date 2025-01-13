@@ -37,9 +37,9 @@ def company_dashboard():
         return redirect(url_for('auth.login'))
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
+    
     # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
     jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
-    # print(jobs)  # Debugging line
 
     # Ensure the user is not an admin (or redirect to the admin dashboard)
     if session.get('role') != 'company':
