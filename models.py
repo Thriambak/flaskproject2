@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import pytz
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -18,7 +18,7 @@ class Job(db.Model):
     __tablename__ = 'jobs'
 
     job_id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
-    # company_id = db.Column(db.Integer, nullable=False)
+    # company_id = db.Column(db.Integer, nullable=False) done in 'created_by'
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract
@@ -26,14 +26,18 @@ class Job(db.Model):
     certifications = db.Column(db.Text)
     location = db.Column(db.String(100), nullable=False)
     salary = db.Column(db.String(50), nullable=False)
+    total_vacancy = db.Column(db.Integer, nullable=False)
+    filled_vacancy = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), nullable=False)
     deadline = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     # Relationship with User (if needed)
     user = db.relationship('User', backref=db.backref('jobs', lazy=True))
 
-    def __init__(self, title, description, job_type, skills, certifications, location, salary, deadline, created_by, job_id=None):
+    def __init__(self, title, description, job_type, skills, certifications, location, salary, total_vacancy,
+    filled_vacancy, status, deadline, created_by, job_id=None):
         self.title = title
         self.description = description
         self.job_type = job_type
@@ -41,6 +45,9 @@ class Job(db.Model):
         self.certifications = certifications
         self.location = location
         self.salary = salary
+        self.total_vacancy = total_vacancy
+        self.filled_vacancy = filled_vacancy
+        self.status = status
         self.deadline = deadline
         self.created_by = created_by
         if job_id is not None:
@@ -67,6 +74,11 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+
+
+
+
 
 
 class ResumeCertification(db.Model):

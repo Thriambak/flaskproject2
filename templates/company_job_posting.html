@@ -382,10 +382,48 @@
         <div class="activity">
             <div class="top-header">
                 <h2>Recently Posted Jobs</h2>
-                <button class="post-job-btn" onclick="window.location.href='/company/company_post_new_job'" style="text-decoration: none;">
-                    <i class="fas fa-plus"></i> Post New Job</button>
+                <a href="{{ url_for('company.company_post_new_job') }}" style="text-decoration: none;">
+                    <button class="post-job-btn"><i class="fas fa-plus"></i> Post New Job</button>
+                </a>
             </div>
             <div class="job-list">
+                {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="job-card">
+                        <div class="job-header">
+                            <h3>{{ job.title }}</h3>
+                            {% if job.status == "open" %}
+                                <span class="status vacant">Open</span>
+                            {% else %}
+                                <span class="status filled">Closed</span>
+                            {% endif %}
+                        </div>
+                        <p>{{ job.description }}</p>
+                        <ul class="job-details">
+                            <li><i class="fas fa-tools"></i> Expected Skills: {{ job.skills }}</li>
+                            <li><i class="fas fa-certificate"></i> Required Certifications: {{ job.skills }}</li>
+                            <li><i class="fas fa-map-marker-alt"></i> Location: {{ job.location }}</li>
+                            <li><i class="fas fa-dollar-sign"></i> Salary: ${{ job.salary }}</li>
+                            <li><i class="fas fa-briefcase"></i> Job Type: {{ job.job_type }}</li>
+                            <li><i class="fas fa-calendar"></i> Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</li>
+                            <li><i class="fas fa-calendar"></i> Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</li>
+                        </ul>
+                        <div class="application-status">
+                            <h4>Application Status</h4>
+                            <div class="progress-bar">
+                                {% if job.filled_vacancy >= job.total_vacancy %}
+                                    <div style="width: 100%;">100% (Filled)</div>
+                                {% else %}
+                                <div style="width: {{ (job.filled_vacancy * 100 / job.total_vacancy) if job.total_vacancy > 0 else 0 }}%">{{ job.filled_vacancy * 100 / job.total_vacancy }}% (Filled)</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No job listings available at the moment.</p>
+                {% endif %}
+                <!--
                 <div class="job-card">
                     <div class="job-header">
                         <h3>Software Engineer</h3>
@@ -462,7 +500,7 @@
                             <div style="width: 80%;">80% (Filled)</div>
                         </div>
                     </div>
-                </div>
+                </div>       -->
             </div>
         </div>
 
