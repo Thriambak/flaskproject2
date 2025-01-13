@@ -18,7 +18,13 @@
         </div>
         <div>Welcome, {{ session['username'] }}!
 
-           
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         </div>
         <div class="profile-settings">
             <button onclick="window.location.href='/user/profile'">
@@ -31,13 +37,6 @@
         </div>
     </header>
     <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-message {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
         <div class="navigation">
             <button><i class="fas fa-home"></i> Home</button>
             <button onclick="window.location.href='/user/load_application_history'">
