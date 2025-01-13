@@ -329,9 +329,26 @@
                 </div>
                 <!-- Replace the "Vacant Posts" and "Application Details" sections in the info-section div -->
                 <div class="info-box">
-                    <h3>Vacant Posts</h3>
+                    <h3>Job Posts</h3>
                     <div class="vacant-posts">
-                        <div class="post">
+                        {% if jobs %}
+                            {% for job in jobs %}
+                            <div class="post">
+                                <div class="post-header">
+                                    <strong>{{ job.title }}</strong>
+                                    {% if job.status == "closed" %}
+                                        <span class="status filled">Filled</span>
+                                    {% else %}
+                                        <span class="status vacant">Open</span>
+                                    {% endif %}
+                                </div>
+                                <p>{{ job.description }}</p>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No job listings available at the moment.</p>
+                        {% endif %}
+                        <!-- <div class="post">
                             <div class="post-header">
                                 <strong>Software Engineer</strong>
                                 <span class="status filled">Filled</span>
@@ -358,7 +375,7 @@
                                 <span class="status vacant">Vacant</span>
                             </div>
                             <p>Design aesthetic and efficient websites.</p>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
                 <div class="info-box">

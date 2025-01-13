@@ -1,16 +1,13 @@
-from datetime import datetime
+from datetime import datetime, date
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
-from flask_login import current_user
-from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
 #from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-import os
 from models import db  # Ensure 'db' is the instance of SQLAlchemy
-  # Assuming your model is in 'models.py'
+# Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from models import Job
@@ -40,20 +37,24 @@ def company_dashboard():
         return redirect(url_for('auth.login'))
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-#    jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by
-    # jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
-#    print(jobs)  # Debugging line
+    # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
+    jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
+    # print(jobs)  # Debugging line
 
     # Ensure the user is not an admin (or redirect to the admin dashboard)
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
     
-    return render_template('company_dashboard.html') #, jobs=jobs
+    return render_template('company_dashboard.html', jobs=jobs)
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
 def company_jobposting():
-    return render_template('company_job_posting.html')
+    from app import db
+    user_id = session.get('user_id')
+    # Retrieve all jobs
+    jobs = Job.query.filter_by(created_by=user_id).all()
+    return render_template('company_job_posting.html', jobs=jobs)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
@@ -73,8 +74,15 @@ def company_post_new_job():
         job_type = request.form['job-type']
         locations = request.form['locations']
         salary = request.form['salary']
+        total_vacancy = request.form['vacancy']
         deadline_str = request.form['deadline']
         created_by = session['user_id']  # Get admin's user ID from session
+        total_vacancy = int(total_vacancy)
+        filled_vacancy = 3
+        if total_vacancy > filled_vacancy:
+            status = "open" 
+        else:
+            status = "closed"
 
         # Convert the deadline string to a Python date object
         try:
@@ -93,6 +101,7 @@ def company_post_new_job():
                 job.certifications = certifications
                 job.locations = locations
                 job.salary = salary
+                job.total_vacancy = total_vacancy
                 job.deadline = deadline
                 db.session.commit()
                 flash('Job updated successfully!', 'success')
@@ -108,19 +117,23 @@ def company_post_new_job():
                 certifications = certifications,
                 location=locations,
                 salary=salary,
+                total_vacancy=total_vacancy,
+                filled_vacancy=filled_vacancy,
+                status=status,
                 deadline=deadline,
                 created_by=created_by
             )
             print(title)
             db.session.add(new_job)
             db.session.commit()
-            #flash('Job added successfully!', 'success')
+            flash('Job added successfully!', 'success')
 
-        return redirect(url_for('company.company_post_new_job'))
+        return redirect(url_for('company.company_jobposting'))
 
     # Retrieve all jobs
-    jobs = Job.query.all()
-    return render_template('company_job_posting.html', jobs=jobs)
+    # jobs = Job.query.all()
+    current_date = date.today().strftime('%d-%m-%Y')  # Get today's date in 'DD-MM-YYYY' format
+    return render_template('company_post_new_job.html',current_date=current_date)
 
 # Application Review
 @company_blueprint.route('/company_application_review')
