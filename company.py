@@ -39,6 +39,7 @@ def company_dashboard():
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
     
     # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
+    
     jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
 
     # Ensure the user is not an admin (or redirect to the admin dashboard)
@@ -132,7 +133,7 @@ def company_post_new_job():
 
     # Retrieve all jobs
     # jobs = Job.query.all()
-    current_date = date.today().strftime('%d-%m-%Y')  # Get today's date in 'DD-MM-YYYY' format
+    current_date = date.today().strftime('%d-%m-%Y')   # Get today's date in 'DD-MM-YYYY' format
     return render_template('company_post_new_job.html',current_date=current_date)
 
 # Application Review
