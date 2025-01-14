@@ -1,5 +1,5 @@
 from datetime import datetime
-import pytz
+
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -52,7 +52,6 @@ class Job(db.Model):
         self.created_by = created_by
         if job_id is not None:
             self.job_id = job_id
-
 
 
 
