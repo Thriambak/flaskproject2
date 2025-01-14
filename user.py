@@ -112,6 +112,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
 
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
+@login_required
 def resume_certifications():
     # Ensure the user is logged in
     user_id = session.get('user_id')

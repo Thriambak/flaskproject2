@@ -335,14 +335,14 @@
                             {% for job in jobs %}
                             <div class="post">
                                 <div class="post-header">
-                                    <strong>{{ job.title }}</strong>
+                                    <strong style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</strong>
                                     {% if job.status == "closed" %}
                                         <span class="status filled">Filled</span>
                                     {% else %}
                                         <span class="status vacant">Open</span>
                                     {% endif %}
                                 </div>
-                                <p>{{ job.description }}</p>
+                                <p style="overflow-wrap: break-word; max-width: 100%;">{{ job.description }}</p>
                             </div>
                             {% endfor %}
                         {% else %}

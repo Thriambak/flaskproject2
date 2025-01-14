@@ -371,7 +371,7 @@
 
                 <div class="form-group">
                     <label for="vacancy">Vacancy:</label>
-                    <input type="number" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" required>
+                    <input type="number" min="0" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" required>
                 </div>
         
                 <div class="form-group">
@@ -379,7 +379,7 @@
                     <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace;font-size: 14.5px;" required min="{{ current_date }}">
                 </div>
                 <a href="{{ url_for('company.company_jobposting') }}" style="text-decoration: none;">
-                    <button onclick="postMessage()" type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
+                    <button onsubmit="postMessage()" type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
                 </a>
             </form>
         </div>

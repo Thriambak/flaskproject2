@@ -12,7 +12,7 @@ class Config:
     SECRET_KEY = 'your_secret_key'  # For session management and CSRF protection
     
     # Connection string for MySQL
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://username:password@localhost:3306/your_database'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:root123*@localhost:3306/new_database'
 
     @staticmethod
     def allowed_file(filename):
