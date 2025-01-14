@@ -10,7 +10,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job, Company, Login
+from models import Job, Company, Login, JobApplication, User, Communication
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -141,16 +141,111 @@ def company_post_new_job():
     return render_template('company_post_new_job.html',current_date=current_date)
 
 # Application Review
-@company_blueprint.route('/company_application_review')
+@company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
 @login_required
 def company_application_review():
-    return render_template('company_application_review.html')
+    user_id = session.get('login_id')
+    
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only company can access
+    
+    if request.method == 'POST':
+        # Handle the status update
+        application_id = request.form.get('application_id')
+        new_status = request.form.get('status')
+ 
+        # print('\n',application_id,new_status,'\n')   # debug
+        # Update the application status in the database
+        application = JobApplication.query.get(application_id)
+        if application:
+            application.status = new_status
+            db.session.commit()
+            flash('Application status updated successfully!', 'success')
+        else:
+            flash('Application not found!', 'danger')
+
+    # Get all jobs created by the company
+    jobs = Job.query.filter_by(created_by=user_id).all()
+    
+    # Get all job applications for the jobs created by the company
+    job_applications = JobApplication.query.join(Job).filter(Job.created_by == user_id).all()
+    
+    # Create a list of applications with details for rendering
+    applications_data = []
+    for application in job_applications:
+        applications_data.append({
+            'candidate_name': application.user.name,
+            'job_post': application.job.title,
+            'status': application.status,
+            'application_id': application.id,  # Include application ID
+            'resume_path': application.resume_path,
+            'certificate_path': application.certificate_path,
+        })
+
+    return render_template('company_application_review.html', applications=applications_data)
 
 # Hiring Communication
-@company_blueprint.route('/company_hiring_communication')
+'''@company_blueprint.route('/company_hiring_communication')
 @login_required
 def company_hiring_communication():
-    return render_template('company_hiring_message.html')
+    user_id = session.get('login_id')
+    
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only company can access
+    
+    if request.method == 'POST':
+        application_id = request.form.get('application_id')
+
+        msg = Notification.query.filter_by(user_id=application_id).all()
+        
+    return render_template('company_hiring_message.html')'''
+
+# Hiring Communication
+@company_blueprint.route('/company_hiring_communication', methods=['GET', 'POST'])
+@login_required
+def company_hiring_communication():
+    user_id = session.get('login_id')
+    
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only company can access
+
+    # Fetch all users who applied for the company's jobs
+    applied_users = (
+        db.session.query(User.id, User.name)
+        .join(JobApplication, JobApplication.user_id == User.id)
+        .join(Job, JobApplication.job_id == Job.job_id)
+        .filter(Job.created_by == user_id)
+        .all()
+    )
+
+    # Fetch communication history
+    messages = (
+        db.session.query(Communication, User.name)
+        .join(User, User.id == Communication.user_id)
+        .filter(Communication.company_id == user_id)
+        .order_by(Communication.timestamp.desc())
+        .all()
+    )
+
+    if request.method == 'POST':
+        # Get data from form
+        selected_user_id = request.form.get('user_id')
+        message_content = request.form.get('message')
+
+        print(f"Selected User ID: {selected_user_id}")
+        print(f"Message Content: {message_content}")
+
+        # Add message to the database
+        if selected_user_id and message_content:
+            new_message = Communication(company_id=user_id, user_id=selected_user_id, message=message_content)
+            db.session.add(new_message)
+            db.session.commit()
+            flash('Message sent successfully!', 'success')
+
+        return redirect(url_for('company.company_hiring_communication'))
+
+    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages)
+
 
 # Profile
 @company_blueprint.route('/company_profile', methods=['GET', 'POST'])

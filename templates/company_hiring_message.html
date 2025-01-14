@@ -329,7 +329,43 @@
             <button style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
+
         <div class="activity">  
+            <h2>Candidate Communication</h2>
+            <!-- Search Bar and Dropdown -->
+            <div class="search-bar">
+                <input type="text" placeholder="Search candidates..." id="search-input">
+                <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
+                <div class="dropdown-menu" id="dropdown-menu">
+                    {% for user in applied_users %}
+                        <label>
+                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }},{{ user.name }}')">
+                            {{ user.name }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        
+            <!-- Message History -->
+            <div class="message-history">
+                {% for communication, user_name in messages %}
+                    <div class="message-entry">
+                        <strong>{{ user_name }} - {{ communication.timestamp.strftime('%d %b %Y') }}</strong>
+                        {{ communication.message }}
+                    </div>
+                {% endfor %}
+            </div>
+        
+            <!-- Send Message -->
+            <form method="POST" action="{{ url_for('company.company_hiring_communication') }}">
+                <textarea id="message-box" name="message" class="message-box" placeholder="Type your message here..." required></textarea>
+                <div class="controls">
+                    <button type="submit">Send Message</button>
+                </div>
+            </form>
+        </div>        
+
+        <!--<div class="activity">  
             <h2>Candidate Communication</h2>
             <div class="search-bar">
                 <input type="text" placeholder="Search candidates..." id="search-input">
@@ -356,7 +392,7 @@
                 </select>
                 <button onclick="sendMessage()">Send Message</button>
             </div>             
-        </div> 
+        </div> -->
 
         <div class="side-panel">
             <div class="graph">
@@ -377,19 +413,25 @@
         </div>
     </main>
     <script>
+        function updateSearchText(id, name) {
+            document.getElementById('search-input').value = name;
+            console.log(id, name);
+            
+        }
+
         function toggleDropdown() {
             const dropdownMenu = document.getElementById("dropdown-menu");
             dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
         }
 
-        function updateSearchText() {
+        /*function updateSearchText() {
             const selectedCandidates = [];
             const checkboxes = document.querySelectorAll(".dropdown-menu input[type='checkbox']:checked");
             checkboxes.forEach(checkbox => {
                 selectedCandidates.push(checkbox.value);
             });
             document.getElementById("search-input").value = selectedCandidates.join(", ");
-        }
+        }*/
 
         function populateTemplate() {
             const templateDropdown = document.getElementById('template-dropdown');

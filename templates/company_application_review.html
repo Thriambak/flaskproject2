@@ -373,10 +373,11 @@
                         <label><input type="checkbox"> Rejected</label>
 
                         <h4>Job Post</h4>
-                        <label><input type="checkbox"> Software Engineer</label>
-                        <label><input type="checkbox"> Data Scientist</label>
-                        <label><input type="checkbox"> Product Manager</label>
-                        <label><input type="checkbox"> UI/UX Designer</label>
+                        {% if applications %}
+                            {% for application in applications %}
+                                <p style="overflow-wrap: break-word; max-width: 100%;"><input type="checkbox"> {{ application.job_post }}</p>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -386,14 +387,18 @@
                 <h3>Candidate List</h3>
                 <br>
                 <ul id="candidate-list">
-                    <li>
-                        <button class="candidate-item" onclick="selectCandidate('John Doe')">
-                            <div class="candidate-name">John Doe</div>
-                            <div class="candidate-profile">Software Engineer</div>
-                            <div class="candidate-status">Pending</div>
-                        </button>
-                    </li>
-                    <li>
+                    {% if applications %}
+                        {% for application in applications %}
+                        <li>
+                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}', '{{ application.certificate_path }}', '{{ application.status }}', '{{ application.application_id }}')">
+                                <div class="candidate-name" style="overflow-wrap: break-word; max-width: 20%;">{{ application.candidate_name }}</div>
+                                <div class="candidate-profile" style="overflow-wrap: break-word; max-width: 60%;">{{ application.job_post }}</div>
+                                <div class="candidate-status" style="overflow-wrap: break-word; max-width: 20%;">{{ application.status }}</div>
+                            </button>
+                        </li>
+                        {% endfor %}
+                    {% endif %}
+                    <!--<li>
                         <button class="candidate-item" onclick="selectCandidate('Jane Smith')">
                             <div class="candidate-name">Jane Smith</div>
                             <div class="candidate-profile">Data Scientist</div>
@@ -420,7 +425,7 @@
                             <div class="candidate-profile">Backend Developer</div>
                             <div class="candidate-status">Rejected</div>
                         </button>
-                    </li>
+                    </li>-->
                 </ul>
             </div>
 
@@ -431,17 +436,18 @@
                 <div id="selected-candidate">
                     <p style="font-family: monospace;font-size: 14.5px;">Select a candidate to view their details.</p>
                 </div>
-                <div id="update-status">
+                <form id="update-status-form" action="/company/company_application_review" method="POST">
                     <h4>Update Application Status</h4>
                     <br>
-                    <select id="status-update">
-                        <option value="pending">Pending</option>
-                        <option value="interviewed">Interviewed</option>
-                        <option value="hired">Hired</option>
-                        <option value="rejected">Rejected</option>
+                    <input type="hidden" id="application-id" name="application_id" value="">
+                    <select id="status-update" name="status">
+                        <option value="Pending">Pending</option>
+                        <option value="Interviewed">Interviewed</option>
+                        <option value="Hired">Hired</option>
+                        <option value="Rejected">Rejected</option>
                     </select>
-                    <button class="update-btn" onclick="updateCandidateStatus()">Update Status</button>
-                </div>
+                    <button class="update-btn" type="submit">Update Status</button>
+                </form>
             </div>
         </div>              
         
@@ -466,6 +472,21 @@
         </div>
     </main>
     <script>
+        function selectCandidate(name, jobPost, resumePath, certificatePath, status, applicationId) {
+            // Populate the candidate details
+            const candidateDetails = `
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong> ${name}</p>
+                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong> ${jobPost}</p>
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong> <a href="${resumePath}" target="_blank">View Resume</a></p>
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Certificate: </strong> <a href="${certificatePath}" target="_blank">View Certificate</a></p>
+            `;
+            document.getElementById('selected-candidate').innerHTML = candidateDetails;
+            
+            document.getElementById('application-id').value = applicationId;
+            // Update the dropdown to reflect the current status
+            document.getElementById('status-update').value = status;
+        }
+
         const ctx = document.getElementById('chart').getContext('2d');
         new Chart(ctx, {
             type: 'pie',
