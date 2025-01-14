@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Activity Tracking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+
+        header {
+            background: #0a9396;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        header .profile-settings button {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #0a9396;
+            transition: background-color 0.3s;
+        }
+
+        header .profile-settings button:hover {
+            background-color: #e0f4f1;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Student Activity Section */
+        .activity-tracking-container {
+            width: 80%;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .activity-header h2 {
+            font-size: 28px;
+            color: #333;
+        }
+
+        /* Search and Filter Widgets */
+        .search-filter-widgets {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .search-filter-widgets input,
+        .search-filter-widgets select,
+        .search-filter-widgets button {
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            width: 30%;
+        }
+
+        .search-filter-widgets button {
+            background-color: #0a9396;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        .search-filter-widgets button:hover {
+            background-color: #005f73;
+        }
+
+        /* Student Activity List */
+        .student-activity-list {
+            margin-top: 30px;
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .student-activity-list th,
+        .student-activity-list td {
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .student-activity-list th {
+            background-color: #0a9396;
+            color: white;
+        }
+
+        .student-activity-list td {
+            background-color: #f9f9f9;
+        }
+
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-applied {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-hired {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            background-color: #0a9396;
+            color: white;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .pagination button:hover {
+            background-color: #005f73;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-user-graduate"></i> Student Activity Tracking
+        </div>
+        <div class="profile-settings">
+            <button><i class="fas fa-user"></i> Profile</button>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="activity-tracking-container">
+            <!-- Activity Tracking Header -->
+            <div class="activity-header">
+                <h2>Track Student Activity</h2>
+            </div>
+
+            <!-- Search and Filter Widgets -->
+            <div class="search-filter-widgets">
+                <input type="text" id="searchNameOrId" placeholder="Search by Name or ID" />
+                <select id="statusFilter">
+                    <option value="">Filter by Status</option>
+                    <option value="active">Active</option>
+                    <option value="applied">Applied</option>
+                    <option value="hired">Hired</option>
+                </select>
+                <button id="searchButton">Search</button>
+            </div>
+
+            <!-- Student Activity List -->
+            <div class="student-activity-list-container">
+                <h3>Student Activity</h3>
+                <table class="student-activity-list">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Student ID</th>
+                            <th>Job Application Status</th>
+                            <th>Company Name</th>
+                            <th>Current Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityList">
+                        <!-- Hardcoded Data -->
+                        <tr>
+                            <td>John Doe</td>
+                            <td>CS123</td>
+                            <td>Applied for Developer Role</td>
+                            <td>Google</td>
+                            <td class="status-applied">Applied</td>
+                        </tr>
+                        <tr>
+                            <td>Jane Smith</td>
+                            <td>CS124</td>
+                            <td>Applied for Data Analyst Role</td>
+                            <td>Microsoft</td>
+                            <td class="status-hired">Hired</td>
+                        </tr>
+                        <tr>
+                            <td>Sam Wilson</td>
+                            <td>EE345</td>
+                            <td>No applications yet</td>
+                            <td>N/A</td>
+                            <td class="status-active">Active</td>
+                        </tr>
+                        <tr>
+                            <td>Emma Brown</td>
+                            <td>CS126</td>
+                            <td>Applied for UI/UX Designer Role</td>
+                            <td>Apple</td>
+                            <td class="status-applied">Applied</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button id="prevPage">Previous</button>
+                <button id="nextPage">Next</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simulate student data with pagination
+        const students = [
+            { name: "John Doe", id: "CS123", application: "Applied for Developer Role", company: "Google", status: "applied" },
+            { name: "Jane Smith", id: "CS124", application: "Applied for Data Analyst Role", company: "Microsoft", status: "hired" },
+            { name: "Sam Wilson", id: "EE345", application: "No applications yet", company: "N/A", status: "active" },
+            { name: "Emma Brown", id: "CS126", application: "Applied for UI/UX Designer Role", company: "Apple", status: "applied" },
+            { name: "Lucas Green", id: "EE789", application: "Applied for Electrical Engineer Role", company: "Tesla", status: "applied" },
+            { name: "Sophia White", id: "CS130", application: "No applications yet", company: "N/A", status: "active" },
+            { name: "Mason Taylor", id: "ME245", application: "Applied for Mechanical Engineer Role", company: "Ford", status: "hired" },
+            { name: "Olivia Lee", id: "CE234", application: "Applied for Civil Engineer Role", company: "Bechtel", status: "applied" },
+        ];
+
+        let currentPage = 1;
+        const recordsPerPage = 4;
+
+        function displayStudents(page) {
+            const start = (page - 1) * recordsPerPage;
+            const end = page * recordsPerPage;
+            const paginatedStudents = students.slice(start, end);
+
+            const list = document.getElementById('activityList');
+            list.innerHTML = '';
+
+            paginatedStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.name}</td>
+                    <td>${student.id}</td>
+                    <td>${student.application}</td>
+                    <td>${student.company}</td>
+                    <td class="status-${student.status}">${student.status.charAt(0).toUpperCase() + student.status.slice(1)}</td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function searchStudents() {
+            const searchValue = document.getElementById('searchNameOrId').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filteredStudents = students.filter(student => {
+                const matchesNameOrId = student.name.toLowerCase().includes(searchValue) || student.id.includes(searchValue);
+                const matchesStatus = statusFilter ? student.status === statusFilter : true;
+                return matchesNameOrId && matchesStatus;
+            });
+
+            // Reset to page 1 when new search is performed
+            currentPage = 1;
+            displayFilteredStudents(filteredStudents);
+        }
+
+        function displayFilteredStudents(filteredStudents) {
+            const list = document.getElementById('activityList');
+            list.innerHTML = '';
+
+            filteredStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.name}</td>
+                    <td>${student.id}</td>
+                    <td>${student.application}</td>
+                    <td>${student.company}</td>
+                    <td class="status-${student.status}">${student.status.charAt(0).toUpperCase() + student.status.slice(1)}</td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        document.getElementById('searchButton').addEventListener('click', searchStudents);
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayStudents(currentPage);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage * recordsPerPage < students.length) {
+                currentPage++;
+                displayStudents(currentPage);
+            }
+        });
+
+        // Initial display of students
+        displayStudents(currentPage);
+    </script>
+</body>
+</html>
