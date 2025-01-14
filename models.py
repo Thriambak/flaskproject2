@@ -1,5 +1,5 @@
 from datetime import datetime
-
+#import pytz
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -30,7 +30,7 @@ class Job(db.Model):
     filled_vacancy = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), nullable=False)
     deadline = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     created_by = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
 
     # Relationship with User (if needed)
@@ -118,6 +118,54 @@ class Admin(db.Model):
 
 # ithil nammal kodukunna username aan company,college ,admin and username aayitt edkan ushesikunne, ath kurach changes koode und
 
+class ResumeCertification(db.Model):
+    __tablename__ = 'resume_certifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    resume_path = db.Column(db.String(255), nullable=True)  # Path to the resume file
+    certification_path = db.Column(db.String(255), nullable=True)  # Path to the certification file
+    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())  # Upload timestamp
+
+    user = db.relationship('Login', backref=db.backref('resume_certifications', lazy=True))
+
+    def __repr__(self):
+        return f'<ResumeCertification User ID: {self.user_id}>'
+class JobApplication(db.Model):
+    __tablename__ = 'job_applications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'accepted', 'rejected'
+    resume_path = db.Column(db.String(200), nullable=True)  # Store path to the resume file
+    certificate_path = db.Column(db.String(200), nullable=True)
+    # Relationships
+    user = db.relationship('User', backref='applications')
+    job = db.relationship('Job', backref='applications')
+
+    def __init__(self, user_id, job_id, status, resume_path,certificate_path):
+        self.user_id = user_id
+        self.job_id = job_id
+        self.status = status
+        self.resume_path = resume_path
+        self.certificate_path=certificate_path
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    message = db.Column(db.String(255), nullable=False)
+    read = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('Login', backref='notifications')
+    
+    def __init__(self, user_id, message):
+        self.user_id = user_id
+        self.message = message
+
+        
 
 '''class User(db.Model):
     __tablename__ = 'users'
@@ -142,49 +190,3 @@ class Admin(db.Model):
 
 
 '''
-
-class ResumeCertification(db.Model):
-    __tablename__ = 'resume_certifications'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
-    resume_path = db.Column(db.String(255), nullable=True)  # Path to the resume file
-    certification_path = db.Column(db.String(255), nullable=True)  # Path to the certification file
-    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())  # Upload timestamp
-
-    user = db.relationship('Login', backref=db.backref('resume_certifications', lazy=True))
-
-    def __repr__(self):
-        return f'<ResumeCertification User ID: {self.user_id}>'
-'''class JobApplication(db.Model):
-    __tablename__ = 'job_applications'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # 'pending', 'accepted', 'rejected'
-    resume_path = db.Column(db.String(200), nullable=True)  # Store path to the resume file
-
-    # Relationships
-    user = db.relationship('User', backref='applications')
-    job = db.relationship('Job', backref='applications')
-
-    def __init__(self, user_id, job_id, status, resume_path):
-        self.user_id = user_id
-        self.job_id = job_id
-        self.status = status
-        self.resume_path = resume_path'''
-class Notification(db.Model):
-    __tablename__ = 'notifications'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
-    message = db.Column(db.String(255), nullable=False)
-    read = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    user = db.relationship('Login', backref='notifications')
-    
-    def __init__(self, user_id, message):
-        self.user_id = user_id
-        self.message = message

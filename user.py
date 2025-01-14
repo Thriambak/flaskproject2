@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Job, db,User,ResumeCertification, Notification #, JobApplication
+from models import Job, JobApplication, db,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
@@ -35,12 +35,14 @@ def user_dashboard():
     user_id = session.get('user_id')
     
     # Ensure the user_id is in session
-    if not user_id:
+    ''' if not user_id:
         flash("User is not logged in.", "error")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login'))'''
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-    jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by
+   # Fetching jobs ordered by the creation date (newest first)
+    jobs = Job.query.order_by(Job.created_at.desc()).all()  # Assuming the column is named 'created_at'
+# If you want to show all jobs. If you need jobs posted by the user, filter by created_by
     # jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
     print(jobs)  # Debugging line
 
@@ -76,12 +78,19 @@ def apply_for_job(job_id):
         flash("You must upload a resume to apply for a job.", 'error')
         return redirect(url_for('user.resume_certifications'))
 
+    # Check if the user has already applied for this job
+    existing_application = JobApplication.query.filter_by(user_id=user.id, job_id=job_id).first()
+    if existing_application:
+        flash(f"You have already applied for the job {job.title}.", 'error')
+        return redirect(url_for('user.user_dashboard'))
+
     # Prepare the application
     new_application = JobApplication(
         user_id=user.id,
-        job_id=job.id,
+        job_id=job.job_id,
         status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
-        resume_path=resume_certification.resume_path  # Store the resume path
+        resume_path=resume_certification.resume_path,
+        certificate_path=resume_certification.certification_path # Store the resume path
     )
 
     # Add the application to the database
@@ -92,6 +101,7 @@ def apply_for_job(job_id):
 
     # Redirect to the user dashboard
     return redirect(url_for('user.user_dashboard'))
+
 
 @user_blueprint.route('/notifications')
 @login_required
@@ -143,14 +153,14 @@ def resume_certifications():
         # Handle Resume Upload
         if resume and allowed_file(resume.filename):
             resume_filename = secure_filename(resume.filename)
-            resume_path = os.path.join(upload_folder, f"resume_{user.username}_{resume_filename}")
+            resume_path = os.path.join(upload_folder, f"resume_{user.name}_{resume_filename}")
             resume.save(resume_path)
             resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
 
         # Handle Certification Upload
         if certification and allowed_file(certification.filename):
             cert_filename = secure_filename(certification.filename)
-            certification_path = os.path.join(upload_folder, f"certification_{user.username}_{cert_filename}")
+            certification_path = os.path.join(upload_folder, f"certification_{user.name}_{cert_filename}")
             certification.save(certification_path)
             certification_path = certification_path.replace('\\', '/')  # Normalize path for web use
 
@@ -177,9 +187,6 @@ def resume_certifications():
 @user_blueprint.route('/profile')
 @login_required
 def profile():
-    from app import db
-    from models import User
-
     # Get the current user's ID from the session
     user_id = session.get('user_id')
     if not user_id:
@@ -187,21 +194,21 @@ def profile():
         return redirect(url_for('auth.login'))
 
     # Query the database for the user's information
-    user = User.query.filter_by(id=user_id, role='user').first()
+    user = User.query.filter_by(id=user_id).first()
 
     if user:
         return render_template(
             'profile.html',
             user={
                 'name': user.name,
-                'role': user.role,
+                'role': user.login.role,  # Access the role through the 'login' relationship
                 'email': user.email,
-                
             }
         )
     else:
         flash('User not found.', 'error')
         return redirect(url_for('user.user_dashboard'))
+
 
 
 @user_blueprint.route('/load_application_history')

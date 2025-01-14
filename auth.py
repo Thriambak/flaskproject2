@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
 from config import Config
-from models import db, User, Job, Login, Company
+from models import Admin, db, User, Job, Login, Company
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -113,6 +113,7 @@ def login():
             if not user:
                 flash('User details not found.', 'danger')
                 return redirect(url_for('auth.login'))
+            session['user_id'] = user.id  
             return redirect(url_for('user.user_dashboard'))
         elif login.role == 'company':
             company = Company.query.filter_by(login_id=login.id).first()

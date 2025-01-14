@@ -65,26 +65,27 @@
                 {% if jobs %}
                     {% for job in jobs %}
                     <div class="job-posting">
-                        <h3>{{ job.title }}</h3>
-                        <p><strong>Type:</strong> {{ job.job_type }}</p>
-                        <p><strong>Location:</strong> {{ job.location }}</p>
-                        <p><strong>Salary:</strong> ₹{{ job.salary }}</p>
-                        <p><strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+                        <div class="job-header">
+                            <h3>{{ job.title }}</h3>
+                            <div class="job-type">
+                                <i class="fas fa-briefcase"></i> {{ job.job_type }}
+                            </div>
+                        </div>
+                        <p><strong>Location:</strong> <i class="fas fa-map-marker-alt"></i> {{ job.location }}</p>
+                        <p><strong>Salary:</strong> <i class="fas fa-wallet"></i> ₹{{ job.salary }}</p>
+                        <p><strong>Deadline:</strong> <i class="fas fa-calendar-alt"></i> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
                         <p>{{ job.description }}</p>
-                        <p><strong>Skills Required:</strong> {{ job.skills }}</p>
-                        <p><strong>Certifications:</strong> {{ job.certifications }}</p>
+                        <p><strong>Skills Required:</strong> <i class="fas fa-cogs"></i> {{ job.skills }}</p>
+                        <p><strong>Certifications:</strong> <i class="fas fa-certificate"></i> {{ job.certifications }}</p>
                         <!-- Apply button -->
                         <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
-                            <button type="submit" class="apply-btn">Apply</button>
+                            <button type="submit" class="btn apply-btn">Apply Now</button>
                         </form>
                     </div>
                     {% endfor %}
                 {% else %}
                     <p>No job listings available at the moment.</p>
                 {% endif %}
-            </div>
-            
-            
             </div>
         </div>
         <div class="side-panel">
