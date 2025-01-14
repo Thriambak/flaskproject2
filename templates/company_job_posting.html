@@ -213,6 +213,13 @@
             transition: background 0.3s ease, box-shadow 0.3s ease;
         }
 
+        .job-card p {
+            word-wrap: break-word; /* Ensures long words or URLs break onto the next line */
+            white-space: normal;   /* Prevents text from staying on one line */
+            overflow-wrap: break-word; /* Alternative for better browser support */
+            max-width: 95%;
+        }
+
         .job-card:hover {
             background: linear-gradient(135deg, #f0f0f0, #ffffff);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
@@ -391,7 +398,7 @@
                     {% for job in jobs %}
                     <div class="job-card">
                         <div class="job-header">
-                            <h3>{{ job.title }}</h3>
+                            <h3 style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</h3>
                             {% if job.status == "open" %}
                                 <span class="status vacant">Open</span>
                             {% else %}
@@ -400,13 +407,13 @@
                         </div>
                         <p>{{ job.description }}</p>
                         <ul class="job-details">
-                            <li><i class="fas fa-tools"></i> Expected Skills: {{ job.skills }}</li>
-                            <li><i class="fas fa-certificate"></i> Required Certifications: {{ job.skills }}</li>
-                            <li><i class="fas fa-map-marker-alt"></i> Location: {{ job.location }}</li>
-                            <li><i class="fas fa-dollar-sign"></i> Salary: ${{ job.salary }}</li>
-                            <li><i class="fas fa-briefcase"></i> Job Type: {{ job.job_type }}</li>
-                            <li><i class="fas fa-calendar"></i> Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</li>
-                            <li><i class="fas fa-calendar"></i> Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</li>
+                            <li><i class="fas fa-tools"></i> <p>Expected Skills: {{ job.skills }}</p></li>
+                            <li><i class="fas fa-certificate"></i> <p>Required Certifications: {{ job.skills }}</p></li>
+                            <li><i class="fas fa-map-marker-alt"></i> <p>Location: {{ job.location }}</p></li>
+                            <li><i class="fas fa-dollar-sign"></i> <p>Salary: ${{ job.salary }}</p></li>
+                            <li><i class="fas fa-briefcase"></i> <p>Job Type: {{ job.job_type }}</p></li>
+                            <li><i class="fas fa-calendar"></i> <p>Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
+                            <li><i class="fas fa-calendar"></i> <p>Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</p></li>
                         </ul>
                         <div class="application-status">
                             <h4>Application Status</h4>
@@ -414,7 +421,7 @@
                                 {% if job.filled_vacancy >= job.total_vacancy %}
                                     <div style="width: 100%;">100% (Filled)</div>
                                 {% else %}
-                                <div style="width: {{ (job.filled_vacancy * 100 / job.total_vacancy) if job.total_vacancy > 0 else 0 }}%">{{ job.filled_vacancy * 100 / job.total_vacancy }}% (Filled)</div>
+                                <div style="width: {{ (job.filled_vacancy * 100 / job.total_vacancy) if job.total_vacancy > 0 else 0 }}%">{{ (job.filled_vacancy * 100 / job.total_vacancy) | int }}% (Filled)</div>
                                 {% endif %}
                             </div>
                         </div>

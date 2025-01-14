@@ -10,7 +10,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job
+from models import Job, Company, Login
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -29,12 +29,14 @@ def login_required(f):
 @company_blueprint.route('/company_dashboard')
 @login_required
 def company_dashboard():
-    user_id = session.get('user_id')
+    user_id = session.get('login_id')
     
     # Ensure the user_id is in session
     if not user_id:
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
+    
+    print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
     
@@ -50,19 +52,21 @@ def company_dashboard():
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
+@login_required
 def company_jobposting():
     from app import db
-    user_id = session.get('user_id')
+    user_id = session.get('login_id')
     # Retrieve all jobs
     jobs = Job.query.filter_by(created_by=user_id).all()
     return render_template('company_job_posting.html', jobs=jobs)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
+@login_required
 def company_post_new_job():
     from app import db
 
-    if 'user_id' not in session or session.get('role') != 'company':
+    if 'login_id' not in session or session.get('role') != 'company':
         return redirect(url_for('auth.login'))  # Ensure only admins can access
 
     if request.method == 'POST':
@@ -77,7 +81,7 @@ def company_post_new_job():
         salary = request.form['salary']
         total_vacancy = request.form['vacancy']
         deadline_str = request.form['deadline']
-        created_by = session['user_id']  # Get admin's user ID from session
+        created_by = session['login_id']  # Get admin's user ID from session
         total_vacancy = int(total_vacancy)
         filled_vacancy = 3
         if total_vacancy > filled_vacancy:
@@ -138,18 +142,54 @@ def company_post_new_job():
 
 # Application Review
 @company_blueprint.route('/company_application_review')
+@login_required
 def company_application_review():
     return render_template('company_application_review.html')
 
 # Hiring Communication
 @company_blueprint.route('/company_hiring_communication')
+@login_required
 def company_hiring_communication():
     return render_template('company_hiring_message.html')
 
 # Profile
-@company_blueprint.route('/company_profile')
+@company_blueprint.route('/company_profile', methods=['GET', 'POST'])
+@login_required
 def company_profile():
-    return render_template('company_profile.html')
+    user_id = session.get('login_id')
+
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only companies can access
+
+    if request.method == 'POST':
+        # Get form data
+        company_id = request.form.get('logId')  # Hidden input for company ID
+        company_name = request.form['company-name']
+        description = request.form['company-description']
+        email = request.form['contact-email']
+        address = request.form['company-address']
+        website = request.form['company-website']
+        logo = request.form['company-logo']
+
+        # Fetch the company profile by ID and update its fields
+        profile = Company.query.filter_by(id=company_id, login_id=user_id).first()
+        if profile:
+            profile.company_name = company_name
+            profile.description = description
+            profile.email = email
+            profile.address = address
+            profile.website = website
+            profile.logo = logo
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+        else:
+            flash('Profile not found or unauthorized access.', 'danger')
+
+    # Fetch the company profile to display in the form
+    companies = Company.query.filter_by(login_id=user_id).first()
+
+    return render_template('company_profile.html', companies=companies, login_id=user_id)
+
 
 
 
