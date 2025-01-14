@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: #0a9396;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        header .logo i {
+            margin-right: 10px;
+        }
+
+        header .profile-settings button {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #0a9396;
+            transition: background-color 0.3s;
+        }
+
+        header .profile-settings button:hover {
+            background-color: #e0f4f1;
+        }
+
+        main {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            flex-grow: 1;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Left Panel (Navigation and Metrics) */
+        .left-panel {
+            width: 20%;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .left-panel a {
+            text-decoration: none;
+        }
+
+        .left-panel button {
+            padding: 15px;
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .left-panel button:hover {
+            background-color: #005f73;
+        }
+
+        /* Metrics Cards */
+        .metrics-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .metrics-card {
+            background-color: #ffffff;
+            padding: 20px;
+            width: 30%;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .metrics-card:hover {
+            transform: scale(1.05);
+        }
+
+        .metrics-card i {
+            font-size: 40px;
+            color: #0a9396;
+        }
+
+        .metrics-card h3 {
+            margin-top: 10px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .metrics-card p {
+            margin-top: 5px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Charts Section */
+        .charts {
+            width: 75%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .chart-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
+
+        footer {
+            background-color: #0a9396;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .left-panel {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .metrics-card {
+                width: 100%;
+            }
+
+            .charts {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </div>
+        <div class="profile-settings">
+            <button><i class="fas fa-user"></i> Profile</button>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Panel (Navigation and Metrics) -->
+        <div class="left-panel">
+            <a href="studenttrack2.html">
+                <button><i class="fas fa-users"></i> Student Activity Tracking</button>
+            </a>
+            <a href="referrall.html">
+                <button><i class="fas fa-hand-holding-usd"></i> Referral Incentives</button>
+            </a>
+            <a href="coupon2.html">
+                <button><i class="fas fa-gift"></i> Coupon Code Management</button>
+            </a>
+            <a href="collab.html">
+                <button><i class="fas fa-chart-line"></i> Collaboration Reports</button>
+            </a>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts">
+            <!-- Metrics Cards -->
+            <div class="metrics-cards">
+                <div class="metrics-card">
+                    <i class="fas fa-users"></i>
+                    <h3>500</h3>
+                    <p>Students Registered</p>
+                </div>
+                <div class="metrics-card">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>300</h3>
+                    <p>Applications Submitted</p>
+                </div>
+            </div>
+
+            <!-- Chart 1: Student Registrations Over Time -->
+            <div class="chart-container">
+                <h3>Student Registrations Over Time</h3>
+                <canvas id="studentChart"></canvas>
+            </div>
+
+            <!-- Chart 2: Applications Submitted Over Time -->
+            <div class="chart-container">
+                <h3>Applications Submitted Over Time</h3>
+                <canvas id="applicationsChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2025 Dashboard. All rights reserved.
+    </footer>
+
+    <script>
+        // Data for Student Registrations Over Time Chart
+        const studentCtx = document.getElementById('studentChart').getContext('2d');
+        const studentChart = new Chart(studentCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Students Registered',
+                    data: [30, 50, 70, 100, 120, 140, 180, 200, 220, 250, 270, 300],
+                    borderColor: '#0a9396',
+                    backgroundColor: 'rgba(10, 147, 150, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `Registered: ${tooltipItem.raw}`;
+                            }
+                        }
+                    }
+                }]
+            }
+        });
+
+        // Data for Applications Submitted Over Time Chart
+        const applicationsCtx = document.getElementById('applicationsChart').getContext('2d');
+        const applicationsChart = new Chart(applicationsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Applications Submitted',
+                    data: [20, 40, 60, 90, 110, 130, 150, 170, 190, 210, 230, 250],
+                    backgroundColor: '#005f73',
+                    borderColor: '#0a9396',
+                    borderWidth: 1,
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `Submitted: ${tooltipItem.raw}`;
+                            }
+                        }
+                    }
+                }]
+            }
+        });
+    </script>
+</body>
+</html>
