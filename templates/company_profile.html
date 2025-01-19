@@ -17,7 +17,7 @@
             font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
-            height: auto;
+            height: 100vh;
             color: #333;
             background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
         }
@@ -133,12 +133,12 @@
             margin-bottom: 20px;
         }
 
-        .page-main {
+        /*.page-main {
             display: flex;
             flex-direction: column;
             height: calc(100vh - 60px);
             padding: 20px;
-        }
+        }*/
 
         .profile-form {
             display: grid;
@@ -200,6 +200,7 @@
             background: linear-gradient(135deg, #ffffff, #f7f7f7);
             border: 1px solid #ddd;
             padding: 20px;
+            margin-bottom: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             color: #333;
@@ -226,8 +227,8 @@
 <body>
     <header>
         <div class="logo">
-            <img src="logo.jpg" height="35px" style="border-radius: 50%;" alt="Company Logo">
-            <h4>Code Fusion</h4>
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" alt="Not Found" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
             <button><i class="fas fa-user"></i> Profile</button>
@@ -239,19 +240,11 @@
     </header>
     <main>
         <div class="navigation">
-            <a href="{{ url_for('company.company_dashboard') }}" style="position: sticky;top: 14.1%; text-decoration: none;">
-                <button><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            </a>
-            <a href="{{ url_for('company.company_jobposting') }}" style="position: sticky;top: 23.5%; text-decoration: none;">
-                <button><i class="fas fa-briefcase"></i> Job Posting</button>
-            </a>
-            <button style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <a href="{{ url_for('company.company_application_review') }}" style="position: sticky;top: 42.3%; text-decoration: none;">
-                <button><i class="fas fa-check-circle"></i> Application Review</button>
-            </a>
-            <a href="{{ url_for('company.company_hiring_communication') }}" style="position: sticky;top: 51.7%; text-decoration: none;">
-                <button><i class="fas fa-comments"></i> Hiring Communication</button>
-            </a>
+            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
         <div class="activity">
@@ -296,20 +289,23 @@
         </div>
 
         <div class="side-panel">
-            <div class="graph">
-                <h3>Success Rate</h3>
-                <canvas id="chart"></canvas>
-            </div>
-            <div class="live-feed">
-                <h3>Live Feed</h3>
-                <p>New candidate applied for UI/UX Designer role!</p>
-            </div>
-            <div class="calendar">
-                <h3>Upcoming Events</h3>
-                <ul style="padding-left: 20px;">
-                    <li><p>Host Interview - Dec 15, 2024</p></li>
-                    <li><p>Send reject messages - Dec 20, 2024</p></li>
-                </ul>
+            <div class="boxes"  style="position: sticky; top: 14.1%;">
+                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
+                    <h3>Success Rate</h3>
+                    <canvas id="chart"></canvas>
+                </div>
+                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
+                    <h3>Live Feed</h3>
+                    <p>New candidate applied for UI/UX Designer role!</p>
+                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
+                </div>
+                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
+                    <h3>Upcoming Events</h3>
+                    <ul style="padding-left: 20px;">
+                        <li><p>Host Interview - Dec 15, 2024</p></li> 
+                        <li><p>Send reject messages - Dec 20, 2024</p></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </main>

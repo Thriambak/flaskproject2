@@ -39,16 +39,15 @@ def company_dashboard():
     print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-    
     # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
     
     jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
-
+    profile = Company.query.filter_by(login_id=user_id).first()
     # Ensure the user is not an admin (or redirect to the admin dashboard)
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
     
-    return render_template('company_dashboard.html', jobs=jobs)
+    return render_template('company_dashboard.html', jobs=jobs, profile=profile)
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
@@ -58,13 +57,15 @@ def company_jobposting():
     user_id = session.get('login_id')
     # Retrieve all jobs
     jobs = Job.query.filter_by(created_by=user_id).all()
-    return render_template('company_job_posting.html', jobs=jobs)
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('company_job_posting.html', jobs=jobs, profile=profile)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
 @login_required
 def company_post_new_job():
     from app import db
+    user_id = session.get('login_id')
 
     if 'login_id' not in session or session.get('role') != 'company':
         return redirect(url_for('auth.login'))  # Ensure only admins can access
@@ -137,8 +138,9 @@ def company_post_new_job():
 
     # Retrieve all jobs
     # jobs = Job.query.all()
-    current_date = date.today().strftime('%d-%m-%Y')   # Get today's date in 'DD-MM-YYYY' format
-    return render_template('company_post_new_job.html',current_date=current_date)
+    current_date = date.today().strftime('%Y-%m-%d')   # Get today's date in 'DD-MM-YYYY' format
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('company_post_new_job.html',current_date=current_date, profile=profile)
 
 # Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
@@ -182,7 +184,8 @@ def company_application_review():
             'certificate_path': application.certificate_path,
         })
 
-    return render_template('company_application_review.html', applications=applications_data)
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('company_application_review.html', applications=applications_data, profile=profile)
 
 # Hiring Communication
 '''@company_blueprint.route('/company_hiring_communication')
@@ -221,7 +224,8 @@ def company_hiring_communication():
     # Fetch communication history
     messages = (
         db.session.query(Communication, User.name)
-        .join(User, User.id == Communication.user_id)
+        .join(Login, Communication.user_id == Login.id)  # Join Login
+        .join(User, User.login_id == Login.id)           # Join User
         .filter(Communication.company_id == user_id)
         .order_by(Communication.timestamp.desc())
         .all()
@@ -231,20 +235,25 @@ def company_hiring_communication():
         # Get data from form
         selected_user_id = request.form.get('user_id')
         message_content = request.form.get('message')
+        new_user_id = db.session.query(User.login_id).filter_by(id=selected_user_id).scalar()
 
+        # Debug
+        '''print(f"Company ID: {user_id}")
         print(f"Selected User ID: {selected_user_id}")
-        print(f"Message Content: {message_content}")
+        print(f"New User ID: {new_user_id}")
+        print(f"Message Content: {message_content}")'''
 
         # Add message to the database
         if selected_user_id and message_content:
-            new_message = Communication(company_id=user_id, user_id=selected_user_id, message=message_content)
+            new_message = Communication(company_id=user_id, user_id=new_user_id, message=message_content)
             db.session.add(new_message)
             db.session.commit()
             flash('Message sent successfully!', 'success')
 
         return redirect(url_for('company.company_hiring_communication'))
 
-    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages)
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages, profile=profile)
 
 
 # Profile
@@ -282,8 +291,8 @@ def company_profile():
 
     # Fetch the company profile to display in the form
     companies = Company.query.filter_by(login_id=user_id).first()
-
-    return render_template('company_profile.html', companies=companies, login_id=user_id)
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('company_profile.html', companies=companies, login_id=user_id, profile=profile)
 
 
 

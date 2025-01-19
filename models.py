@@ -118,21 +118,6 @@ class Admin(db.Model):
 
 # ithil nammal kodukunna username aan company,college ,admin and username aayitt edkan ushesikunne, ath kurach changes koode und
 
-class ResumeCertification(db.Model):
-    __tablename__ = 'resume_certifications'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
-    resume_path = db.Column(db.String(255), nullable=True)  # Path to the resume file
-    certification_path = db.Column(db.String(255), nullable=True)  # Path to the certification file
-    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())  # Upload timestamp
-
-    user = db.relationship('Login', backref=db.backref('resume_certifications', lazy=True))
-
-    def __repr__(self):
-        return f'<ResumeCertification User ID: {self.user_id}>'
-
-
 class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
@@ -187,7 +172,20 @@ class Notification(db.Model):
         self.user_id = user_id
         self.message = message
 
-        
+
+class ResumeCertification(db.Model):
+    __tablename__ = 'resume_certifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    resume_path = db.Column(db.String(255), nullable=True)  # Path to the resume file
+    certification_path = db.Column(db.String(255), nullable=True)  # Path to the certification file
+    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())  # Upload timestamp
+
+    user = db.relationship('Login', backref=db.backref('resume_certifications', lazy=True))
+
+    def __repr__(self):
+        return f'<ResumeCertification User ID: {self.user_id}>'
 
 '''class User(db.Model):
     __tablename__ = 'users'

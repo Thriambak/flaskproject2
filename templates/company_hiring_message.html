@@ -179,8 +179,8 @@
 
         .dropdown-menu {
             position: absolute;
-            top: 135px;
-            left: 735px;
+            top: 22%;
+            left: 55%;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -212,6 +212,8 @@
             overflow-y: auto;
             margin-bottom: 20px;
             background: #fff;
+            max-height: 50%;
+            overflow-y: scroll;
         }
 
         .message-entry {
@@ -220,6 +222,7 @@
             border-radius: 8px;
             background: #e6f7ff;
             border: 1px solid #ddd;
+            overflow-wrap: break-word;
         }
 
         .message-entry strong {
@@ -274,6 +277,7 @@
             background: linear-gradient(135deg, #ffffff, #f7f7f7);
             border: 1px solid #ddd;
             padding: 20px;
+            margin-bottom: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             color: #333;
@@ -301,8 +305,8 @@
 <body>
     <header>
         <div class="logo">
-            <img src="logo.jpg" height="35px" style="border-radius: 50%;" alt="Company Logo">
-            <h4>Code Fusion</h4>
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" alt="Not Found" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
             <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
@@ -316,56 +320,60 @@
     </header>
     <main>
         <div class="navigation">
-            <a href="{{ url_for('company.company_dashboard') }}" style="position: sticky;top: 14.1%; text-decoration: none;">
-                <button><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            </a>
-            <a href="{{ url_for('company.company_jobposting') }}" style="position: sticky;top: 23.5%; text-decoration: none;">
-                <button><i class="fas fa-briefcase"></i> Job Posting</button>
-            </a>
-            <button style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <a href="{{ url_for('company.company_application_review') }}" style="position: sticky;top: 42.3%; text-decoration: none;">
-                <button><i class="fas fa-check-circle"></i> Application Review</button>
-            </a>
-            <button style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
-
-        <div class="activity">  
+        
+        <form class="activity" action="{{ url_for('company.company_hiring_communication') }}" method="POST">  
             <h2>Candidate Communication</h2>
             <!-- Search Bar and Dropdown -->
             <div class="search-bar">
+                <h4 style="padding-left: 1%;">To:</h4>
                 <input type="text" placeholder="Search candidates..." id="search-input">
                 <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
                 <div class="dropdown-menu" id="dropdown-menu">
                     {% for user in applied_users %}
                         <label>
-                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }},{{ user.name }}')">
+                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }}', '{{ user.name }}')">
                             {{ user.name }}
                         </label>
                     {% endfor %}
                 </div>
             </div>
-        
+
+            <!-- Send Message -->
+            <div>
+                <textarea id="message-box" name="message" class="message-box" placeholder="Type your message here..." required></textarea>
+                <div class="controls">
+                    <select id="template-dropdown" onchange="populateTemplate()">
+                        <option value="">Select Template</option>
+                        <option value="Thank you for applying. We will review your profile.">Thank You</option>
+                        <option value="We would like to schedule an interview. Please let us know your availability.">Interview Scheduling</option>
+                        <option value="Congratulations! We are pleased to offer you the position.">Offer Letter</option>
+                        <option value="Sorry for the inconvenience. Your application has been rejected.">Reject Letter</option>
+                    </select>
+                    <button type="submit">Send Message</button>
+                </div>
+            </div>
+
             <!-- Message History -->
+            <br><br>
+            <h4 style="padding-left: 1%;">Messgae History</h4><br>
             <div class="message-history">
                 {% for communication, user_name in messages %}
                     <div class="message-entry">
                         <strong>{{ user_name }} - {{ communication.timestamp.strftime('%d %b %Y') }}</strong>
-                        {{ communication.message }}
+                        <p>{{ communication.message }}</p> <!-- style="max-width: 99%; overflow: hidden;" -->
                     </div>
                 {% endfor %}
             </div>
-        
-            <!-- Send Message -->
-            <form method="POST" action="{{ url_for('company.company_hiring_communication') }}">
-                <textarea id="message-box" name="message" class="message-box" placeholder="Type your message here..." required></textarea>
-                <div class="controls">
-                    <button type="submit">Send Message</button>
-                </div>
-            </form>
-        </div>        
-
-        <!--<div class="activity">  
+        </form> 
+        <!--
+        <div class="activity">  
             <h2>Candidate Communication</h2>
             <div class="search-bar">
                 <input type="text" placeholder="Search candidates..." id="search-input">
@@ -395,28 +403,29 @@
         </div> -->
 
         <div class="side-panel">
-            <div class="graph">
-                <h3>Success Rate</h3>
-                <canvas id="chart"></canvas>
-            </div>
-            <div class="live-feed">
-                <h3>Live Feed</h3>
-                <p>New candidate applied for UI/UX Designer role!</p>
-            </div>
-            <div class="calendar">
-                <h3>Upcoming Events</h3>
-                <ul style="padding-left: 20px;">
-                    <li><p>Host Interview - Dec 15, 2024</p></li> 
-                    <li><p>Send reject messages - Dec 20, 2024</p></li>
-                </ul>
+            <div class="boxes"  style="position: sticky; top: 14.1%;">
+                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
+                    <h3>Success Rate</h3>
+                    <canvas id="chart"></canvas>
+                </div>
+                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
+                    <h3>Live Feed</h3>
+                    <p>New candidate applied for UI/UX Designer role!</p>
+                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
+                </div>
+                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
+                    <h3>Upcoming Events</h3>
+                    <ul style="padding-left: 20px;">
+                        <li><p>Host Interview - Dec 15, 2024</p></li> 
+                        <li><p>Send reject messages - Dec 20, 2024</p></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </main>
     <script>
         function updateSearchText(id, name) {
-            document.getElementById('search-input').value = name;
-            console.log(id, name);
-            
+            document.getElementById("search-input").value = name;
         }
 
         function toggleDropdown() {
