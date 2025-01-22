@@ -143,20 +143,22 @@ class JobApplication(db.Model):
 
 class Communication(db.Model):
     __tablename__ = 'communications'
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     message = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    sender = db.relationship('Login', foreign_keys=[company_id], backref='sent_messages')
-    receiver = db.relationship('Login', foreign_keys=[user_id], backref='received_messages')
-    
-    def __init__(self, company_id, user_id, message):
-        self.company_id = company_id
+    read = db.Column(db.Boolean, default=False)
+
+    user = db.relationship('User', backref=db.backref('communications', lazy=True))
+    company = db.relationship('Company', backref=db.backref('communications', lazy=True))
+
+    def __init__(self, user_id, company_id, message):
         self.user_id = user_id
+        self.company_id = company_id
         self.message = message
+
 
 
 class Notification(db.Model):

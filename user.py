@@ -65,6 +65,8 @@ def apply_for_job(job_id):
 
     # Fetch the job that the user is applying for
     job = Job.query.get(job_id)
+   
+
     if not job:
         flash("Job not found.", 'error')
         return redirect(url_for('user.user_dashboard'))
@@ -103,19 +105,39 @@ def apply_for_job(job_id):
     return redirect(url_for('user.user_dashboard'))
 
 
-@user_blueprint.route('/notifications')
-@login_required
-def notifications():
-    from models import Notification  # Import the Notification model
+from models import Communication
 
-    # Fetch notifications for the logged-in user
+from flask import session, render_template
+from models import Communication
+
+@user_blueprint.route('/notifications', methods=['GET'])
+def notifications():
     user_id = session.get('user_id')
+
     if not user_id:
-        flash("You need to log in to view your notifications.", "error")
+        flash("Please log in to view notifications.", "danger")
         return redirect(url_for('auth.login'))
 
-    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).all()
-    return render_template('notification.html', notifications=notifications)
+    notifications = Communication.query.filter_by(user_id=user_id).order_by(Communication.timestamp.desc()).all()
+    unread_count = Communication.query.filter_by(user_id=user_id, read=False).count()
+
+    return render_template('notification.html', notifications=notifications, unread_count=unread_count)
+from flask import session, render_template
+from models import Communication
+
+@user_blueprint.route('/mark_all_read', methods=['POST'])
+def mark_all_read():
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('auth.login'))
+
+    Communication.query.filter_by(user_id=user_id, read=False).update({"read": True})
+    db.session.commit()
+
+    flash("All notifications marked as read.", "success")
+    return redirect(url_for('user.notifications'))
 
 # Helper function to check file type
 def allowed_file(filename):
@@ -211,10 +233,22 @@ def profile():
 
 
 
-@user_blueprint.route('/load_application_history')
+@user_blueprint.route('/application_history', methods=['GET'])
 @login_required
-def load_application_history():
-    return render_template('applicationhistory.html')
+def application_history():
+    user_id = session.get('user_id')
+    
+    # Ensure the user_id is in the session
+    if not user_id:
+        flash("User is not logged in.", "error")
+        return redirect(url_for('auth.login'))
+
+    # Fetch all applications for the logged-in user
+    applications = JobApplication.query.filter_by(user_id=user_id).all()
+
+    # Render the template with the application data
+    return render_template('applicationhistory.html', applications=applications)
+
 
 @user_blueprint.route('/jobsearch')
 @login_required
@@ -223,38 +257,33 @@ def jobsearch():
     return render_template('jobsearch.html')
 
 @user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
-@login_required
 def mark_notification_read(notification_id):
-    from models import Notification
+    notification = Communication.query.get(notification_id)
 
-    # Fetch the notification
-    notification = Notification.query.get(notification_id)
-    user_id = session.get('user_id')
+    if not notification or notification.user_id != session.get('user_id'):
+        flash("Notification not found or access denied.", "danger")
+        return redirect(url_for('user.notifications'))
 
-    if notification and notification.user_id == user_id:
-        notification.read = True
-        db.session.commit()
-        flash("Notification marked as read.", "success")
-    else:
-        flash("Notification not found or unauthorized.", "error")
+    notification.read = True
+    db.session.commit()
+
+    flash("Notification marked as read.", "success")
     return redirect(url_for('user.notifications'))
 
 
+
 @user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
-@login_required
 def delete_notification(notification_id):
-    from models import Notification
+    notification = Communication.query.get(notification_id)
 
-    # Fetch the notification
-    notification = Notification.query.get(notification_id)
-    user_id = session.get('user_id')
+    if not notification or notification.user_id != session.get('user_id'):
+        flash("Notification not found or access denied.", "danger")
+        return redirect(url_for('user.notifications'))
 
-    if notification and notification.user_id == user_id:
-        db.session.delete(notification)
-        db.session.commit()
-        flash("Notification deleted successfully.", "success")
-    else:
-        flash("Notification not found or unauthorized.", "error")
+    db.session.delete(notification)
+    db.session.commit()
+
+    flash("Notification deleted.", "success")
     return redirect(url_for('user.notifications'))
 
 

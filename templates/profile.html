@@ -27,7 +27,7 @@
 
         /* Top Bar */
         .top-bar {
-            background-color: #00796b;
+            background-color:rgb(0, 107, 121);
             color: #fff;
             display: flex;
             justify-content: space-between;
@@ -135,6 +135,7 @@
         .skills-section h3,
         .social-links h3,
         .achievements h3 {
+            
             margin-bottom: 15px;
             font-family: 'Poppins', sans-serif;
             color: #00796b;
@@ -180,14 +181,46 @@
         .social-icons a:hover {
             color: #004d40;
         }
+
+        /* About Me Section */
+        .profile-details p {
+            text-align: left;
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* Edit Button */
+        #edit-save-button {
+            background-color: #00796b;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #edit-save-button:hover {
+            background-color: #004d40;
+        }
+
+        #about-me-edit {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
-        <h1>Job Portal</h1>
+        <h1>Employee Recruitment</h1>
         <div class="top-actions">
-           
             <a href="#"><span class="material-icons">settings</span> Settings</a>
             <a href="{{ url_for('auth.logout') }}"><span class="material-icons">logout</span> Log Out</a>
         </div>
@@ -217,21 +250,15 @@
                 </div>
             </div>
 
-            <!-- Personal Information -->
-          <!-- About Me Section -->
-<div class="profile-details">
-    <h3>About Me</h3>
-    <div id="about-me-section">
-        <p id="about-me-text">{{ user['about_me'] if 'about_me' in user else 'Not provided' }}</p>
-        <textarea id="about-me-edit" style="display: none;">{{ user['about_me'] if 'about_me' in user else '' }}</textarea>
-    </div>
-    <button id="edit-save-button" onclick="toggleEdit()">Edit</button>
-</div>
-
-<!-- Include External Files -->
-<link rel="stylesheet" href="{{url_for('static',filename='/css/profilestyle.css')}}">
-<script src="{{url_for('static',filename='/js/profilejs.js')}}" defer></script>
-
+            <!-- About Me Section -->
+            <div class="profile-details">
+                <h3>About Me</h3>
+                <div id="about-me-section">
+                    <p id="about-me-text">{{ user['about_me'] if 'about_me' in user else 'Not provided' }}</p>
+                    <textarea id="about-me-edit">{{ user['about_me'] if 'about_me' in user else '' }}</textarea>
+                </div>
+                <button id="edit-save-button" onclick="toggleEdit()">Edit</button>
+            </div>
 
             <!-- Social Links -->
             <div class="social-links">
@@ -244,5 +271,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleEdit() {
+            const aboutText = document.getElementById('about-me-text');
+            const editText = document.getElementById('about-me-edit');
+            const button = document.getElementById('edit-save-button');
+
+            if (editText.style.display === 'none') {
+                editText.style.display = 'block';
+                aboutText.style.display = 'none';
+                button.textContent = 'Save';
+            } else {
+                aboutText.textContent = editText.value;
+                editText.style.display = 'none';
+                aboutText.style.display = 'block';
+                button.textContent = 'Edit';
+            }
+        }
+    </script>
 </body>
 </html>

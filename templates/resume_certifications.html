@@ -4,10 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Resume & Certifications</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS for utility-based styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- AOS (Animate on Scroll) for scroll animations -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+    <!-- Materialize CSS for modern components -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Custom Styles -->
     <style>
-        /* Base Styles */
+        /* Body Styling */
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f5f7fa;
@@ -16,23 +28,26 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
+        /* Container for Form */
         .container {
             background-color: #ffffff;
             padding: 40px;
-            border-radius: 10px;
+            border-radius: 20px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
+            position: relative;
         }
 
         h2 {
             text-align: center;
-            font-size: 24px;
+            font-size: 28px;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .form-group {
@@ -40,18 +55,18 @@
         }
 
         .form-group label {
-            display: block;
             font-weight: 500;
             color: #555;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            display: block;
         }
 
         .form-group input[type="file"] {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
             background-color: #fafafa;
             transition: border-color 0.3s ease;
         }
@@ -60,14 +75,15 @@
             border-color: #0a9396;
         }
 
+        /* Submit Button */
         button[type="submit"] {
             width: 100%;
-            padding: 14px;
-            font-size: 16px;
+            padding: 16px;
+            font-size: 18px;
             background-color: #0a9396;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
@@ -76,11 +92,12 @@
             background-color: #005f73;
         }
 
+        /* Flash Message Styling */
         .flash-message {
             margin-top: 20px;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: 500;
         }
 
@@ -94,22 +111,24 @@
             color: #155724;
         }
 
+        /* File List */
         .file-list {
             margin-top: 30px;
         }
 
         .file-item {
-            padding: 12px;
+            padding: 14px;
             background-color: #f9f9f9;
-            margin-bottom: 10px;
-            border-radius: 8px;
+            margin-bottom: 15px;
+            border-radius: 12px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
 
         .file-item a {
             color: #0a9396;
+            font-weight: 600;
             text-decoration: none;
         }
 
@@ -122,16 +141,32 @@
             color: #777;
         }
 
+        /* Hover effect for interactions */
         .file-item i {
             margin-left: 10px;
             color: #0a9396;
         }
+
+        /* Gradient background and Neumorphism for Button */
+        .button {
+            background: linear-gradient(45deg, #0a9396, #005f73);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 18px;
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" data-aos="fade-up">
         <h2>Upload Your Resume & Certifications</h2>
-    
+        
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -143,39 +178,41 @@
         
         <!-- Upload Form -->
         <form action="{{ url_for('user.resume_certifications') }}" method="POST" enctype="multipart/form-data">
-            <!-- Resume Upload -->
             <div class="form-group">
                 <label for="resume">Upload Resume:</label>
                 <input type="file" name="resume" id="resume" required>
             </div>
         
-            <!-- Certification Upload (Optional) -->
             <div class="form-group">
                 <label for="certification">Upload Certification (Optional):</label>
                 <input type="file" name="certification" id="certification">
             </div>
         
-            <button type="submit">Upload</button>
+            <button type="submit" class="button">Upload</button>
         </form>
+        
+        <!-- Uploaded Files List -->
         <div class="file-list">
             {% if resume_certifications %}
                 <h3>Your Uploaded Files:</h3>
                 <ul>
                     {% for resume_cert in resume_certifications %}
                         {% if resume_cert.resume_path %}
-                            <li>
-                                <strong>Resume:</strong>
+                            <li class="file-item">
+                                <span><strong>Resume:</strong> 
                                 <a href="{{ url_for('static', filename=resume_cert.resume_path.split('static/')[1]) }}" target="_blank">
                                     {{ resume_cert.resume_path.split('/')[-1] }}
-                                </a>
+                                </a></span>
+                                <i class="fas fa-download"></i>
                             </li>
                         {% endif %}
                         {% if resume_cert.certification_path %}
-                            <li>
-                                <strong>Certification:</strong>
+                            <li class="file-item">
+                                <span><strong>Certification:</strong> 
                                 <a href="{{ url_for('static', filename=resume_cert.certification_path.split('static/')[1]) }}" target="_blank">
                                     {{ resume_cert.certification_path.split('/')[-1] }}
-                                </a>
+                                </a></span>
+                                <i class="fas fa-download"></i>
                             </li>
                         {% endif %}
                     {% endfor %}
@@ -183,6 +220,19 @@
             {% else %}
                 <p>No files uploaded yet.</p>
             {% endif %}
-        </div>        
+        </div>
+    </div>
+
+    <!-- AOS Scroll Animations -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            easing: 'ease-in-out',
+        });
+    </script>
+
+    <!-- Materialize JS (optional) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
