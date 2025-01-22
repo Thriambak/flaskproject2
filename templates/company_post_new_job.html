@@ -368,12 +368,12 @@
         
                 <div class="form-group">
                     <label for="skill-sets">Expected Skill Sets:</label>
-                    <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                    <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="certifications">Required Certifications:</label>
-                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -395,10 +395,18 @@
                     <label for="deadline">Joining Date: {{ current_date }}</label>
                     <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace; font-size: 14.5px;" min="{{ current_date }}" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="form-url">Questionnaire Form URL (optional):</label>
+                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;">
+                </div>
                 
+                <!-- Hidden field to store questionnaire URL
+                <input type="hidden" id="questionnaire-url" name="questionnaire-url"> -->
+
                 <!-- Add Questionnaire Button -->
                 <div style="display: flex; gap: 10px;">
-                <button type="button" class="questionnaire-btn">
+                <button type="button" class="questionnaire-btn" onclick="window.location.href='https:/forms.google.com'">
                     <i class="fas fa-question-circle"></i> Add Questionnaire
                 </button>
                 <button onsubmit="postMessage()" type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
@@ -430,6 +438,11 @@
         </div>
     </main>
     <script>
+        function openGoogleForms() {
+            const googleFormsURL = "https://forms.google.com";
+            window.open(googleFormsURL, "_blank");
+        }
+
         function postMessage() {
             alert('Jop posted successfully');
             window.location.href="{{ url_for('company.company_jobposting') }}";

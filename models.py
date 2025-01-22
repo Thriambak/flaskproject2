@@ -29,6 +29,7 @@ class Job(db.Model):
     total_vacancy = db.Column(db.Integer, nullable=False)
     filled_vacancy = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), nullable=False)
+    form_url = db.Column(db.String(255))  # To store the Google Form link
     deadline = db.Column(db.Date)
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     created_by = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
@@ -38,7 +39,7 @@ class Job(db.Model):
     # creator = db.relationship('Login', backref='jobs')
 
     def __init__(self, title, description, job_type, skills, certifications, location, salary, total_vacancy,
-    filled_vacancy, status, deadline, created_by, job_id=None):
+    filled_vacancy, status, form_url, deadline, created_by, job_id=None):
         self.title = title
         self.description = description
         self.job_type = job_type
@@ -49,6 +50,7 @@ class Job(db.Model):
         self.total_vacancy = total_vacancy
         self.filled_vacancy = filled_vacancy
         self.status = status
+        self.form_url = form_url
         self.deadline = deadline
         self.created_by = created_by
         if job_id is not None:

@@ -402,13 +402,17 @@
                         </div>
                         <p>{{ job.description }}</p>
                         <ul class="job-details">
-                            <li><i class="fas fa-tools"></i> <p>Expected Skills: {{ job.skills }}</p></li>
-                            <li><i class="fas fa-certificate"></i> <p>Required Certifications: {{ job.certifications }}</p></li>
-                            <li><i class="fas fa-map-marker-alt"></i> <p>Location: {{ job.location }}</p></li>
-                            <li><i class="fas fa-dollar-sign"></i> <p>Salary: ${{ job.salary }}</p></li>
-                            <li><i class="fas fa-briefcase"></i> <p>Job Type: {{ job.job_type }}</p></li>
-                            <li><i class="fas fa-calendar"></i> <p>Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
-                            <li><i class="fas fa-calendar"></i> <p>Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</p></li>
+                            <li><i class="fas fa-tools" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Expected Skills: {{ job.skills }}</p></li>
+                            <li><i class="fas fa-certificate" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Required Certifications: {{ job.certifications }}</p></li>
+                            <li><i class="fas fa-map-marker-alt" style="padding-left: 0.5%;"></i> <p style="padding-left: 0.6%;">Location: {{ job.location }}</p></li>
+                            <li><i class="fas fa-dollar-sign" style="padding-left: 0.6%;"></i> <p style="padding-left: 0.7%;">Salary: ${{ job.salary }}</p></li>
+                            <li><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <p style="padding-left: 0.3%;">Job Type: {{ job.job_type }}</p></li>
+                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.45%;">Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
+                            
+                            {% if job.form_url %}
+                                <li><i class="fas fa-link"></i><p>Questionnaire URL: <a href="{{ job.form_url }}" style="text-decoration: none;" target="_blank">{{ job.form_url }}</a></p></li>
+                            {% endif %}
+                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.45%;">Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</p></li>
                         </ul>
                         <div class="application-status">
                             <h4>Application Status</h4>

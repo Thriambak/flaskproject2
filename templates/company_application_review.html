@@ -149,25 +149,45 @@
         }
 
         #search-bar {
-            width: 80%;
+            width: 60%;
             padding: 10px 35px 10px 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
         }
 
-        .search-icon {
+        /*.search-icon {
             position: absolute;
-            left: 75%;
+            left: 55%;
             top: 50%;
             transform: translateY(-50%);
             color: #999;
             font-size: 18px;
+        }*/
+
+        .search-btn {
+            background: linear-gradient(90deg, #f4a261, #e76f51);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            
+            box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
+        }
+
+        .search-btn:hover {
+            background: linear-gradient(90deg, #e76f51, #f4a261);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(244, 162, 97, 0.4);
         }
 
         .filter-container {
             position: relative;
-            right: 15%;
+            right: 5%;
             display: inline-block;
         }
 
@@ -353,11 +373,14 @@
             <div class="filter-bar">
                 <div class="search-container">
                     <input type="text" id="search-bar" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
-                    <i class="fas fa-search search-icon"></i>
+                    
+                    <button class="search-btn"> Search <i class="fas fa-search search-icon"></i></button>
                 </div>
                 <!-- Filter Section -->
                 <div class="filter-container">
+                    
                     <button class="filter-button">Filter <i class="fas fa-filter"></i></button>
+                    
                     <div class="filter-dropdown">
                         <h4>Status</h4>
                         <label><input type="checkbox"> Pending</label>

@@ -81,14 +81,13 @@ def company_post_new_job():
         locations = request.form['locations']
         salary = request.form['salary']
         total_vacancy = request.form['vacancy']
+        form_url = request.form.get('questionnaire-url')
         deadline_str = request.form['deadline']
         created_by = session['login_id']  # Get admin's user ID from session
         total_vacancy = int(total_vacancy)
         filled_vacancy = 3
-        if total_vacancy > filled_vacancy:
-            status = "open" 
-        else:
-            status = "closed"
+
+        status = "open" if total_vacancy > filled_vacancy else "closed"
 
         # Convert the deadline string to a Python date object
         try:
@@ -109,6 +108,7 @@ def company_post_new_job():
                 job.salary = salary
                 job.total_vacancy = total_vacancy
                 job.deadline = deadline
+                job.form_url = form_url
                 db.session.commit()
                 flash('Job updated successfully!', 'success')
                 
@@ -126,6 +126,7 @@ def company_post_new_job():
                 total_vacancy=total_vacancy,
                 filled_vacancy=filled_vacancy,
                 status=status,
+                form_url=form_url,
                 deadline=deadline,
                 created_by=created_by
             )
