@@ -137,7 +137,7 @@
         }
 
         .filter-bar {
-            display: flex;
+            display: block;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
@@ -174,8 +174,8 @@
             font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            
+            display: inline-flex;
+            margin-left: 4%;
             box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
         }
 
@@ -185,9 +185,31 @@
             box-shadow: 0 6px 12px rgba(244, 162, 97, 0.4);
         }
 
+        /*.apply-filters-btn {
+            background: linear-gradient(90deg, #3fd153, #70c93d);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            position:absolute;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            margin-left: 5%;
+            box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
+        }
+
+        .apply-filters-btn:hover {
+            background: linear-gradient(90deg, #70c93d, #3fd153);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(244, 162, 97, 0.4);
+        }*/
+
         .filter-container {
-            position: relative;
-            right: 5%;
+            position: absolute;
+            top: 22.3%;
+            left: 68.3%;
             display: inline-block;
         }
 
@@ -199,6 +221,10 @@
             color: white;
             font-size: 14px;
             cursor: pointer;
+        }
+
+        .filter-button:hover {
+            transform: translateY(-2px);
         }
 
         .filter-dropdown {
@@ -371,31 +397,34 @@
                 <h2>Review Job Applications</h2>
             </div>
             <div class="filter-bar">
-                <div class="search-container">
-                    <input type="text" id="search-bar" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
-                    
-                    <button class="search-btn"> Search <i class="fas fa-search search-icon"></i></button>
-                </div>
-                <!-- Filter Section -->
-                <div class="filter-container">
-                    
-                    <button class="filter-button">Filter <i class="fas fa-filter"></i></button>
-                    
-                    <div class="filter-dropdown">
-                        <h4>Status</h4>
-                        <label><input type="checkbox"> Pending</label>
-                        <label><input type="checkbox"> Interviewed</label>
-                        <label><input type="checkbox"> Hired</label>
-                        <label><input type="checkbox"> Rejected</label>
-
-                        <h4>Job Post</h4>
-                        {% if applications %}
-                            {% for application in applications %}
-                                <p style="overflow-wrap: break-word; max-width: 100%;"><input type="checkbox"> {{ application.job_post }}</p>
-                            {% endfor %}
-                        {% endif %}
+                <form method="GET" action="{{ url_for('company.company_application_review') }}">
+                    <div class="search-container">
+                            <input type="text" id="search-bar" name="search_name" value="{{ search_name }}" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
+                            <button class="search-btn" type="submit"> <pre>Search </pre><i class="fas fa-search search-icon"></i></button>
                     </div>
-                </div>
+
+                    <!-- Filter Section -->
+                    <div class="filter-container">
+                            <button class="filter-button"><pre>Filter <i class="fas fa-filter"></i></pre></button>
+                            <div class="filter-dropdown">
+                                <h4>Status</h4>
+                                <label><input type="checkbox" name="status" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
+                                <label><input type="checkbox" name="status" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
+                                <label><input type="checkbox" name="status" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
+                                <label><input type="checkbox" name="status" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
+
+                                <h4>Job Post</h4>
+                                {% if applications %}
+                                    {% for application in applications %}
+                                        <p style="overflow-wrap: break-word; max-width: 100%;">
+                                            <input type="checkbox" name="job_post" value="{{ application.job_post }}" {% if application.job_post in selected_jobs %}checked{% endif %}> 
+                                            {{ application.job_post }}
+                                        </p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                    </div>
+                </form>
             </div>
             <br>
             <!-- Candidate List -->
@@ -462,7 +491,7 @@
                         <option value="Hired">Hired</option>
                         <option value="Rejected">Rejected</option>
                     </select>
-                    <button class="update-btn" type="submit">Update Status</button>
+                    <button class="update-btn" type="submit"><pre>Update Status</pre></button>
                 </form>
             </div>
         </div>              
@@ -512,7 +541,7 @@
                 labels: ['Successful Applications', 'Unsuccessful Applications'],
                 datasets: [{
                     label: 'Success Rate',
-                    data: [30, 70],
+                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
                     backgroundColor: ['#f4a261', '#0a9396'],
                     hoverOffset: 4
                 }]
@@ -525,70 +554,6 @@
                     }
                 }
             }
-        });
-
-        const ctx1 = document.getElementById('applicationBarGraph').getContext('2d');
-        const applicationBarGraph = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'],
-                datasets: [
-                    {
-                        label: 'Applications',
-                        data: [60, 30, 10, 50],
-                        backgroundColor: [
-                            '#264653',
-                            '#2a9d8f',
-                            '#e76f51',
-                            '#f4a261'
-                        ],
-                        borderColor: [
-                            '#264653',
-                            '#2a9d8f',
-                            '#e76f51',
-                            '#f4a261'
-                        ],
-                        borderWidth: 1,
-                    },
-                    {
-                        label: 'Shortlisted',
-                        data: [20, 8, 2, 15],
-                        backgroundColor: [
-                            '#e9c46a',
-                            '#f4a261',
-                            '#2a9d8f',
-                            '#264653'
-                        ],
-                        borderColor: [
-                            '#e9c46a',
-                            '#f4a261',
-                            '#2a9d8f',
-                            '#264653'
-                        ],
-                        borderWidth: 1,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        enabled: true,
-                    },
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                    },
-                    y: {
-                        beginAtZero: true,
-                    },
-                },
-            },
         });
     </script>
 </body>

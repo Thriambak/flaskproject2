@@ -539,7 +539,7 @@
                 labels: ['Successful Applications', 'Unsuccessful Applications'],
                 datasets: [{
                     label: 'Success Rate',
-                    data: [30, 70],
+                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
                     backgroundColor: ['#f4a261', '#0a9396'],
                     hoverOffset: 4
                 }]
@@ -552,70 +552,6 @@
                     }
                 }
             }
-        });
-
-        const ctx1 = document.getElementById('applicationBarGraph').getContext('2d');
-        const applicationBarGraph = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'],
-                datasets: [
-                    {
-                        label: 'Applications',
-                        data: [60, 30, 10, 50],
-                        backgroundColor: [
-                            '#264653',
-                            '#2a9d8f',
-                            '#e76f51',
-                            '#f4a261'
-                        ],
-                        borderColor: [
-                            '#264653',
-                            '#2a9d8f',
-                            '#e76f51',
-                            '#f4a261'
-                        ],
-                        borderWidth: 1,
-                    },
-                    {
-                        label: 'Shortlisted',
-                        data: [20, 8, 2, 15],
-                        backgroundColor: [
-                            '#e9c46a',
-                            '#f4a261',
-                            '#2a9d8f',
-                            '#264653'
-                        ],
-                        borderColor: [
-                            '#e9c46a',
-                            '#f4a261',
-                            '#2a9d8f',
-                            '#264653'
-                        ],
-                        borderWidth: 1,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        enabled: true,
-                    },
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                    },
-                    y: {
-                        beginAtZero: true,
-                    },
-                },
-            },
         });
     </script>
 </body>

@@ -334,7 +334,7 @@
             <!-- Search Bar and Dropdown -->
             <div class="search-bar">
                 <h4 style="padding-left: 1%;">To:</h4>
-                <input type="text" placeholder="Search candidates..." id="search-input">
+                <input type="text" placeholder="Enter candidate name..." id="search-input" style="font-family: monospace;">
                 <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
                 <div class="dropdown-menu" id="dropdown-menu">
                     {% for user in applied_users %}
@@ -462,7 +462,7 @@
                 labels: ['Successful Applications', 'Unsuccessful Applications'],
                 datasets: [{
                     label: 'Success Rate',
-                    data: [30, 70],
+                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
                     backgroundColor: ['#f4a261', '#0a9396'],
                     hoverOffset: 4
                 }]

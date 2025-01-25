@@ -413,7 +413,7 @@
                 labels: ['Successful Applications', 'Unsuccessful Applications'],
                 datasets: [{
                     label: 'Success Rate',
-                    data: [30, 70],
+                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
                     backgroundColor: ['#f4a261', '#0a9396'],
                     hoverOffset: 4
                 }]
@@ -428,15 +428,16 @@
             }
         });
 
+        const labels = {{ labels | tojson }};
         const ctx1 = document.getElementById('applicationBarGraph').getContext('2d');
         const applicationBarGraph = new Chart(ctx1, {
             type: 'bar',
             data: {
-                labels: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'],
+                labels: labels,
                 datasets: [
                     {
                         label: 'Applications',
-                        data: [60, 30, 10, 50],
+                        data: {{ total_applications | tojson }},
                         backgroundColor: [
                             '#264653',
                             '#2a9d8f',
@@ -453,7 +454,7 @@
                     },
                     {
                         label: 'Shortlisted',
-                        data: [20, 8, 2, 15],
+                        data: {{ shortlisted_applications | tojson }},
                         backgroundColor: [
                             '#e9c46a',
                             '#f4a261',

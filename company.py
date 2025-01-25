@@ -25,7 +25,6 @@ def login_required(f):
 
 
 # Display the user dashboard
-
 @company_blueprint.route('/company_dashboard')
 @login_required
 def company_dashboard():
@@ -43,11 +42,49 @@ def company_dashboard():
     
     jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
     profile = Company.query.filter_by(login_id=user_id).first()
+
+    # Fetch the application data
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+
+
+    # Process data for the bar graph
+    labels = [job.title for job in jobs]
+    total_applications = []
+    shortlisted_applications = []
+
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
     # Ensure the user is not an admin (or redirect to the admin dashboard)
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
     
-    return render_template('company_dashboard.html', jobs=jobs, profile=profile)
+    return render_template(
+        'company_dashboard.html',
+        jobs=jobs,
+        profile=profile,
+        labels=labels,
+        total_applications=total_applications,
+        shortlisted_applications=shortlisted_applications,
+        total_successful=total_successful,
+        total_unsuccessful=total_unsuccessful
+    )
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
@@ -58,7 +95,33 @@ def company_jobposting():
     # Retrieve all jobs
     jobs = Job.query.filter_by(created_by=user_id).all()
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_job_posting.html', jobs=jobs, profile=profile)
+
+
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
+    return render_template('company_job_posting.html', jobs=jobs, profile=profile,
+        total_successful=total_successful,
+        total_unsuccessful=total_unsuccessful)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
@@ -81,11 +144,11 @@ def company_post_new_job():
         locations = request.form['locations']
         salary = request.form['salary']
         total_vacancy = request.form['vacancy']
-        form_url = request.form.get('questionnaire-url')
+        form_url = request.form.get('form-url')
         deadline_str = request.form['deadline']
         created_by = session['login_id']  # Get admin's user ID from session
         total_vacancy = int(total_vacancy)
-        filled_vacancy = 3
+        filled_vacancy = 0
 
         status = "open" if total_vacancy > filled_vacancy else "closed"
 
@@ -137,11 +200,37 @@ def company_post_new_job():
 
         return redirect(url_for('company.company_jobposting'))
 
+    jobs = Job.query.filter_by(created_by=user_id).all()
+
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
     # Retrieve all jobs
     # jobs = Job.query.all()
     current_date = date.today().strftime('%Y-%m-%d')   # Get today's date in 'DD-MM-YYYY' format
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_post_new_job.html',current_date=current_date, profile=profile)
+    return render_template('company_post_new_job.html',current_date=current_date, profile=profile,
+        total_successful=total_successful,
+        total_unsuccessful=total_unsuccessful)
 
 # Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
@@ -164,14 +253,40 @@ def company_application_review():
             application.status = new_status
             db.session.commit()
             flash('Application status updated successfully!', 'success')
+
+            # If the application is hired, increment the filled_vacancy in Job table
+            if new_status == 'Hired':
+                job = application.job  # Get the related job
+                if job.filled_vacancy < job.total_vacancy:  # Ensure filled_vacancy does not exceed total_vacancy
+                    job.filled_vacancy += 1
+                    db.session.commit()
+                if job.filled_vacancy == job.total_vacancy:
+                    job.status = 'closed'
+                    db.session.commit()
+
         else:
             flash('Application not found!', 'danger')
+
+    search_name = request.args.get('search_name', '').strip()  # Get the search name
+    selected_status = request.args.getlist('status')  # Get selected status filters
+    selected_jobs = request.args.getlist('job_post')  # Get selected job filters
 
     # Get all jobs created by the company
     jobs = Job.query.filter_by(created_by=user_id).all()
     
+    # Query all job applications for the company's jobs
+    query = JobApplication.query.join(Job).filter(Job.created_by == user_id)
+
+     # Apply search filters
+    if search_name:
+        query = query.join(User).filter(User.name.ilike(f'%{search_name}%'))
+    if selected_status:
+        query = query.filter(JobApplication.status.in_(selected_status))
+    if selected_jobs:
+        query = query.filter(Job.title.in_(selected_jobs))
+
     # Get all job applications for the jobs created by the company
-    job_applications = JobApplication.query.join(Job).filter(Job.created_by == user_id).all()
+    job_applications = query.all()
     
     # Create a list of applications with details for rendering
     applications_data = []
@@ -184,9 +299,33 @@ def company_application_review():
             'resume_path': application.resume_path,
             'certificate_path': application.certificate_path,
         })
+    
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_application_review.html', applications=applications_data, profile=profile)
+    return render_template('company_application_review.html', applications=applications_data, 
+    profile=profile, search_name=search_name, selected_status=selected_status, selected_jobs=selected_jobs,
+    total_successful=total_successful, total_unsuccessful=total_unsuccessful)
 
 # Hiring Communication
 '''@company_blueprint.route('/company_hiring_communication')
@@ -253,8 +392,33 @@ def company_hiring_communication():
 
         return redirect(url_for('company.company_hiring_communication'))
 
+    jobs = Job.query.filter_by(created_by=user_id).all()
+
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages, profile=profile)
+    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages, 
+    profile=profile, total_successful=total_successful, total_unsuccessful=total_unsuccessful)
 
 
 # Profile
