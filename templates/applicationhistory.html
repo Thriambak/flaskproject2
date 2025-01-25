@@ -3,87 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile - Application History</title>
-    <!-- Link to external CSS file -->
+    <title>Application History</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Animate.css -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/applistyle.css') }}" rel="stylesheet">
-    <!-- Google Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
-<body>
-    <!-- Top Bar -->
-    <div class="top-bar">
-        <h1>Job Portal</h1>
-        <div class="top-actions">
-            <a href="#"><span class="material-icons">person</span> Profile</a>
-            <a href="#"><span class="material-icons">settings</span> Settings</a>
-            <a href="#"><span class="material-icons">logout</span> Log Out</a>
-        </div>
-    </div>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-gray-200">
 
-    <!-- Content Wrapper -->
-    <div class="content-wrapper">
-        <!-- Navigation -->
-        <div class="navigation">
-            <a href="#"><span class="material-icons">home</span> Home</a>
-            <a href="#"><span class="material-icons">history</span> Application History</a>
-            <a href="#"><span class="material-icons">notifications</span> Notifications</a>
-            <a href="#"><span class="material-icons">description</span> Resume & Certifications</a>
-            <a href="#"><span class="material-icons">feedback</span> Feedback & Reviews</a>
+    <!-- Top Navbar -->
+    <nav class="nav-extended blue darken-4">
+        <div class="nav-wrapper px-6">
+            <a href="#" class="brand-logo center">
+                <i class="fas fa-rocket animate__animated animate__bounceInLeft"></i> Job Portal
+            </a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="#"><i class="fas fa-user"></i> Profile</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Your Application History</span>
+            <div class="progress light-blue lighten-4">
+                <div class="indeterminate light-blue darken-1"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-12">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-teal-300 animate__animated animate__fadeInDown">Application History</h1>
+            <p class="text-gray-400">Track your applications in a modern, user-friendly interface.</p>
         </div>
 
-        <!-- Application History Section -->
-        <div class="application-history">
-            <h2>Application History</h2>
-            <table class="history-table">
+        <!-- Application Table -->
+        <div class="overflow-x-auto rounded-lg shadow-lg">
+            <table class="table-auto w-full bg-gray-800 rounded-lg">
                 <thead>
-                    <tr>
-                        <th>Job Title</th>
-                        <th>Company</th>
-                        <th>Application Date</th>
-                        <th>Status</th>
+                    <tr class="bg-gray-700 text-gray-300">
+                        <th class="px-4 py-2">Job Title</th>
+                        <th class="px-4 py-2">Company</th>
+                        <th class="px-4 py-2">Status</th>
+                        <th class="px-4 py-2">Details</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Mock data for application history, could be dynamically loaded from backend -->
-                    <tr onclick="openModal('Frontend Developer', 'ABC Technologies', '2024-12-05', 'Accepted', 'Details about the application here.')">
-                        <td>Frontend Developer</td>
-                        <td>ABC Technologies</td>
-                        <td>2024-12-05</td>
-                        <td><span class="status accepted">Accepted</span></td>
+                    {% for application in applications %}
+                    <tr class="hover:bg-gray-700 transition duration-300">
+                        <td class="px-4 py-2">{{ application.job.title }}</td>
+                        <td class="px-4 py-2">{{ application.job.user.company.company_name }}</td>
+                        <td class="px-4 py-2">
+                            <span class="badge 
+                                {% if application.status == 'accepted' %} green darken-1
+                                {% elif application.status == 'rejected' %} red darken-1
+                                {% else %} yellow darken-3
+                                {% endif %}">
+                                {{ application.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-2">
+                            <button class="btn waves-effect waves-light blue darken-2"
+                                    onclick="showDetails('{{ application.job.title }}', '{{ application.job.user.company.company_name }}', '{{ application.status.capitalize() }}')">
+                                <i class="fas fa-info-circle"></i> View
+                            </button>
+                        </td>
                     </tr>
-                    <tr onclick="openModal('UI/UX Designer', 'XYZ Corp', '2024-11-20', 'Rejected', 'Details about the application here.')">
-                        <td>UI/UX Designer</td>
-                        <td>XYZ Corp</td>
-                        <td>2024-11-20</td>
-                        <td><span class="status rejected">Rejected</span></td>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-gray-500">No applications found.</td>
                     </tr>
-                    <tr onclick="openModal('Backend Developer', 'DEF Solutions', '2024-10-15', 'Pending', 'Details about the application here.')">
-                        <td>Backend Developer</td>
-                        <td>DEF Solutions</td>
-                        <td>2024-10-15</td>
-                        <td><span class="status pending">Pending</span></td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Modal for Application Details -->
-    <div id="applicationModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Application Details</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            <div id="modalBody">
-                <!-- Dynamic content for application details will be displayed here -->
-            </div>
+    <!-- Modal for Details -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content bg-gray-800 text-gray-300">
+            <h4 class="text-xl font-semibold">Application Details</h4>
+            <p><strong>Job Title:</strong> <span id="modalJobTitle"></span></p>
+            <p><strong>Company:</strong> <span id="modalCompany"></span></p>
+            <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+        </div>
+        <div class="modal-footer bg-gray-900">
+            <button class="modal-close waves-effect waves-light btn blue darken-2">Close</button>
         </div>
     </div>
 
-    <!-- Link to external JavaScript file -->
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="{{ url_for('static', filename='js/applijs.js') }}"></script>
+    <script>
+        // Initialize Materialize Modal
+        document.addEventListener('DOMContentLoaded', function () {
+            var elems = document.querySelectorAll('.modal');
+            M.Modal.init(elems);
+        });
+
+        // Function to Populate Modal
+        function showDetails(jobTitle, company, status) {
+            document.getElementById('modalJobTitle').textContent = jobTitle;
+            document.getElementById('modalCompany').textContent = company;
+            document.getElementById('modalStatus').textContent = status;
+
+            var modal = M.Modal.getInstance(document.getElementById('detailsModal'));
+            modal.open();
+        }
+    </script>
 </body>
 </html>

@@ -16,6 +16,33 @@ body {
     margin: 0;
     padding: 0;
 }
+/* Ensure job form link is visible and prominent */
+.form-link {
+    font-size: 15px;
+    color: #1abc9c; /* Vibrant teal for visibility */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease-in-out;
+}
+
+.form-link:hover {
+    color: #16a085; /* Slightly darker teal for hover effect */
+    text-decoration: underline;
+}
+
+/* Ensure card content spacing is consistent */
+.activity .job-posting p {
+    font-size: 15px;
+    color: #666;
+    margin: 8px 0;
+    line-height: 1.5; /* Better readability */
+}
+
+/* Add margin around the form link section */
+.activity .job-posting .form-link {
+    margin: 10px 0;
+    display: inline-block;
+}
 
 /* Job postings container */
 .activity .job-postings {

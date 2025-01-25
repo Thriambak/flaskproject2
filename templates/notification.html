@@ -1,131 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style>
+        /* Enhanced hover effect */
+.bg-blue-50:hover {
+    background-color: #e0f2fe;
+    transform: translateY(-3px);
+    transition: all 0.3s ease-in-out;
+}
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Interactive Notifications</title>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: #f7f8fc;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: #ffffff;
-            padding: 20px 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .notification {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 20px;
-            margin-bottom: 15px;
-            background: #f9f9f9;
-            border: 1px solid #e2e2e2;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .notification.unread {
-            background-color: #eaf4fc;
-            border-left: 4px solid #007bff;
-        }
-
-        .notification .message {
-            flex: 1;
-            font-size: 16px;
-            color: #555;
-            margin-right: 15px;
-        }
-
-        .notification .timestamp {
-            font-size: 14px;
-            color: #999;
-        }
-
-        .notification .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .notification .actions button {
-            padding: 5px 15px;
-            font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .mark-read {
-            background-color: #4caf50;
-            color: white;
-        }
-
-        .mark-read:hover {
-            background-color: #45a049;
-        }
-
-        .delete {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .delete:hover {
-            background-color: #e53935;
-        }
-
-        .empty {
-            text-align: center;
-            color: #666;
-            margin-top: 20px;
-            font-size: 16px;
-        }
-    </style>
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Balloon.css -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css">
 </head>
-<body>
-    <div class="container">
-        <h1>Notifications</h1>
-        {% if notifications %}
-        {% for notification in notifications %}
-        <div class="notification {% if not notification.read %}unread{% endif %}">
-            <div class="message">
-                <i class="fas fa-info-circle"></i> {{ notification.message }}
-            </div>
-            <div class="timestamp">
-                {{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}
-            </div>
-            <div class="actions">
-                {% if not notification.read %}
-                <form action="{{ url_for('user.mark_notification_read', notification_id=notification.id) }}" method="post" style="display: inline;">
-                    <button type="submit" class="mark-read">Mark as Read</button>
-                </form>
-                {% endif %}
-                <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="post" style="display: inline;">
-                    <button type="submit" class="delete">Delete</button>
-                </form>
+<body class="bg-gray-100 font-sans" x-data="{ darkMode: false }" x-bind:class="{'bg-gray-900 text-gray-100': darkMode}">
+    <div class="container mx-auto mt-8 px-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Notifications</h1>
+            <div class="flex items-center gap-4">
+                <!-- Dark Mode Toggle -->
+                <button @click="darkMode = !darkMode" class="p-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                    <i :class="darkMode ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-blue-400'"></i>
+                </button>
             </div>
         </div>
-        {% endfor %}
-        
-        {% else %}
-            <div class="empty">You have no notifications at the moment.</div>
-        {% endif %}
+
+        <!-- Search Bar -->
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" id="search" onkeyup="searchNotifications()" placeholder="Search notifications..."
+                class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-300">
+            <!-- Filters -->
+            <div class="space-x-2">
+                <button onclick="filterNotifications('all')" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm">All</button>
+                <button onclick="filterNotifications('unread')" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">Unread</button>
+                <button onclick="filterNotifications('read')" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm">Read</button>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div id="notifications-list" class="space-y-4">
+            {% if notifications %}
+                {% for notification in notifications %}
+                <div class="p-4 rounded-lg shadow-lg border-l-4 transition-all
+                    {% if not notification.read %}
+                        bg-blue-50 border-blue-400 hover:shadow-blue-500/50
+                    {% else %}
+                        bg-gray-50 border-gray-400 hover:shadow-gray-500/50
+                    {% endif %}
+                    animate__animated animate__fadeInUp">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 text-xl mt-1"></i>
+                        <div class="ml-4 flex-1">
+                            <p class="text-gray-700 dark:text-gray-300 text-base font-medium">{{ notification.message }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            {% if not notification.read %}
+                                <form action="{{ url_for('user.mark_notification_read', notification_id=notification.id) }}" method="POST">
+                                    <button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs rounded-lg">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
+                                <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-xs rounded-lg">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-gray-600 mt-8">
+                    <i class="fas fa-bell-slash text-5xl text-gray-300"></i>
+                    <p class="mt-4 font-semibold">You have no notifications at the moment.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
+
+    <script>
+        // Search Notifications
+        function searchNotifications() {
+            const searchInput = document.getElementById("search").value.toLowerCase();
+            const notifications = document.querySelectorAll("#notifications-list .notification");
+            notifications.forEach(notification => {
+                const message = notification.querySelector(".message").innerText.toLowerCase();
+                notification.style.display = message.includes(searchInput) ? "block" : "none";
+            });
+        }
+
+        // Filter Notifications
+        function filterNotifications(type) {
+            const notifications = document.querySelectorAll("#notifications-list .notification");
+            notifications.forEach(notification => {
+                if (type === 'all') {
+                    notification.style.display = "block";
+                } else if (type === 'unread') {
+                    notification.style.display = notification.classList.contains("unread") ? "block" : "none";
+                } else if (type === 'read') {
+                    notification.style.display = !notification.classList.contains("unread") ? "block" : "none";
+                }
+            });
+        }
+    </script>
 </body>
 </html>
