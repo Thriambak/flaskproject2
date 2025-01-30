@@ -1,0 +1,259 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: tr;
+    display: flex;
+    flex-direction: column;
+    height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
+    color: #333;
+    background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: linear-gradient(90deg, #005f73, #0a9396);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+header .logo {
+    display: flex;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
+    gap: 10px;
+}
+
+header .logo i {
+    font-size: 32px;
+    color: white;
+}
+
+header .profile-settings {
+    display: flex;
+    gap: 15px;
+}
+
+header .profile-settings button {
+    background-color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #005f73;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+header .profile-settings button i {
+    color: #0a9396;
+}
+
+header .profile-settings button:hover {
+    background-color: #e6e6e6;
+    color: #0a9396;
+}
+
+main {
+    display: flex;
+    flex: 1;
+}
+
+.navigation {
+    width: 20%;
+    background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-right: 1px solid #ccc;
+    box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.navigation button {
+    padding: 12px 20px;
+    border: none;
+    background: linear-gradient(90deg, #f0f4ff, #ffffff);
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 8px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.navigation button i {
+    font-size: 18px;
+    color: #005f73;
+}
+
+.navigation button:hover {
+    background: linear-gradient(90deg, #dce4ff, #f9faff);
+    transform: scale(1.05);
+}
+
+.activity {
+    width: 60%;
+    padding: 20px;
+    background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.top-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.activity h2 {
+    color: #005f73;
+    text-align: center;
+    font-size: 25px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.notifications-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.notification {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.notification:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.notification-icon {
+    font-size: 24px;
+    color: #005f73;
+    margin-right: 15px;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-content h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.notification-content p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.notification-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.notification-actions .mark-read {
+    background-color: #0a9396;
+    color: white;
+}
+
+.notification-actions .mark-read:hover {
+    background-color: #007f84;
+}
+
+.notification-actions .delete {
+    background-color: #e76f51;
+    color: white;
+}
+
+.notification-actions .delete:hover {
+    background-color: #d9534f;
+}
+
+.no-notifications {
+    text-align: center;
+    font-size: 16px;
+    color: #888;
+}
+
+.notification.read {
+    opacity: 0.6;
+}
+.notification.read .mark-read {
+    display: none;
+}
+
+.side-panel {
+    width: 20%;
+    background: linear-gradient(to bottom, #ffffff, #f3f5f9);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
+    background: linear-gradient(135deg, #ffffff, #f7f7f7);
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+.side-panel p {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.side-panel .graph {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+canvas {
+    width: 100%;
+    max-width: 100%; /*this controls the width of the bar graph(canvas) relative to the info-box*/
+    height: auto;
+    display: block;
+}

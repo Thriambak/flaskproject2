@@ -7,9 +7,10 @@ from models import db, User,Job
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
-from flask_migrate import Migrate
 from admin_routes import admin_blueprint
+from flask_migrate import Migrate
 from flask import jsonify, request
+from flask_mail import Mail
 
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -24,6 +25,16 @@ if not os.path.exists(Config.UPLOAD_FOLDER):
 
 # Load configuration from Config object          
 app.config.from_object(Config)
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use your mail server
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your_email@example.com'  # Sender email address
+app.config['MAIL_PASSWORD'] = 'your_email_password'  # Sender email password
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@example.com'
+
+# Initialize Flask-Mail
+mail = Mail(app)
 
 # Register blueprints with URL prefixes
 app.register_blueprint(auth_blueprint, url_prefix='/auth')

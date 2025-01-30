@@ -1,7 +1,8 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 from functools import wraps
 import os
+from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 #from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
@@ -10,7 +11,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job, Company, Login, JobApplication, User, Communication
+from models import Job, Company, Login, JobApplication, User, Communication, Notification
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -35,13 +36,26 @@ def company_dashboard():
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
     
-    print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
+    # print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
 
     # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
     # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
     
     jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
     profile = Company.query.filter_by(login_id=user_id).first()
+    
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+
+    '''print("Pending count:",pending_applications_count)
+    print("Interviewed count:",interviewed_applications_count)'''
 
     # Fetch the application data
     applications = db.session.query(
@@ -74,17 +88,19 @@ def company_dashboard():
     # Ensure the user is not an admin (or redirect to the admin dashboard)
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
+
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
     
-    return render_template(
-        'company_dashboard.html',
-        jobs=jobs,
-        profile=profile,
-        labels=labels,
-        total_applications=total_applications,
-        shortlisted_applications=shortlisted_applications,
-        total_successful=total_successful,
-        total_unsuccessful=total_unsuccessful
-    )
+    return render_template('/company/dashboard.html', jobs=jobs, profile=profile, labels=labels,
+        total_applications=total_applications, shortlisted_applications=shortlisted_applications,
+        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
+        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+        interviewed_applications_count=interviewed_applications_count)
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
@@ -93,7 +109,7 @@ def company_jobposting():
     from app import db
     user_id = session.get('login_id')
     # Retrieve all jobs
-    jobs = Job.query.filter_by(created_by=user_id).all()
+    jobs = Job.query.filter_by(created_by=user_id).order_by(Job.created_at.desc()).all()
     profile = Company.query.filter_by(login_id=user_id).first()
 
 
@@ -101,8 +117,7 @@ def company_jobposting():
     Job.title,
     db.func.count(JobApplication.id).label('total_applications'),
     db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
+                (JobApplication.status == 'Hired', 1), else_=0
             )).label('shortlisted_applications')
         ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
 
@@ -119,9 +134,27 @@ def company_jobposting():
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
-    return render_template('company_job_posting.html', jobs=jobs, profile=profile,
-        total_successful=total_successful,
-        total_unsuccessful=total_unsuccessful)
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+    
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
+    return render_template('/company/job_posting.html', jobs=jobs, profile=profile,
+        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
+        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+        interviewed_applications_count=interviewed_applications_count)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
@@ -224,13 +257,31 @@ def company_post_new_job():
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+    
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
     # Retrieve all jobs
     # jobs = Job.query.all()
     current_date = date.today().strftime('%Y-%m-%d')   # Get today's date in 'DD-MM-YYYY' format
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_post_new_job.html',current_date=current_date, profile=profile,
-        total_successful=total_successful,
-        total_unsuccessful=total_unsuccessful)
+    return render_template('/company/post_new_job.html',current_date=current_date, profile=profile,
+        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
+        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+        interviewed_applications_count=interviewed_applications_count)
 
 # Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
@@ -322,10 +373,29 @@ def company_application_review():
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+    
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_application_review.html', applications=applications_data, 
-    profile=profile, search_name=search_name, selected_status=selected_status, selected_jobs=selected_jobs,
-    total_successful=total_successful, total_unsuccessful=total_unsuccessful)
+    return render_template('/company/application_review.html', applications=applications_data, 
+    profile=profile, search_name=search_name, selected_status=selected_status, jobs=jobs,
+    selected_jobs=selected_jobs, total_successful=total_successful, total_unsuccessful=total_unsuccessful,
+    pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+    interviewed_applications_count=interviewed_applications_count)
 
 # Hiring Communication
 '''@company_blueprint.route('/company_hiring_communication')
@@ -343,10 +413,14 @@ def company_hiring_communication():
         
     return render_template('company_hiring_message.html')'''
 
+
+from flask_mail import Message
+from flask import current_app
 # Hiring Communication
 @company_blueprint.route('/company_hiring_communication', methods=['GET', 'POST'])
 @login_required
 def company_hiring_communication():
+    mail = current_app.extensions['mail']
     user_id = session.get('login_id')
     
     if 'login_id' not in session or session.get('role') != 'company':
@@ -377,6 +451,10 @@ def company_hiring_communication():
         message_content = request.form.get('message')
         new_user_id = db.session.query(User.login_id).filter_by(id=selected_user_id).scalar()
 
+        # Fetch recipient and sender email
+        recipient_email = db.session.query(User.email).filter_by(id=selected_user_id).scalar()
+        sender_email = db.session.query(Company.email).filter_by(login_id=user_id).scalar()
+
         # Debug
         '''print(f"Company ID: {user_id}")
         print(f"Selected User ID: {selected_user_id}")
@@ -388,6 +466,17 @@ def company_hiring_communication():
             new_message = Communication(company_id=user_id, user_id=new_user_id, message=message_content)
             db.session.add(new_message)
             db.session.commit()
+
+            # Send email notification
+            try:
+                subject = "New Message from Company"
+                body = f"Dear Candidate,\n\nYou have received a new message from {sender_email}:\n\n{message_content}\n\nBest regards,\nYour Job Portal"
+                msg = Message(subject=subject, recipients=[recipient_email])
+                msg.body = body
+                mail.send(msg)
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+
             flash('Message sent successfully!', 'success')
 
         return redirect(url_for('company.company_hiring_communication'))
@@ -416,10 +505,107 @@ def company_hiring_communication():
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
-    profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_hiring_message.html', applied_users=applied_users, messages=messages, 
-    profile=profile, total_successful=total_successful, total_unsuccessful=total_unsuccessful)
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
 
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+    
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
+    profile = Company.query.filter_by(login_id=user_id).first()
+    return render_template('/company/hiring_message.html', applied_users=applied_users, messages=messages, 
+    profile=profile, total_successful=total_successful, total_unsuccessful=total_unsuccessful,
+    pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+    interviewed_applications_count=interviewed_applications_count)
+
+# Notifications
+@company_blueprint.route('/company_notification', methods=['GET', 'POST'])
+@login_required
+def company_notification():
+    user_id = session.get('login_id')
+
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only companies can access
+
+    if request.method == 'POST':
+        notification_id = request.form.get('notification_id')
+        action = request.form.get('action')
+
+        if notification_id and action:
+            notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
+            if notification:
+                if action == 'mark_read':
+                    notification.read_status = True
+                    db.session.commit()
+                    flash('Notification marked as read.', 'success')
+                elif action == 'delete':
+                    notification.hidden = True  # Soft delete
+                    db.session.commit()
+                    flash('Notification hidden successfully.', 'success')
+
+
+    # Fetch notifications for the company
+    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).all()
+    
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+
+    jobs = Job.query.filter_by(created_by=user_id).all()
+
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
+    # Fetch the company profile to display in the form
+    companies = Company.query.filter_by(login_id=user_id).first()
+    profile = Company.query.filter_by(login_id=user_id).first()
+
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
+    return render_template('/company/notification.html', notifications=notifications, profile=profile,
+        pending_applications_count=pending_applications_count, total_successful=total_successful, 
+        total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
+        live_feed_notifications=live_feed_notifications)
 
 # Profile
 @company_blueprint.route('/company_profile', methods=['GET', 'POST'])
@@ -454,10 +640,55 @@ def company_profile():
         else:
             flash('Profile not found or unauthorized access.', 'danger')
 
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+        .scalar()
+
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+        .scalar()
+
+    jobs = Job.query.filter_by(created_by=user_id).all()
+
+    applications = db.session.query(
+    Job.title,
+    db.func.count(JobApplication.id).label('total_applications'),
+    db.func.sum(db.case(
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
+        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+
+    total_applications = []
+    shortlisted_applications = []
+    for job in jobs:
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+
+        total_applications.append(total_count)
+        shortlisted_applications.append(shortlisted_count)
+    
+    # Process data for the pie chart
+    total_successful = sum(app.shortlisted_applications for app in applications)
+    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+
     # Fetch the company profile to display in the form
     companies = Company.query.filter_by(login_id=user_id).first()
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('company_profile.html', companies=companies, login_id=user_id, profile=profile)
+
+    # Fetch notifications within the past day for the live feed
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    live_feed_notifications = Notification.query.filter(
+        Notification.user_id == user_id,
+        Notification.timestamp >= one_day_ago
+    ).order_by(Notification.timestamp.desc()).all()
+
+    return render_template('/company/profile.html', companies=companies, login_id=user_id, profile=profile,
+        pending_applications_count=pending_applications_count, total_successful=total_successful, 
+        total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
+        live_feed_notifications=live_feed_notifications)
 
 
 
