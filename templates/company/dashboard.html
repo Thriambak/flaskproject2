@@ -3,293 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Page</title>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/company/dashboard.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: tr;
-            display: flex;
-            flex-direction: column;
-            height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
-            color: #333;
-            background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
-        }
-
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            background: linear-gradient(90deg, #005f73, #0a9396);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        header .logo {
-            display: flex;
-            align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            gap: 10px;
-        }
-
-        header .logo i {
-            font-size: 32px;
-            color: white;
-        }
-
-        header .profile-settings {
-            display: flex;
-            gap: 15px;
-        }
-
-        header .profile-settings button {
-            background-color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #005f73;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        header .profile-settings button i {
-            color: #0a9396;
-        }
-
-        header .profile-settings button:hover {
-            background-color: #e6e6e6;
-            color: #0a9396;
-        }
-
-        main {
-            display: flex;
-            flex: 1;
-        }
-
-        .navigation {
-            width: 20%;
-            background: linear-gradient(to bottom, #ffffff, #f0f4f9);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            border-right: 1px solid #ccc;
-            box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navigation button {
-            padding: 12px 20px;
-            border: none;
-            background: linear-gradient(90deg, #f0f4ff, #ffffff);
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 8px;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: background 0.3s, transform 0.2s;
-        }
-
-        .navigation button i {
-            font-size: 18px;
-            color: #005f73;
-        }
-
-        .navigation button:hover {
-            background: linear-gradient(90deg, #dce4ff, #f9faff);
-            transform: scale(1.05);
-        }
-
-        .activity {
-            width: 60%;
-            padding: 20px;
-            background: linear-gradient(to bottom, #ffffff, #f7f7f7);
-            border-left: 1px solid #ccc;
-            border-right: 1px solid #ccc;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .activity .top-buttons {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .activity .top-buttons button {
-            padding: 12px 25px;
-            border: none;
-            background: linear-gradient(90deg, #0a9396, #005f73);
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: background 0.3s, transform 0.2s;
-        }
-
-        .activity .top-buttons button i {
-            font-size: 18px;
-        }
-
-        .activity .top-buttons button:hover {
-            background: linear-gradient(90deg, #005f73, #003f8f);
-            transform: translateY(-3px);
-        }
-
-        .activity .info-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .activity .info-box {
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #f9f9f9, #ffffff);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s, background 0.3s;
-        }
-
-        .activity .info-box h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .activity .info-box p {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .vacant-posts .post {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #f9f9f9, #ffffff);
-        }
-
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .status {
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .status.filled {
-            background-color: #f4a261;
-        }
-
-        .status.vacant {
-            background-color: #2a9d8f;
-        }
-
-        .info-box {
-            margin: 20px 0;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #f3f3f3, #ffffff);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-weight: 600;
-            font-size: 18px;
-            text-transform: uppercase;
-        }
-
-
-        .activity .info-box:hover {
-            background: linear-gradient(135deg, #f0f0f0, #ffffff);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .side-panel {
-            width: 20%;
-            background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
-            background: linear-gradient(135deg, #ffffff, #f7f7f7);
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin-bottom: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            color: #333;
-        }
-
-        .side-panel p {
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .side-panel .graph {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        canvas {
-            width: 100%;
-            max-width: 100%; /*this controls the width of the bar graph(canvas) relative to the info-box*/
-            height: auto;
-            display: block;
-        }
-
-        .progress-bar {
-            background-color: #ddd;
-            border-radius: 25px;
-            overflow: hidden;
-            height: 20px;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .progress-bar div {
-            height: 100%;
-            background-color: #0a9396;
-            width: 70%;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-        }
-
-    </style>
 </head>
 <body>
     <header>
@@ -311,7 +28,7 @@
         <div class="navigation"> <!--sticky = 14.1% or 86px-->
             <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
             <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
             <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
             <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
@@ -319,9 +36,9 @@
             <div class="info-section">
                 <div class="info-box">
                     <h3>Number of Applicants</h3>
-                    <p>Current applications received: <strong>150</strong></p>
+                    <p>Current applications received: <strong>{{ total_successful + total_unsuccessful }}</strong></p>
                     <div class="progress-bar">
-                        <div style="width: 75%;">75%</div>
+                        <div style="width: {{ (total_successful + total_unsuccessful)/2 }}%;">{{ (total_successful + total_unsuccessful)/2 }}%</div>
                     </div>
                 </div>
                 <!-- Replace the "Vacant Posts" and "Application Details" sections in the info-section div -->
@@ -392,14 +109,28 @@
                 </div>
                 <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
                     <h3>Live Feed</h3>
-                    <p>New candidate applied for UI/UX Designer role!</p>
+                    {% if live_feed_notifications %}
+                    <ul style="padding-left: 10px;">
+                        {% for notification in live_feed_notifications %}
+                            <li> <p>{{ notification.message }}</p> </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                        <p>No new notifications in the past day.</p>
+                    {% endif %}
                     <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
                 </div>
                 <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
                     <h3>Upcoming Events</h3>
-                    <ul style="padding-left: 20px;">
-                        <li><p>Host Interview - Dec 15, 2024</p></li> 
-                        <li><p>Send reject messages - Dec 20, 2024</p></li>
+                    <ul style="padding-left: 10px;">
+                        {% if pending_applications_count > 0 %}
+                            <li><p>Host Interview: </p>
+                                <p>Applications pending - {{pending_applications_count}}</p></li> 
+                        {% endif %}
+                        {% if interviewed_applications_count > 0 %}
+                            <li><p>Send hire/reject messages: </p>
+                                <p>Applicants waiting - {{interviewed_applications_count}}</p></li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -413,7 +144,7 @@
                 labels: ['Successful Applications', 'Unsuccessful Applications'],
                 datasets: [{
                     label: 'Success Rate',
-                    data: [30, 70],
+                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
                     backgroundColor: ['#f4a261', '#0a9396'],
                     hoverOffset: 4
                 }]
@@ -428,15 +159,16 @@
             }
         });
 
+        const labels = {{ labels | tojson }};
         const ctx1 = document.getElementById('applicationBarGraph').getContext('2d');
         const applicationBarGraph = new Chart(ctx1, {
             type: 'bar',
             data: {
-                labels: ['Software Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'],
+                labels: labels,
                 datasets: [
                     {
                         label: 'Applications',
-                        data: [60, 30, 10, 50],
+                        data: {{ total_applications | tojson }},
                         backgroundColor: [
                             '#264653',
                             '#2a9d8f',
@@ -453,7 +185,7 @@
                     },
                     {
                         label: 'Shortlisted',
-                        data: [20, 8, 2, 15],
+                        data: {{ shortlisted_applications | tojson }},
                         backgroundColor: [
                             '#e9c46a',
                             '#f4a261',

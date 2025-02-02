@@ -159,11 +159,11 @@ class Communication(db.Model):
     __tablename__ = 'communications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.login_id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    read = db.Column(db.Boolean, default=False)
+    read_status = db.Column(db.Boolean, nullable=False, default=False)
 
     user = db.relationship('User', backref=db.backref('communications', lazy=True))
     company = db.relationship('Company', backref=db.backref('communications', lazy=True))
@@ -179,12 +179,13 @@ class Notification(db.Model):
     __tablename__ = 'notifications'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.String(255), nullable=False)
-    read = db.Column(db.Boolean, default=False)
+    read_status = db.Column(db.Boolean, nullable=False, default=False)
+    hidden = db.Column(db.Boolean, nullable=False, default=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
-    user = db.relationship('Login', backref='notifications')
+    user = db.relationship('Company', backref='notifications')
     
     def __init__(self, user_id, message):
         self.user_id = user_id

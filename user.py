@@ -119,7 +119,7 @@ def notifications():
         return redirect(url_for('auth.login'))
 
     notifications = Communication.query.filter_by(user_id=user_id).order_by(Communication.timestamp.desc()).all()
-    unread_count = Communication.query.filter_by(user_id=user_id, read=False).count()
+    unread_count = Communication.query.filter_by(user_id=user_id, read_status=False).count()
 
     return render_template('notification.html', notifications=notifications, unread_count=unread_count)
 from flask import session, render_template
@@ -133,7 +133,7 @@ def mark_all_read():
         flash("Unauthorized access.", "danger")
         return redirect(url_for('auth.login'))
 
-    Communication.query.filter_by(user_id=user_id, read=False).update({"read": True})
+    Communication.query.filter_by(user_id=user_id, read_status=False).update({"read_status": True})
     db.session.commit()
 
     flash("All notifications marked as read.", "success")
@@ -154,6 +154,7 @@ def resume_certifications():
 
     # Fetch user data
     user = User.query.get(user_id)
+    print(user_id,user)
     if not user:
         flash('User not found.', 'error')
         return redirect(url_for('login'))
