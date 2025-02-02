@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neon Profile</title>
+  <title>Profile</title>
 
-  <!-- Libraries: Tailwind CSS, Bootstrap 5, Font Awesome, AOS -->
+  <!-- Libraries -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -13,129 +13,143 @@
 
   <style>
     :root {
-      --neon-blue: #00f3ff;
-      --neon-purple: #bc00ff;
-      --dark-bg: #0a0a0f;
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --background-color: #f3f4f6;
+      --text-color: #111827;
+      --card-background: #ffffff;
     }
+
     body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--dark-bg);
-      color: #fff;
-      overflow-x: hidden;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
     }
+
     .container {
       max-width: 1200px;
       margin: 2rem auto;
       padding: 2rem;
-      background: rgba(15, 15, 25, 0.9);
-      border-radius: 30px;
-      backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
-      position: relative;
-      overflow: hidden;
+      background-color: var(--card-background);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
     .profile-header {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 2rem;
+      display: flex;
       align-items: center;
-      padding: 2rem;
-      background: linear-gradient(145deg, rgba(15,15,25,0.8), rgba(30,30,50,0.8));
-      border-radius: 20px;
-      margin-bottom: 3rem;
-      position: relative;
+      gap: 2rem;
+      margin-bottom: 2rem;
     }
+
     .profile-picture {
       width: 150px;
       height: 150px;
       border-radius: 50%;
-      border: 3px solid var(--neon-blue);
+      border: 4px solid var(--primary-color);
       object-fit: cover;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 20px var(--neon-blue);
     }
-    .profile-picture:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 30px var(--neon-blue);
-    }
-    .profile-info h1 {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: var(--neon-blue);
-      margin-bottom: 0.5rem;
-    }
+
     .editable-field {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 0.8rem;
-      transition: all 0.3s ease;
       margin-bottom: 1rem;
     }
-    .editable-field:focus-within {
-      border-color: var(--neon-blue);
-      box-shadow: 0 0 15px rgba(0,243,255,0.2);
+
+    .editable-field input,
+    .editable-field textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      color: var(--text-color);
+      background-color: var(--card-background);
     }
-    .profile-actions button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
+
+    .editable-field input:focus,
+    .editable-field textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
-    .btn-edit {
-      background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
-      color: #0a0a0f;
-    }
-    .btn-edit:hover {
-      transform: scale(1.05);
-    }
-    .section-title {
-      font-size: 1.5rem;
-      color: var(--neon-blue);
-      margin: 2rem 0 1rem;
-      position: relative;
-      padding-left: 1rem;
-    }
-    .section-title::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 4px;
-      height: 80%;
-      background: var(--neon-purple);
-      border-radius: 2px;
-    }
+
     .glass-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
+      background-color: var(--card-background);
+      border-radius: 12px;
       padding: 1.5rem;
-      margin: 1rem 0;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .glass-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,243,255,0.1);
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
     }
+
     .skill-tag {
       display: inline-block;
-      background: rgba(0,243,255,0.1);
-      color: var(--neon-blue);
+      background-color: rgba(37, 99, 235, 0.1);
+      color: var(--primary-color);
       padding: 0.5rem 1rem;
       border-radius: 20px;
       margin: 0.3rem;
-      border: 1px solid var(--neon-blue);
-      transition: all 0.3s ease;
+      font-size: 0.875rem;
     }
-    .skill-tag:hover {
-      background: var(--neon-blue);
-      color: var(--dark-bg);
+
+    .certification-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: var(--card-background);
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .certification-card:hover {
+      transform: translateY(-2px);
+      transition: transform 0.2s ease;
+    }
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .badge.verified {
+      background-color: #10b981;
+      color: white;
+    }
+
+    .badge.pending {
+      background-color: #f59e0b;
+      color: white;
+    }
+
+    .floating-action {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--primary-color);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .floating-action:hover {
+      transform: scale(1.1);
     }
   </style>
 </head>
@@ -143,153 +157,158 @@
   <div class="container" data-aos="fade-up">
     <!-- Profile Header -->
     <div class="profile-header">
-      <div class="relative">
-        <img src="{{ user.profile_picture or 'https://via.placeholder.com/150' }}" alt="Profile Picture" class="profile-picture" id="profile-pic">
-        <!-- Profile Picture Upload Form -->
-        <form id="upload-picture-form" action="{{ url_for('user.upload_profile_picture') }}" method="POST" enctype="multipart/form-data" class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-          <input type="file" name="profile_picture" class="form-control" style="max-width: 150px;" onchange="document.getElementById('upload-picture-form').submit()">
-        </form>
+      <div class="profile-pic-container">
+        <img src="{{ user.profile_picture or 'https://via.placeholder.com/150' }}" class="profile-picture" alt="Profile">
       </div>
-      <div class="profile-info">
-        <h1 id="user-name">{{ user.name }}</h1>
-        <div class="editable-field">
-          <label>Email</label>
-          <div class="text-gray-300">{{ user.email }}</div>
-        </div>
-        <div class="editable-field">
-          <label>Phone</label>
-          <input type="text" id="phone" value="{{ user.phone or 'Not Provided' }}" class="bg-transparent border-none focus:ring-0 text-white" disabled>
-        </div>
-        <div class="editable-field">
-          <label>Age</label>
-          <input type="number" id="age" value="{{ user.age or '' }}" class="bg-transparent border-none focus:ring-0 text-white" disabled>
-        </div>
-        <div class="profile-actions mt-3">
-          <button class="btn-edit me-2" onclick="enableEdit('phone')">Edit Phone</button>
-          <button class="btn-edit me-2" onclick="enableEdit('age')">Edit Age</button>
-          <button class="btn-edit" onclick="saveProfile()">Save Changes</button>
-        </div>
+      <div>
+        <h1 class="text-3xl font-bold mb-2">{{ user.name }}</h1>
+        {% if edit_mode %}
+          <form action="{{ url_for('user.profile', edit='true') }}" method="POST">
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">Email</label>
+              <input type="email" name="email" value="{{ user.email }}" class="mt-1 block w-full" readonly>
+            </div>
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">Phone</label>
+              <input type="text" name="phone" value="{{ user.phone or '' }}" class="mt-1 block w-full">
+            </div>
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">Age</label>
+              <input type="number" name="age" value="{{ user.age or '' }}" class="mt-1 block w-full">
+            </div>
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">Coupon Code</label>
+              <input type="text" name="coupon_code" placeholder="Enter coupon code" class="mt-1 block w-full">
+            </div>
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">College Name</label>
+              <input type="text" name="college_name" value="{{ user.college_name or '' }}" placeholder="Enter college name manually" class="mt-1 block w-full">
+            </div>
+            <div class="editable-field">
+              <label class="block text-sm font-medium text-gray-700">About Me</label>
+              <textarea name="about_me" rows="5" class="mt-1 block w-full">{{ user.about_me or '' }}</textarea>
+            </div>
+            <div class="mt-4 flex items-center gap-4">
+              <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">Save Profile</button>
+              <a href="{{ url_for('user.profile') }}" class="text-blue-500 hover:underline">Cancel</a>
+            </div>
+          </form>
+        {% else %}
+          <div class="editable-field">
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <div class="text-gray-900">{{ user.email }}</div>
+          </div>
+          <div class="editable-field">
+            <label class="block text-sm font-medium text-gray-700">Phone</label>
+            <div>{{ user.phone or 'Not provided' }}</div>
+          </div>
+          <div class="editable-field">
+            <label class="block text-sm font-medium text-gray-700">Age</label>
+            <div>{{ user.age or 'Not provided' }}</div>
+          </div>
+          <div class="editable-field">
+            <label class="block text-sm font-medium text-gray-700">College Name</label>
+            <div>{{ user.college_name or 'Not provided' }}</div>
+          </div>
+          <div class="editable-field">
+            <label class="block text-sm font-medium text-gray-700">About Me</label>
+            <div>{{ user.about_me or 'Tell us about yourself...' }}</div>
+          </div>
+          <div class="mt-4">
+            <a href="{{ url_for('user.profile', edit='true') }}" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
+              Edit Profile
+            </a>
+          </div>
+        {% endif %}
       </div>
     </div>
 
-    <!-- Stats Section (optional) -->
-    <div class="glass-card">
-      <h2 class="section-title">Stats</h2>
-      <div class="d-flex justify-content-around">
-        <div>
-          <div class="h4 text-neon-blue">{{ certifications|length }}</div>
-          <div>Certifications</div>
-        </div>
-        <!-- You can add more stats here -->
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="glass-card">
+        <div class="text-2xl font-bold text-blue-500">85%</div>
+        <div class="text-sm text-gray-600">Profile Complete</div>
+      </div>
+      <div class="glass-card">
+        <div class="text-2xl font-bold text-blue-500">1.2k</div>
+        <div class="text-sm text-gray-600">Connections</div>
+      </div>
+      <div class="glass-card">
+        <div class="text-2xl font-bold text-blue-500">{{ certifications|length }}</div>
+        <div class="text-sm text-gray-600">Certifications</div>
       </div>
     </div>
 
-    <!-- Skills & Expertise Section -->
-    <div class="glass-card">
-      <h2 class="section-title">Skills & Expertise</h2>
-      <div class="flex flex-wrap">
-        {% for cert in certifications %}
-          <!-- Using certification names as skills -->
-          <span class="skill-tag">{{ cert.certification_name }}</span>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Certifications Section -->
-    <div class="glass-card">
-      <h2 class="section-title">Certifications</h2>
-      {% for cert in certifications %}
-      <div class="d-flex justify-content-between align-items-center p-3 bg-dark-bg rounded-lg mb-2">
-        <div>
-          <div class="fw-bold">{{ cert.certification_name }}</div>
-          <!-- You could add issuing organization and date if available -->
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Left Column -->
+      <div>
+        {% if not edit_mode %}
+          <div class="glass-card">
+            <h2 class="section-title">About Me</h2>
+            <p class="text-gray-700">{{ user.about_me or 'Tell us about yourself...' }}</p>
+          </div>
+        {% endif %}
+        <div class="glass-card">
+          <h2 class="section-title">Skills & Expertise</h2>
+          <div class="flex flex-wrap">
+            {% if certifications|length > 0 %}
+              {% for cert in certifications %}
+                <span class="skill-tag">{{ cert.certification_name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-gray-500">No skills available</span>
+            {% endif %}
+          </div>
         </div>
-        <div>
-          {% if cert.verification_status %}
-            <span class="badge bg-success">Verified</span>
+      </div>
+      <!-- Right Column -->
+      <div>
+        <div class="glass-card">
+          <h2 class="section-title">Certifications</h2>
+          {% if certifications|length > 0 %}
+            {% for cert in certifications %}
+              <div class="certification-card">
+                <div>
+                  <div class="font-bold">{{ cert.certification_name }}</div>
+                  <div class="text-sm text-gray-500">{{ cert.issuing_organization or '' }}</div>
+                </div>
+                <div class="badge {{ 'verified' if cert.verification_status else 'pending' }}">
+                  {{ 'Verified' if cert.verification_status else 'Pending' }}
+                </div>
+              </div>
+            {% endfor %}
           {% else %}
-            <span class="badge bg-warning text-dark">Pending</span>
+            <p class="text-center text-gray-500">No certifications added yet.</p>
+          {% endif %}
+        </div>
+        <div class="glass-card">
+          <h2 class="section-title">Resume</h2>
+          {% if resumes|length > 0 %}
+            <div class="space-y-3">
+              {% for resume in resumes %}
+                <div class="flex justify-between items-center p-3 bg-gray-100 rounded-md">
+                  <div>
+                    <i class="fas fa-file-pdf text-blue-500 mr-2"></i>
+                    {{ resume.resume_path.split('/')[-1] }}
+                  </div>
+                  <a href="{{ url_for('static', filename=resume.resume_path.split('static/')[1]) }}" class="text-blue-500 hover:underline">
+                    View
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4 text-gray-500">No resumes uploaded yet</div>
           {% endif %}
         </div>
       </div>
-      {% endfor %}
-      {% if certifications|length == 0 %}
-        <p class="text-center text-gray-400">No certifications added yet.</p>
-      {% endif %}
-    </div>
-
-    <!-- Resume Section -->
-    <div class="glass-card">
-      <h2 class="section-title">Resume</h2>
-      {% if resumes %}
-      <div class="space-y-3">
-        {% for resume in resumes %}
-        <div class="d-flex justify-content-between align-items-center p-3 bg-dark-bg rounded-lg">
-          <div>
-            <i class="fas fa-file-pdf text-neon-blue me-2"></i>
-            {{ resume.resume_path.split('/')[-1] }}
-          </div>
-          <a href="{{ url_for('static', filename=resume.resume_path.split('static/')[1]) }}" class="text-neon-purple text-decoration-none">View</a>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-        <p class="text-center text-gray-400 py-3">No resume uploaded yet.</p>
-      {% endif %}
-    </div>
-
-    <!-- About Me Section -->
-    <div class="glass-card">
-      <h2 class="section-title">About Me</h2>
-      <textarea id="about-me" class="w-100 bg-transparent border border-neon-blue text-white p-3 rounded" rows="5" placeholder="Tell us about yourself...">{{ user.about_me or '' }}</textarea>
-      <button class="btn-edit mt-3" onclick="saveAboutMe()">Save Bio</button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script>
-    AOS.init({
-      duration: 1000,
-      once: true
-    });
-
-    function enableEdit(field) {
-      document.getElementById(field).disabled = false;
-      document.getElementById(field).focus();
-    }
-
-    function saveProfile() {
-      const phone = document.getElementById('phone').value;
-      const age = document.getElementById('age').value;
-      fetch("{{ url_for('user.update_profile') }}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ phone: phone, age: age })
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert(data.message);
-        document.getElementById('phone').disabled = true;
-        document.getElementById('age').disabled = true;
-      });
-    }
-
-    function saveAboutMe() {
-      const aboutMe = document.getElementById('about-me').value;
-      fetch("{{ url_for('user.update_about_me') }}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ about_me: aboutMe })
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert(data.message);
-      });
-    }
+    AOS.init({ duration: 1000, once: true });
   </script>
 </body>
 </html>

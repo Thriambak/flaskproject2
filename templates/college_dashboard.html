@@ -198,28 +198,29 @@
         <div class="profile-settings">
             <button><i class="fas fa-user"></i> Profile</button>
             <button><i class="fas fa-cog"></i> Settings</button>
-            <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
+                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </a>
         </div>
     </header>
 
     <main>
         <!-- Left Panel (Navigation and Metrics) -->
         <div class="left-panel">
-            <a href="college_studenttracking.html">
+            <a href="{{ url_for('college.college_studenttraking') }}" >
                 <button><i class="fas fa-users"></i> Student Activity Tracking</button>
             </a>
-            <a href="college_referall.html">
+            <a href="{{ url_for('college.college_referall') }}">
                 <button><i class="fas fa-hand-holding-usd"></i> Referral Incentives</button>
             </a>
-            <a href="college_coupon.html">
+            <a href="{{ url_for('college.generate_coupon') }}">
                 <button><i class="fas fa-gift"></i> Coupon Code Management</button>
             </a>
-            <a href="college_collab.html">
+            <a href="{{ url_for('college.college_collab') }}">
                 <button><i class="fas fa-chart-line"></i> Collaboration Reports</button>
             </a>
-            <!-- New Endorsement Button -->
-            <a href="endorsement.html">
-                <button><i class="fas fa-check-circle"></i> Endorsement</button>
+            <a href="{{ url_for('college.college_endorsement') }}">
+                <button><i class="fas fa-chart-line"></i> Endorsement</button>
             </a>
         </div>
 

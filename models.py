@@ -10,7 +10,7 @@ class RoleEnum(Enum):
     user = "user"
     admin = "admin"
     company = "company"
-
+    college="college"
 """
 COMPANY
 """
@@ -97,10 +97,13 @@ class User(db.Model):
     phone = db.Column(db.String(15))
     age = db.Column(db.Integer)
     about_me = db.Column(db.Text)
-    profile_picture = db.Column(db.String(255))  # New field for storing the picture path
-    login = db.relationship('Login', backref=db.backref('user', uselist=False))
+    profile_picture = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    college_name = db.Column(db.String(255))  # To store connected college name or manual value.
 
-    def _repr_(self):
+    login = db.relationship('Login', backref=db.backref('user', uselist=False))
+    
+    def __repr__(self):
         return f'<User {self.email}>'
 
 # Company Table
@@ -218,8 +221,8 @@ class Certification(db.Model):
 
     def __repr__(self):
         return f'<Certification {self.certification_name} for User ID: {self.user_id}>'
-
 class Coupon(db.Model):
+    __tablename__ = 'coupons'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(10), unique=True, nullable=False)
     faculty_id = db.Column(db.String(20), nullable=False)
@@ -228,6 +231,16 @@ class Coupon(db.Model):
 
     college = db.relationship('College', backref=db.backref('coupons', lazy=True))
 
+    def __repr__(self):
+        return f"<Coupon {self.code}>"
+class Couponuser(db.Model):
+    __tablename__ = 'couponuser'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)  # Foreign key added
+
+    college = db.relationship('Coupon', backref=db.backref('couponuser', lazy=True))
+    user = db.relationship('User', backref=db.backref('couponuser', lazy=True))
     def __repr__(self):
         return f"<Coupon {self.code}>"
 '''class User(db.Model):
