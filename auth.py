@@ -37,7 +37,7 @@ def signup():
             new_company = Company(login_id=new_login.id, company_name=username, email=email)  #, address=address
             db.session.add(new_company)
         elif role == 'admin':
-            new_admin = Admin(login_id=new_login.id, name=username)
+            new_admin = Admin(login_id=new_login.id, name=username, email=email)
             db.session.add(new_admin)
         elif role == 'college':
             new_college = College(login_id=new_login.id, college_name=username, email=email)
@@ -130,7 +130,7 @@ def login():
             if not admin:
                 flash('Admin details not found.', 'danger')
                 return redirect(url_for('auth.login'))
-            return redirect(url_for('admin.admin_dashboard'))
+            return redirect(url_for('admin_routes.admin_dashboard'))
         elif login.role == 'college':
             college = College.query.filter_by(login_id=login.id).first()
             session['college_id'] = college.id

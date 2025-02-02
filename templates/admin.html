@@ -202,7 +202,9 @@
             <h1>Dashboard Overview</h1>
             <div class="actions">
                 <button>Settings</button>
-                <button>Logout</button>
+                <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
+                    <button>Logout</button>
+                </a>
             </div>
         </div>
         <div class="metrics">
@@ -455,6 +457,136 @@
             }
         });
     </script>
+
+    <script>
+
+    document.getElementById("searchUserBtn").addEventListener("click", function() {
+    const searchTerm = document.getElementById("searchUser").value;
+    const role = document.getElementById("filterUserRole").value;
+    const status = document.getElementById("filterUserStatus").value;
+
+    // Send AJAX request to the backend
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `searchUsers.php?searchTerm=${searchTerm}&role=${role}&status=${status}`, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const users = JSON.parse(xhr.responseText);
+            displayUsers(users);
+        }
+    };
+    xhr.send();
+});
+
+function displayUsers(users) {
+    const userSearchResults = document.getElementById("userSearchResults");
+    const tbody = userSearchResults.querySelector("tbody");
+
+    // Clear existing rows
+    tbody.innerHTML = "";
+
+    // Add new rows for each user
+    users.forEach(user => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td>${user.status}</td>
+            <td><button onclick="viewUserDetails(${user.id})">View</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function viewUserDetails(userId) {
+    // You can implement a function to show user details when clicked (optional)
+    console.log("View details for user ID:", userId);
+}
+
+    </script>
+
+<script>
+document.getElementById("searchCompanyBtn").addEventListener("click", function() {
+    const searchTerm = document.getElementById("searchCompany").value;
+    const industry = document.getElementById("filterIndustry").value;
+    const status = document.getElementById("filterStatus").value;
+
+    // Create AJAX request
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `searchCompanies.php?searchTerm=${encodeURIComponent(searchTerm)}&industry=${encodeURIComponent(industry)}&status=${encodeURIComponent(status)}`, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const companies = JSON.parse(xhr.responseText);
+            displayCompanies(companies);
+        }
+    };
+    xhr.send();
+});
+
+function displayCompanies(companies) {
+    const companySearchResults = document.getElementById("companySearchResults");
+    const tbody = companySearchResults.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    companies.forEach(company => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${company.name}</td>
+            <td>${company.industry}</td>
+            <td>${company.status}</td>
+            <td><button onclick="viewCompanyDetails(${company.id})">View</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function viewCompanyDetails(companyId) {
+    // Implement your function to show detailed information
+    console.log("View details for company ID:", companyId);
+}
+</script>
+
+<script>
+document.getElementById("searchCollegeBtn").addEventListener("click", function() {
+    const searchTerm = document.getElementById("searchCollege").value;
+    const location = document.getElementById("filterLocation").value;
+    // If you add a status filter in the future, you can get it similarly.
+
+    // Create AJAX request
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `searchColleges.php?searchTerm=${encodeURIComponent(searchTerm)}&location=${encodeURIComponent(location)}`, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const colleges = JSON.parse(xhr.responseText);
+            displayColleges(colleges);
+        }
+    };
+    xhr.send();
+});
+
+function displayColleges(colleges) {
+    const collegeSearchResults = document.getElementById("collegeSearchResults");
+    const tbody = collegeSearchResults.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    colleges.forEach(college => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${college.name}</td>
+            <td>${college.location}</td>
+            <td>${college.status}</td>
+            <td><button onclick="viewCollegeDetails(${college.id})">View</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function viewCollegeDetails(collegeId) {
+    // Implement your function to show detailed information
+    console.log("View details for college ID:", collegeId);
+}
+</script>
+
+
 </body>
 </html>
-

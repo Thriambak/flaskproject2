@@ -160,7 +160,8 @@ class Communication(db.Model):
     __tablename__ = 'communications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.login_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.login_id'))
+    college_id = db.Column(db.Integer, db.ForeignKey('college.login_id'))
     company_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -169,8 +170,9 @@ class Communication(db.Model):
     user = db.relationship('User', backref=db.backref('communications', lazy=True))
     company = db.relationship('Company', backref=db.backref('communications', lazy=True))
 
-    def __init__(self, user_id, company_id, message):
+    def __init__(self, user_id, college_id, company_id, message):
         self.user_id = user_id
+        self.college_id = college_id
         self.company_id = company_id
         self.message = message
 

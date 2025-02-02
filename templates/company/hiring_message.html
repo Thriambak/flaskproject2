@@ -39,13 +39,22 @@
             <!-- Search Bar and Dropdown -->
             <div class="search-bar">
                 <h4 style="padding-left: 1%;">To:</h4>
-                <input type="text" placeholder="Enter candidate name..." id="search-input" style="font-family: monospace;">
-                <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
-                <div class="dropdown-menu" id="dropdown-menu">
+                <input type="text" placeholder="Enter candidate or college name..." id="search-input" style="font-family: monospace;">
+                <div class="select-btn" onclick="toggleUserDropdown()">Candidates</div>
+                <div class="dropdown-menu" id="user-dropdown-menu">
                     {% for user in applied_users %}
                         <label>
-                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }}', '{{ user.name }}')">
+                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }}', '{{ user.name }}', 'candidate')">
                             {{ user.name }}
+                        </label>
+                    {% endfor %}
+                </div>
+                <div class="select-btn" onclick="toggleCollegeDropdown()">Colleges</div>
+                <div class="dropdown-menu" id="college-dropdown-menu">
+                    {% for college in colleges %}
+                        <label>
+                            <input type="radio" name="college_id" value="{{ college.id }}" onclick="updateSearchText('{{ college.id }}', '{{ college.college_name }}', 'college')">
+                            {{ college.college_name }}
                         </label>
                     {% endfor %}
                 </div>
@@ -70,10 +79,10 @@
             <br><br>
             <h4 style="padding-left: 1%;">Messgae History</h4><br>
             <div class="message-history">
-                {% for communication, user_name in messages %}
+                {% for communication, recipient_name in messages %}
                     <div class="message-entry">
-                        <strong>{{ user_name }} - {{ communication.timestamp.strftime('%d %b %Y') }}</strong>
-                        <p>{{ communication.message }}</p> <!-- style="max-width: 99%; overflow: hidden;" -->
+                        <strong>{{ recipient_name }} - {{ communication.timestamp.strftime('%d %b %Y') }}</strong>
+                        <p>{{ communication.message }}</p>
                     </div>
                 {% endfor %}
             </div>
@@ -144,12 +153,29 @@
         </div>
     </main>
     <script>
-        function updateSearchText(id, name) {
+        function updateSearchText(id, name, type) {
             document.getElementById("search-input").value = name;
+
+            // Deselect the other dropdown's selected radio buttons based on the type (candidate or college)
+            if (type === 'candidate') {
+                // Deselect the college dropdown
+                const collegeRadios = document.querySelectorAll("#college-dropdown-menu input[type='radio']");
+                collegeRadios.forEach(radio => radio.checked = false);
+            }
+            else if (type === 'college') {
+                // Deselect the candidate dropdown
+                const candidateRadios = document.querySelectorAll("#user-dropdown-menu input[type='radio']");
+                candidateRadios.forEach(radio => radio.checked = false);
+            }
         }
 
-        function toggleDropdown() {
-            const dropdownMenu = document.getElementById("dropdown-menu");
+        function toggleUserDropdown() {
+            const dropdownMenu = document.getElementById("user-dropdown-menu");
+            dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+        }
+
+        function toggleCollegeDropdown() {
+            const dropdownMenu = document.getElementById("college-dropdown-menu");
             dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
         }
 
