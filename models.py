@@ -10,7 +10,7 @@ class RoleEnum(Enum):
     user = "user"
     admin = "admin"
     company = "company"
-
+    college="college"
 """
 COMPANY
 """
@@ -197,7 +197,7 @@ class ResumeCertification(db.Model):
     __tablename__ = 'resume_certifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     resume_path = db.Column(db.String(255), nullable=True)
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
@@ -210,7 +210,7 @@ class Certification(db.Model):
     __tablename__ = 'certifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     resume_cert_id = db.Column(db.Integer, db.ForeignKey('resume_certifications.id'), nullable=True)
     certification_name = db.Column(db.String(255), nullable=False)
     verification_status = db.Column(db.Boolean, default=False)
@@ -218,8 +218,8 @@ class Certification(db.Model):
 
     def __repr__(self):
         return f'<Certification {self.certification_name} for User ID: {self.user_id}>'
-
 class Coupon(db.Model):
+    __tablename__ = 'coupons'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(10), unique=True, nullable=False)
     faculty_id = db.Column(db.String(20), nullable=False)
@@ -228,6 +228,16 @@ class Coupon(db.Model):
 
     college = db.relationship('College', backref=db.backref('coupons', lazy=True))
 
+    def __repr__(self):
+        return f"<Coupon {self.code}>"
+class Couponuser(db.Model):
+    __tablename__ = 'couponuser'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)  # Foreign key added
+
+    college = db.relationship('Coupon', backref=db.backref('couponuser', lazy=True))
+    user = db.relationship('User', backref=db.backref('couponuser', lazy=True))
     def __repr__(self):
         return f"<Coupon {self.code}>"
 '''class User(db.Model):

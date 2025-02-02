@@ -131,20 +131,17 @@
             background-color: #f9f9f9;
         }
 
-        .status-endorsed {
-            color: green;
-            font-weight: bold;
+        .students-list td button {
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
-        .status-pending {
-            color: red;
-            font-weight: bold;
-        }
-
-        /* Adjust table columns width */
-        .students-list th:nth-child(1),
-        .students-list td:nth-child(1) {
-            width: 100%; /* Student Name only */
+        .students-list td button:hover {
+            background-color: #005f73;
         }
     </style>
 </head>
@@ -167,7 +164,7 @@
                 <h2>Student Endorsement Management</h2>
             </div>
 
-            <!-- Input Widgets -->
+            <!-- Input Widgets for Filtering -->
             <div class="input-widgets">
                 <input type="text" id="facultyId" placeholder="Enter Faculty ID" />
                 <input type="text" id="year" placeholder="Enter Year" />
@@ -176,15 +173,27 @@
 
             <!-- Students List -->
             <div class="students-list-container">
-                <h3>Student Endorsement Status</h3>
+                <h3>Coupon Users</h3>
                 <table class="students-list">
                     <thead>
                         <tr>
                             <th>Student Name</th>
+                            <th>Faculty ID</th>
+                            <th>Year</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="studentsList">
-                        <!-- Sample Data, will be dynamically filled -->
+                        {% for user in coupon_users %}
+                        <tr>
+                            <td>{{ user.user_name }}</td>
+                            <td>{{ user.faculty_id }}</td>
+                            <td>{{ user.year }}</td>
+                            <td>
+                                <button onclick="viewUserDetails('{{ user.user_id }}')">Endorse</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -192,40 +201,35 @@
     </main>
 
     <script>
-        // Sample students data
-        const studentsData = [
-            { name: 'John Doe', facultyId: 'CS101', year: '2023', status: 'endorsed' },
-            { name: 'Jane Smith', facultyId: 'EE102', year: '2024', status: 'pending' },
-            { name: 'Mark Lee', facultyId: 'ME103', year: '2023', status: 'endorsed' },
-            { name: 'Lucy Brown', facultyId: 'CE104', year: '2024', status: 'pending' },
-        ];
-
-        // Filter students based on faculty ID and year
-        document.getElementById('filterButton').addEventListener('click', function() {
-            const facultyId = document.getElementById('facultyId').value;
-            const year = document.getElementById('year').value;
-
-            const filteredStudents = studentsData.filter(student => {
-                return (!facultyId || student.facultyId.includes(facultyId)) &&
-                       (!year || student.year === year);
+        // Function to filter the table rows based on faculty ID and year
+        function filterStudents() {
+            const facultyId = document.getElementById('facultyId').value.trim(); // Trim whitespace
+            const year = document.getElementById('year').value.trim(); // Trim whitespace
+            const rows = document.querySelectorAll('#studentsList tr');
+    
+            rows.forEach(row => {
+                const facultyIdCell = row.querySelector('td:nth-child(3)').textContent.trim(); // Trim whitespace
+                const yearCell = row.querySelector('td:nth-child(4)').textContent.trim(); // Trim whitespace
+    
+                // Check if both faculty ID and year match exactly (case-sensitive)
+                const facultyMatch = facultyId === '' || facultyIdCell === facultyId;
+                const yearMatch = year === '' || yearCell === year;
+    
+                if (facultyMatch && yearMatch) {
+                    row.style.display = ''; // Show the row
+                } else {
+                    row.style.display = 'none'; // Hide the row
+                }
             });
-
-            // Update the students list table
-            const table = document.getElementById('studentsList');
-            table.innerHTML = ''; // Clear previous results
-
-            filteredStudents.forEach(student => {
-                const newRow = table.insertRow();
-                newRow.innerHTML = `
-                    <td>${student.name}</td>
-                `;
-            });
-
-            // Clear input fields after filtering
-            document.getElementById('facultyId').value = '';
-            document.getElementById('year').value = '';
-        });
+        }
+    
+        // Attach the filter function to the button click event
+        document.getElementById('filterButton').addEventListener('click', filterStudents);
+    
+        // Function to view user details
+        function viewUserDetails(userId) {
+            window.location.href = `/college/user_details/${userId}`;
+        }
     </script>
 </body>
 </html>
-

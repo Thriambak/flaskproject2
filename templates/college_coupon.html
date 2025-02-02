@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coupon Code Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* General Styles */
+    <style>       /* General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -153,26 +152,28 @@
         <div class="coupon-management-container">
             <!-- Coupon Management Header -->
             <div class="coupon-header">
-                <h2>Generate General Coupon Codes</h2>
+                <h2>Generate Coupon</h2>
             </div>
 
             <!-- Input Widgets -->
-            <div class="input-widgets">
-                <input type="text" id="couponDescription" placeholder="Enter Coupon Description" />
-                <select id="branchSelect">
-                    <option value="">Select Branch</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Electrical Engineering">Electrical Engineering</option>
-                    <option value="Mechanical Engineering">Mechanical Engineering</option>
-                    <option value="Civil Engineering">Civil Engineering</option>
-                </select>
-                <select id="classSelect">
-                    <option value="">Select Class</option>
-                    <option value="Class 1">Class 1</option>
-                    <option value="Class 2">Class 2</option>
-                </select>
-                <button id="generateCodeButton">Generate Coupon Code</button>
-            </div>
+            <form method="POST" action="{{ url_for('college.generate_coupon') }}">
+                <div class="input-widgets">
+                    <input type="text" id="year" name="year" placeholder="Enter Year" required />
+                    <input type="text" id="faculty_id" name="faculty_id" placeholder="Enter Faculty ID" required />
+                    <button type="submit">Generate Coupon</button>
+                </div>
+            </form>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                {% for category, message in messages %}
+                    <li><strong>{{ category.title() }}:</strong> {{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% endwith %}
 
             <!-- Active Codes List -->
             <div class="active-codes-list-container">
@@ -181,49 +182,22 @@
                     <thead>
                         <tr>
                             <th>Coupon Code</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                            <th>Usage Limit</th>
+                            <th>Faculty ID</th>
+                            <th>Year</th>
                         </tr>
                     </thead>
-                    <tbody id="codesList">
-                        <!-- Sample Data, will be dynamically filled -->
+                    <tbody>
+                        {% for coupon in coupons %}
+                        <tr>
+                            <td>{{ coupon.code }}</td>
+                            <td>{{ coupon.faculty_id }}</td>
+                            <td>{{ coupon.year }}</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
-
-    <script>
-        // Example function for generating a general coupon code
-        document.getElementById('generateCodeButton').addEventListener('click', function() {
-            const couponDescription = document.getElementById('couponDescription').value;
-            const branch = document.getElementById('branchSelect').value;
-            const studentClass = document.getElementById('classSelect').value;
-
-            if (couponDescription && branch && studentClass) {
-                // Generate the coupon code based on a random string
-                const couponCode = 'GEN' + Math.random().toString(36).substring(2, 10).toUpperCase();
-
-                // Add new row to the active codes list
-                const table = document.getElementById('codesList');
-                const newRow = table.insertRow();
-
-                newRow.innerHTML = `
-                    <td>${couponCode}</td>
-                    <td>${couponDescription}</td>
-                    <td class="status-active">Active</td>
-                    <td>Unlimited</td>
-                `;
-                
-                // Clear input fields after submission
-                document.getElementById('couponDescription').value = '';
-                document.getElementById('branchSelect').value = '';
-                document.getElementById('classSelect').value = '';
-            } else {
-                alert("Please fill in all fields!");
-            }
-        });
-    </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 #from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import Coupon, db  # Ensure 'db' is the instance of SQLAlchemy
+from models import Certification, Coupon, Couponuser, User, db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
@@ -59,34 +59,30 @@ def college_studenttraking():
 @login_required
 def college_referall():
     return render_template('college_referall.html')
-@college_blueprint.route('/college_coupon')
-@login_required
-def college_coupon():
-    return render_template('college_coupon.html')
 @college_blueprint.route('/college_collab')
 @login_required
 def college_collab():
     return render_template('college_collab.html')
-@college_blueprint.route('/endorse')
-@login_required
-def endorse():
-    return render_template('endorse.html')
+
 def generate_coupon_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 # Updating the generate_coupon route to include college_id
 @college_blueprint.route('/generate_coupon', methods=['GET', 'POST'])
+@login_required
 def generate_coupon():
+    # Fetch all active coupons from the database
+    college_id = session.get('college_id')
+    coupons = Coupon.query.filter_by(college_id=college_id).all()
+
     if request.method == 'POST':
         faculty_id = request.form['faculty_id']
         year = request.form['year']
         
         # Get the logged-in college's ID
-        id = session.get('college_id')
-        college = College.query.filter_by(id=id).first()
+        college = College.query.filter_by(id=college_id).first()
         
         if not college:
-            print(id)
             flash("College not found!", "error")
             return redirect(url_for('college.generate_coupon'))
         
@@ -103,6 +99,35 @@ def generate_coupon():
         flash('Coupon generated successfully!', 'success')
         return redirect(url_for('college.generate_coupon'))
     
-    # Fetch all active coupons from the database
-    coupons = Coupon.query.all()
+    # Render the template with the coupons data for both GET and POST requests
     return render_template('college_coupon.html', coupons=coupons)
+@college_blueprint.route('/user_details/<int:user_id>')
+@login_required
+def user_details(user_id):
+    user = User.query.get_or_404(user_id)
+    certifications = Certification.query.filter_by(user_id=user_id).all()
+    return render_template('user_details.html', user=user, certifications=certifications)
+@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
+@login_required
+def verify_certification(cert_id):
+    certification = Certification.query.get_or_404(cert_id)
+    certification.verification_status = True
+    db.session.commit()
+    flash('Certification verified successfully!', 'success')
+    return redirect(url_for('college.user_details', user_id=certification.user_id))
+@college_blueprint.route('/college_endorsement')
+@login_required
+def college_endorsement():
+    # Fetch the necessary data from the database
+    coupon_users = db.session.query(
+        Coupon.code.label('coupon_code'),
+        User.name.label('user_name'),
+        Coupon.faculty_id,
+        Coupon.year,
+        User.id.label('user_id')
+    ).join(Couponuser, Couponuser.coupon_id == Coupon.id)\
+     .join(User, Couponuser.user_id == User.id)\
+     .filter(Coupon.college_id == session.get('college_id'))\
+     .all()
+
+    return render_template('endorse.html', coupon_users=coupon_users)

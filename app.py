@@ -7,6 +7,7 @@ from models import db, User,Job
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
+from college import college_blueprint
 from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask import jsonify, request
@@ -41,7 +42,7 @@ app.register_blueprint(auth_blueprint, url_prefix='/auth')
 app.register_blueprint(user_blueprint, url_prefix='/user')
 app.register_blueprint(company_blueprint, url_prefix='/company')
 app.register_blueprint(admin_blueprint, url_prefix='/admin')
-
+app.register_blueprint(college_blueprint, url_prefix='/college')
 
 db.init_app(app)
 migrate = Migrate(app, db)
