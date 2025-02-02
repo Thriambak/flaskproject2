@@ -142,7 +142,7 @@ main {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    width: 250px;
+    width: 60%;
 }
 
 .search-bar i {
@@ -170,8 +170,8 @@ main {
 
 .dropdown-menu {
     position: absolute;
-    top: 22%;
-    left: 57.5%;
+    top: 30%;
+    left: 60.8%;
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 8px;

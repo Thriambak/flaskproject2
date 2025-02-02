@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify
 from functools import wraps
-from models import Job, User, Notification #, JobApplication
+from models import Job, User, Notification, JobApplication, Login
 
 # Define the admin blueprint
 admin_blueprint = Blueprint('admin_routes', __name__)
@@ -29,11 +29,11 @@ def admin_dashboard():
 
     # Fetch other stats
     total_jobs = Job.query.count()
-    total_users = User.query.filter_by(role='user').count()
+    total_users = Login.query.filter_by(role='user').count()
     pending_reports = JobApplication.query.filter_by(status='pending').count()
 
     return render_template(
-        'admin_dashboard.html', 
+        'admin.html', 
         total_jobs=total_jobs, 
         total_users=total_users, 
         pending_reports=pending_reports, 

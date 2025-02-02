@@ -11,7 +11,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job, Company, Login, JobApplication, User, Communication, Notification
+from models import Job, Company, Login, JobApplication, User, Communication, Notification, College
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -437,33 +437,67 @@ def company_hiring_communication():
 
     # Fetch communication history
     messages = (
-        db.session.query(Communication, User.name)
-        .join(Login, Communication.user_id == Login.id)  # Join Login
-        .join(User, User.login_id == Login.id)           # Join User
+        db.session.query(
+            Communication, 
+            db.case(
+                (Communication.user_id.isnot(None), User.name),  # Fixed argument passing
+                else_=College.college_name
+            ).label("recipient_name")
+        )
+        .outerjoin(User, Communication.user_id == User.login_id)
+        .outerjoin(College, Communication.college_id == College.login_id)
         .filter(Communication.company_id == user_id)
         .order_by(Communication.timestamp.desc())
         .all()
     )
 
+    colleges = College.query.all()
+
     if request.method == 'POST':
         # Get data from form
         selected_user_id = request.form.get('user_id')
+        selected_college_id = request.form.get('college_id')
         message_content = request.form.get('message')
-        new_user_id = db.session.query(User.login_id).filter_by(id=selected_user_id).scalar()
+        # print("\nId conflicts:",selected_user_id,selected_college_id,message_content,"\n")
 
         # Fetch recipient and sender email
-        recipient_email = db.session.query(User.email).filter_by(id=selected_user_id).scalar()
+        if selected_college_id == None:
+            recipient_email = db.session.query(User.email).filter_by(id=selected_user_id).scalar()
+            new_user_id = db.session.query(User.login_id).filter_by(id=selected_user_id).scalar()
+        elif selected_user_id == None:
+            recipient_email = db.session.query(College.email).filter_by(id=selected_college_id).scalar()
+            new_user_id = db.session.query(College.login_id).filter_by(id=selected_college_id).scalar()
         sender_email = db.session.query(Company.email).filter_by(login_id=user_id).scalar()
 
+        
         # Debug
-        '''print(f"Company ID: {user_id}")
+        '''
+        print("User:",new_user_id)
+        print(f"Company ID: {user_id}")
         print(f"Selected User ID: {selected_user_id}")
         print(f"New User ID: {new_user_id}")
         print(f"Message Content: {message_content}")'''
 
         # Add message to the database
         if selected_user_id and message_content:
-            new_message = Communication(company_id=user_id, user_id=new_user_id, message=message_content)
+            new_message = Communication(company_id=user_id, user_id=new_user_id, college_id=None, message=message_content)
+            db.session.add(new_message)
+            db.session.commit()
+
+            # Send email notification
+            try:
+                subject = "New Message from Company"
+                body = f"Dear Candidate,\n\nYou have received a new message from {sender_email}:\n\n{message_content}\n\nBest regards,\nYour Job Portal"
+                msg = Message(subject=subject, recipients=[recipient_email])
+                msg.body = body
+                mail.send(msg)
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+
+            flash('Message sent successfully!', 'success')
+
+        elif selected_college_id and message_content:
+            new_message = Communication(company_id=user_id, user_id=None, college_id=new_user_id, message=message_content)
             db.session.add(new_message)
             db.session.commit()
 
@@ -480,6 +514,7 @@ def company_hiring_communication():
             flash('Message sent successfully!', 'success')
 
         return redirect(url_for('company.company_hiring_communication'))
+
 
     jobs = Job.query.filter_by(created_by=user_id).all()
 
@@ -526,7 +561,7 @@ def company_hiring_communication():
     return render_template('/company/hiring_message.html', applied_users=applied_users, messages=messages, 
     profile=profile, total_successful=total_successful, total_unsuccessful=total_unsuccessful,
     pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
-    interviewed_applications_count=interviewed_applications_count)
+    interviewed_applications_count=interviewed_applications_count, colleges=colleges)
 
 # Notifications
 @company_blueprint.route('/company_notification', methods=['GET', 'POST'])
