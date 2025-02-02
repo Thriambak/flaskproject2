@@ -197,7 +197,7 @@ class ResumeCertification(db.Model):
     __tablename__ = 'resume_certifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     resume_path = db.Column(db.String(255), nullable=True)
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
@@ -210,7 +210,7 @@ class Certification(db.Model):
     __tablename__ = 'certifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     resume_cert_id = db.Column(db.Integer, db.ForeignKey('resume_certifications.id'), nullable=True)
     certification_name = db.Column(db.String(255), nullable=False)
     verification_status = db.Column(db.Boolean, default=False)
