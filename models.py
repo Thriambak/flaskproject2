@@ -72,7 +72,21 @@ class Login(db.Model):
 
     def _repr_(self):
         return f'<Login {self.username}>'
+class College(db.Model):
+    __tablename__ = 'college'
+    id = db.Column(db.Integer, primary_key=True) #, autoincrement=True
+    login_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    college_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(255))
+    website = db.Column(db.String(100))
+    logo = db.Column(db.String(255))
+    description = db.Column(db.String(500))
 
+    login = db.relationship('Login', backref=db.backref('college', uselist=False))
+
+    def _repr_(self):
+        return f'<College {self.college_name}>'
 # User Table
 class User(db.Model):
     __tablename__ = 'users'
@@ -190,7 +204,17 @@ class ResumeCertification(db.Model):
 
     def __repr__(self):
         return f'<ResumeCertification User ID: {self.user_id}>'
+class Coupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(10), unique=True, nullable=False)
+    faculty_id = db.Column(db.String(20), nullable=False)
+    year = db.Column(db.String(4), nullable=False)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)  # Foreign key added
 
+    college = db.relationship('College', backref=db.backref('coupons', lazy=True))
+
+    def __repr__(self):
+        return f"<Coupon {self.code}>"
 '''class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)

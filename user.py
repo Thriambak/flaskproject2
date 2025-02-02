@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Job, JobApplication, db,User,ResumeCertification, Notification #, JobApplication
+from models import Certification, Job, JobApplication, db,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
@@ -150,61 +150,61 @@ def resume_certifications():
     user_id = session.get('user_id')
     if not user_id:
         flash('You need to log in to access this page.', 'error')
-        return redirect(url_for('login'))  # Adjust as needed
+        return redirect(url_for('login'))
 
     # Fetch user data
     user = User.query.get(user_id)
     if not user:
         flash('User not found.', 'error')
-        return redirect(url_for('login'))  # Adjust as needed
+        return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # Ensure the upload folder exists
-        upload_folder = os.path.join('static', 'uploads')
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
+        # Check if the form submission is for a resume or a certification
+        if 'resume' in request.files:
+            # Handle Resume Upload
+            upload_folder = os.path.join('static', 'uploads')
+            if not os.path.exists(upload_folder):
+                os.makedirs(upload_folder)
 
-        # Get files from the form
-        resume = request.files.get('resume')
-        certification = request.files.get('certification')
+            resume = request.files.get('resume')
+            if resume and allowed_file(resume.filename):
+                resume_filename = secure_filename(resume.filename)
+                resume_path = os.path.join(upload_folder, f"resume_{user.name}_{resume_filename}")
+                resume.save(resume_path)
+                resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
 
-        # Initialize paths
-        resume_path = None
-        certification_path = None
+                # Save Resume Entry
+                resume_entry = ResumeCertification(user_id=user.id, resume_path=resume_path)
+                db.session.add(resume_entry)
+                db.session.commit()
+                flash('Resume uploaded successfully!', 'success')
 
-        # Handle Resume Upload
-        if resume and allowed_file(resume.filename):
-            resume_filename = secure_filename(resume.filename)
-            resume_path = os.path.join(upload_folder, f"resume_{user.name}_{resume_filename}")
-            resume.save(resume_path)
-            resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
+        elif 'certification_name' in request.form:
+            # Handle Certification/Skill Additions
+            certification_name = request.form.get('certification_name').strip()
+            if certification_name:
+                certification = Certification(
+                    user_id=user.id,
+                    certification_name=certification_name,
+                    verification_status=False
+                )
+                db.session.add(certification)
+                db.session.commit()
+                flash(f'Certification "{certification_name}" added successfully!', 'success')
 
-        # Handle Certification Upload
-        if certification and allowed_file(certification.filename):
-            cert_filename = secure_filename(certification.filename)
-            certification_path = os.path.join(upload_folder, f"certification_{user.name}_{cert_filename}")
-            certification.save(certification_path)
-            certification_path = certification_path.replace('\\', '/')  # Normalize path for web use
-
-        # Save to Database
-        resume_certification = ResumeCertification(
-            user_id=user.id,
-            resume_path=resume_path,
-            certification_path=certification_path
-        )
-        db.session.add(resume_certification)
-        db.session.commit()
-
-        flash('Files uploaded successfully!', 'success')
         return redirect(url_for('user.resume_certifications'))
 
-    # Retrieve all resume/certifications for the user
-    resume_certifications = ResumeCertification.query.filter_by(user_id=user_id).all()
+    # Retrieve data for display
+    resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
+    certifications = Certification.query.filter_by(user_id=user_id).all()
 
     return render_template(
         'resume_certifications.html',
-        resume_certifications=resume_certifications
+        resume_certifications=resumes,
+        certifications=certifications
     )
+
+
 
 @user_blueprint.route('/profile')
 @login_required
