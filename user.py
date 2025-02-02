@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, flash
 from flask_login import current_user
 from config import Config
 from functools import wraps
@@ -207,33 +207,73 @@ def resume_certifications():
 
 
 
+
 @user_blueprint.route('/profile')
 @login_required
 def profile():
-    # Get the current user's ID from the session
     user_id = session.get('user_id')
     if not user_id:
         flash('You need to log in to access your profile.', 'error')
         return redirect(url_for('auth.login'))
 
-    # Query the database for the user's information
     user = User.query.filter_by(id=user_id).first()
 
-    if user:
-        return render_template(
-            'profile.html',
-            user={
-                'name': user.name,
-                'role': user.login.role,  # Access the role through the 'login' relationship
-                'email': user.email,
-            }
-        )
-    else:
+    if not user:
         flash('User not found.', 'error')
         return redirect(url_for('user.user_dashboard'))
 
+    resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
+    certifications = Certification.query.filter_by(user_id=user_id).all()
 
+    return render_template(
+        'profile.html',
+        user=user,
+        resumes=resumes,
+        certifications=certifications
+    )
 
+@user_blueprint.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    user_id = session.get('user_id')
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json
+    user.phone = data.get("phone")
+    user.age = data.get("age")
+
+    db.session.commit()
+    return jsonify({"message": "Profile updated successfully!"}), 200
+@user_blueprint.route('/update_about_me', methods=['POST'])
+def update_about_me():
+    # Get the logged-in user's ID
+    user_id = session.get('user_id')  # Assuming user ID is stored in the session after login
+    if not user_id:
+        return jsonify({"message": "User not logged in"}), 401
+
+    # Get the 'about_me' data from the request
+    data = request.get_json()
+    about_me = data.get('about_me')
+
+    if not about_me:
+        return jsonify({"message": "About Me cannot be empty"}), 400
+
+    try:
+        # Find the user by ID
+        user = User.query.filter_by(id=user_id).first()
+        if user:
+            user.about_me = about_me
+            db.session.commit()  # Save changes to the database
+
+            return jsonify({"message": "About Me updated successfully!"}), 200
+        else:
+            return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        return jsonify({"message": f"Error updating About Me: {str(e)}"}), 500
 @user_blueprint.route('/application_history', methods=['GET'])
 @login_required
 def application_history():
@@ -288,4 +328,37 @@ def delete_notification(notification_id):
     return redirect(url_for('user.notifications'))
 
 
+from flask import request, redirect, url_for, flash
+from werkzeug.utils import secure_filename
+import os
+
+@user_blueprint.route('/upload_profile_picture', methods=['POST'])
+@login_required
+def upload_profile_picture():
+    user_id = session.get('user_id')
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for("user.profile"))
+    
+    if "profile_picture" not in request.files:
+        flash("No file provided", "error")
+        return redirect(url_for("user.profile"))
+    
+    file = request.files["profile_picture"]
+    if file and allowed_file(file.filename):  # Make sure allowed_file supports image types (e.g., jpg, png)
+        filename = secure_filename(file.filename)
+        upload_folder = os.path.join("static", "profile_pics")
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        file_path = os.path.join(upload_folder, f"profile_{user.name}_{filename}")
+        file.save(file_path)
+        file_path = file_path.replace('\\', '/')
+        user.profile_picture = file_path
+        db.session.commit()
+        flash("Profile picture updated!", "success")
+    else:
+        flash("Invalid file type", "error")
+    
+    return redirect(url_for("user.profile"))
 

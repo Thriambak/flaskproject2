@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
 from config import Config
-from models import Admin, db, User, Job, Login, Company
+from models import Admin, College, db, User, Job, Login, Company
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -39,6 +39,9 @@ def signup():
         elif role == 'admin':
             new_admin = Admin(login_id=new_login.id, name=username)
             db.session.add(new_admin)
+        elif role == 'college':
+            new_college = College(login_id=new_login.id, college_name=username, email=email)
+            db.session.add(new_college)    
         else:
             flash('Invalid role specified.', 'danger')
             return redirect(url_for('auth.signup'))
@@ -117,6 +120,7 @@ def login():
             return redirect(url_for('user.user_dashboard'))
         elif login.role == 'company':
             company = Company.query.filter_by(login_id=login.id).first()
+            
             if not company:
                 flash('Company details not found.', 'danger')
                 return redirect(url_for('auth.login'))
@@ -127,6 +131,13 @@ def login():
                 flash('Admin details not found.', 'danger')
                 return redirect(url_for('auth.login'))
             return redirect(url_for('admin.admin_dashboard'))
+        elif login.role == 'college':
+            college = College.query.filter_by(login_id=login.id).first()
+            session['college_id'] = college.id
+            if not college:
+                flash('College details not found.', 'danger')
+                return redirect(url_for('auth.login'))
+            return redirect(url_for('college.college_dashboard'))
 
     return render_template('login.html')
 

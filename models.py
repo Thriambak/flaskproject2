@@ -96,7 +96,8 @@ class User(db.Model):
     email = db.Column(db.String(100), nullable=False, unique=True)
     phone = db.Column(db.String(15))
     age = db.Column(db.Integer)
-
+    about_me = db.Column(db.Text)
+    profile_picture = db.Column(db.String(255))  # New field for storing the picture path
     login = db.relationship('Login', backref=db.backref('user', uselist=False))
 
     def _repr_(self):
