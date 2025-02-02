@@ -197,14 +197,27 @@ class ResumeCertification(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
-    resume_path = db.Column(db.String(255), nullable=True)  # Path to the resume file
-    certification_path = db.Column(db.String(255), nullable=True)  # Path to the certification file
-    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())  # Upload timestamp
+    resume_path = db.Column(db.String(255), nullable=True)
+    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-    user = db.relationship('Login', backref=db.backref('resume_certifications', lazy=True))
+    certifications = db.relationship('Certification', backref='resume_cert', lazy=True)
 
     def __repr__(self):
         return f'<ResumeCertification User ID: {self.user_id}>'
+
+class Certification(db.Model):
+    __tablename__ = 'certifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    resume_cert_id = db.Column(db.Integer, db.ForeignKey('resume_certifications.id'), nullable=True)
+    certification_name = db.Column(db.String(255), nullable=False)
+    verification_status = db.Column(db.Boolean, default=False)
+    uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def __repr__(self):
+        return f'<Certification {self.certification_name} for User ID: {self.user_id}>'
+
 class Coupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(10), unique=True, nullable=False)
