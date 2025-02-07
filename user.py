@@ -92,7 +92,7 @@ def apply_for_job(job_id):
         job_id=job.job_id,
         status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
         resume_path=resume_certification.resume_path,
-        certificate_path=resume_certification.certification_path # Store the resume path
+      
     )
 
     # Add the application to the database
@@ -108,7 +108,7 @@ def apply_for_job(job_id):
 from models import Communication
 
 from flask import session, render_template
-from models import Communication
+
 
 @user_blueprint.route('/notifications', methods=['GET'])
 def notifications():
@@ -222,11 +222,45 @@ def application_history():
     return render_template('applicationhistory.html', applications=applications)
 
 
-@user_blueprint.route('/jobsearch')
-@login_required
-def jobsearch():
-    # Render the job search page
-    return render_template('jobsearch.html')
+
+
+
+@user_blueprint.route('/jobsearch', methods=['GET', 'POST'])
+def job_search():
+    jobs = Job.query.filter(Job.status == 'open')  # Default: show all open jobs
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        location = request.form.get('location', '').strip()
+        job_type = request.form.get('job_type', '').strip()
+        skills = request.form.get('skills', '').strip()
+        certifications = request.form.get('certifications', '').strip()
+        salary = request.form.get('salary', '').strip()
+        deadline = request.form.get('deadline', '').strip()
+
+        # Apply filters only if values are provided
+        if title:
+            jobs = jobs.filter(Job.title.ilike(f"%{title}%"))
+        if location:
+            jobs = jobs.filter(Job.location.ilike(f"%{location}%"))
+        if job_type:
+            jobs = jobs.filter(Job.job_type == job_type)
+        if skills:
+            jobs = jobs.filter(Job.skills.ilike(f"%{skills}%"))
+        if certifications:
+            jobs = jobs.filter(Job.certifications.ilike(f"%{certifications}%"))
+        if salary:
+            try:
+                jobs = jobs.filter(Job.salary <= salary)  # Ensure it's a valid number
+            except ValueError:
+                pass  # Ignore invalid salary input
+        if deadline:
+            jobs = jobs.filter(Job.deadline <= deadline)
+
+        jobs = jobs.all()  # Execute query
+
+    return render_template('jobsearch.html', jobs=jobs)
+
 
 @user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
 def mark_notification_read(notification_id):

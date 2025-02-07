@@ -78,7 +78,7 @@
                     {% if applications %}
                         {% for application in applications %}
                         <li>
-                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}', '{{ application.certificate_path }}', '{{ application.status }}', '{{ application.application_id }}')">
+                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}',  '{{ application.status }}', '{{ application.application_id }}')">
                                 <div class="candidate-name" style="overflow-wrap: break-word; max-width: 20%;">{{ application.candidate_name }}</div>
                                 <div class="candidate-profile" style="overflow-wrap: break-word; max-width: 60%;">{{ application.job_post }}</div>
                                 <div class="candidate-status" style="overflow-wrap: break-word; max-width: 20%;">{{ application.status }}</div>
@@ -186,13 +186,13 @@
             }
         }
 
-        function selectCandidate(name, jobPost, resumePath, certificatePath, status, applicationId) {
+        function selectCandidate(name, jobPost, resumePath,  status, applicationId) {
             // Populate the candidate details
             const candidateDetails = `
                 <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong> ${name}</p>
                 <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong> ${jobPost}</p>
                 <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong> <a href="${resumePath}" target="_blank">View Resume</a></p>
-                <p style="font-family: monospace;font-size: 14.5px;"><strong>Certificate: </strong> <a href="${certificatePath}" target="_blank">View Certificate</a></p>
+              
             `;
             document.getElementById('selected-candidate').innerHTML = candidateDetails;
             

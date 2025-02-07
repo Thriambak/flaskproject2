@@ -146,17 +146,17 @@ class JobApplication(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
     status = db.Column(db.String(20), default='pending')  # 'pending', 'accepted', 'rejected'
     resume_path = db.Column(db.String(200), nullable=True)  # Store path to the resume file
-    certificate_path = db.Column(db.String(200), nullable=True)
+   
     # Relationships
     user = db.relationship('User', backref='applications')
     job = db.relationship('Job', backref='applications')
 
-    def __init__(self, user_id, job_id, status, resume_path,certificate_path):
+    def __init__(self, user_id, job_id, status, resume_path):
         self.user_id = user_id
         self.job_id = job_id
         self.status = status
         self.resume_path = resume_path
-        self.certificate_path=certificate_path
+      
 
 
 class Communication(db.Model):

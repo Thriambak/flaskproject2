@@ -13,11 +13,12 @@
 
   <style>
     :root {
-      --primary-color: #2563eb;
-      --secondary-color: #1e40af;
-      --background-color: #f3f4f6;
-      --text-color: #111827;
-      --card-background: #ffffff;
+      --primary-color: #6366f1; /* Indigo */
+      --secondary-color: #f59e0b; /* Amber */
+      --accent-color: #10b981; /* Emerald */
+      --background-color: #0f172a; /* Dark blue */
+      --text-color: #f8fafc; /* Light gray */
+      --card-background: rgba(30, 41, 59, 0.8); /* Semi-transparent dark blue */
     }
 
     body {
@@ -33,14 +34,17 @@
       margin: 2rem auto;
       padding: 2rem;
       background-color: var(--card-background);
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .profile-header {
       display: flex;
-      align-items: center;
-      gap: 2rem;
+      flex-direction: column;
+      align-items: left;
+      text-align: left;
       margin-bottom: 2rem;
     }
 
@@ -50,53 +54,77 @@
       border-radius: 50%;
       border: 4px solid var(--primary-color);
       object-fit: cover;
+      margin-bottom: 1rem;
     }
 
     .editable-field {
       margin-bottom: 1rem;
+      width: 100%;
     }
 
     .editable-field input,
     .editable-field textarea {
       width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
+      padding: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
       font-size: 1rem;
       color: var(--text-color);
-      background-color: var(--card-background);
+      background-color: rgba(255, 255, 255, 0.05);
     }
 
     .editable-field input:focus,
     .editable-field textarea:focus {
       outline: none;
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     }
 
     .glass-card {
       background-color: var(--card-background);
-      border-radius: 12px;
+      border-radius: 15px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .section-title {
-      font-size: 1.25rem;
+      font-size: 1.5rem;
       font-weight: 600;
       color: var(--primary-color);
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      padding-left: 1rem;
+    }
+
+    .section-title::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 80%;
+      background: var(--secondary-color);
+      border-radius: 2px;
     }
 
     .skill-tag {
       display: inline-block;
-      background-color: rgba(37, 99, 235, 0.1);
+      background-color: rgba(99, 102, 241, 0.1);
       color: var(--primary-color);
       padding: 0.5rem 1rem;
       border-radius: 20px;
       margin: 0.3rem;
       font-size: 0.875rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .skill-tag:hover {
+      background-color: var(--primary-color);
+      color: var(--text-color);
     }
 
     .certification-card {
@@ -104,15 +132,16 @@
       justify-content: space-between;
       align-items: center;
       padding: 1rem;
-      border-radius: 8px;
-      background-color: var(--card-background);
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.05);
       margin-bottom: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease, border-color 0.3s ease;
     }
 
     .certification-card:hover {
-      transform: translateY(-2px);
-      transition: transform 0.2s ease;
+      transform: translateY(-5px);
+      border-color: var(--primary-color);
     }
 
     .badge {
@@ -123,12 +152,12 @@
     }
 
     .badge.verified {
-      background-color: #10b981;
+      background-color: var(--accent-color);
       color: white;
     }
 
     .badge.pending {
-      background-color: #f59e0b;
+      background-color: var(--secondary-color);
       color: white;
     }
 
@@ -151,9 +180,33 @@
     .floating-action:hover {
       transform: scale(1.1);
     }
+
+    /* Gradient Background Animation */
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+      background-size: 200% 200%;
+      animation: gradientBackground 10s ease infinite;
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
+    <a href="{{ url_for('user.user_dashboard') }}" class="btn btn-secondary mb-4">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+      
   <div class="container" data-aos="fade-up">
     <!-- Profile Header -->
     <div class="profile-header">
@@ -163,29 +216,29 @@
       <div>
         <h1 class="text-3xl font-bold mb-2">{{ user.name }}</h1>
         {% if edit_mode %}
-          <form action="{{ url_for('user.profile', edit='true') }}" method="POST">
+          <form action="{{ url_for('user.profile', edit='true') }}" method="POST" class="w-full max-w-md mx-auto">
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">Email</label>
+              <label class="block text-sm font-medium text-gray-400">Email</label>
               <input type="email" name="email" value="{{ user.email }}" class="mt-1 block w-full" readonly>
             </div>
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">Phone</label>
+              <label class="block text-sm font-medium text-gray-400">Phone</label>
               <input type="text" name="phone" value="{{ user.phone or '' }}" class="mt-1 block w-full">
             </div>
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">Age</label>
+              <label class="block text-sm font-medium text-gray-400">Age</label>
               <input type="number" name="age" value="{{ user.age or '' }}" class="mt-1 block w-full">
             </div>
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">Coupon Code</label>
+              <label class="block text-sm font-medium text-gray-400">Coupon Code</label>
               <input type="text" name="coupon_code" placeholder="Enter coupon code" class="mt-1 block w-full">
             </div>
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">College Name</label>
+              <label class="block text-sm font-medium text-gray-400">College Name</label>
               <input type="text" name="college_name" value="{{ user.college_name or '' }}" placeholder="Enter college name manually" class="mt-1 block w-full">
             </div>
             <div class="editable-field">
-              <label class="block text-sm font-medium text-gray-700">About Me</label>
+              <label class="block text-sm font-medium text-gray-400">About Me</label>
               <textarea name="about_me" rows="5" class="mt-1 block w-full">{{ user.about_me or '' }}</textarea>
             </div>
             <div class="mt-4 flex items-center gap-4">
@@ -195,23 +248,23 @@
           </form>
         {% else %}
           <div class="editable-field">
-            <label class="block text-sm font-medium text-gray-700">Email</label>
-            <div class="text-gray-900">{{ user.email }}</div>
+            <label class="block text-sm font-medium text-gray-400">Email</label>
+            <div class="text-gray-300">{{ user.email }}</div>
           </div>
           <div class="editable-field">
-            <label class="block text-sm font-medium text-gray-700">Phone</label>
+            <label class="block text-sm font-medium text-gray-400">Phone</label>
             <div>{{ user.phone or 'Not provided' }}</div>
           </div>
           <div class="editable-field">
-            <label class="block text-sm font-medium text-gray-700">Age</label>
+            <label class="block text-sm font-medium text-gray-400">Age</label>
             <div>{{ user.age or 'Not provided' }}</div>
           </div>
           <div class="editable-field">
-            <label class="block text-sm font-medium text-gray-700">College Name</label>
+            <label class="block text-sm font-medium text-gray-400">College Name</label>
             <div>{{ user.college_name or 'Not provided' }}</div>
           </div>
           <div class="editable-field">
-            <label class="block text-sm font-medium text-gray-700">About Me</label>
+            <label class="block text-sm font-medium text-gray-400">About Me</label>
             <div>{{ user.about_me or 'Tell us about yourself...' }}</div>
           </div>
           <div class="mt-4">
@@ -226,16 +279,16 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <div class="glass-card">
-        <div class="text-2xl font-bold text-blue-500">85%</div>
-        <div class="text-sm text-gray-600">Profile Complete</div>
+        <div class="text-2xl font-bold text-indigo-500">85%</div>
+        <div class="text-sm text-gray-400">Profile Complete</div>
       </div>
       <div class="glass-card">
-        <div class="text-2xl font-bold text-blue-500">1.2k</div>
-        <div class="text-sm text-gray-600">Connections</div>
+        <div class="text-2xl font-bold text-amber-500">1.2k</div>
+        <div class="text-sm text-gray-400">Connections</div>
       </div>
       <div class="glass-card">
-        <div class="text-2xl font-bold text-blue-500">{{ certifications|length }}</div>
-        <div class="text-sm text-gray-600">Certifications</div>
+        <div class="text-2xl font-bold text-emerald-500">{{ certifications|length }}</div>
+        <div class="text-sm text-gray-400">Certifications</div>
       </div>
     </div>
 
@@ -246,7 +299,7 @@
         {% if not edit_mode %}
           <div class="glass-card">
             <h2 class="section-title">About Me</h2>
-            <p class="text-gray-700">{{ user.about_me or 'Tell us about yourself...' }}</p>
+            <p class="text-gray-300">{{ user.about_me or 'Tell us about yourself...' }}</p>
           </div>
         {% endif %}
         <div class="glass-card">
@@ -257,7 +310,7 @@
                 <span class="skill-tag">{{ cert.certification_name }}</span>
               {% endfor %}
             {% else %}
-              <span class="text-gray-500">No skills available</span>
+              <span class="text-gray-400">No skills available</span>
             {% endif %}
           </div>
         </div>
@@ -271,7 +324,7 @@
               <div class="certification-card">
                 <div>
                   <div class="font-bold">{{ cert.certification_name }}</div>
-                  <div class="text-sm text-gray-500">{{ cert.issuing_organization or '' }}</div>
+                  <div class="text-sm text-gray-400">{{ cert.issuing_organization or '' }}</div>
                 </div>
                 <div class="badge {{ 'verified' if cert.verification_status else 'pending' }}">
                   {{ 'Verified' if cert.verification_status else 'Pending' }}
@@ -279,7 +332,7 @@
               </div>
             {% endfor %}
           {% else %}
-            <p class="text-center text-gray-500">No certifications added yet.</p>
+            <p class="text-center text-gray-400">No certifications added yet.</p>
           {% endif %}
         </div>
         <div class="glass-card">
@@ -287,19 +340,19 @@
           {% if resumes|length > 0 %}
             <div class="space-y-3">
               {% for resume in resumes %}
-                <div class="flex justify-between items-center p-3 bg-gray-100 rounded-md">
+                <div class="flex justify-between items-center p-3 bg-gray-800 rounded-md">
                   <div>
-                    <i class="fas fa-file-pdf text-blue-500 mr-2"></i>
+                    <i class="fas fa-file-pdf text-indigo-500 mr-2"></i>
                     {{ resume.resume_path.split('/')[-1] }}
                   </div>
-                  <a href="{{ url_for('static', filename=resume.resume_path.split('static/')[1]) }}" class="text-blue-500 hover:underline">
+                  <a href="{{ url_for('static', filename=resume.resume_path.split('static/')[1]) }}" class="text-indigo-500 hover:underline">
                     View
                   </a>
                 </div>
               {% endfor %}
             </div>
           {% else %}
-            <div class="text-center py-4 text-gray-500">No resumes uploaded yet</div>
+            <div class="text-center py-4 text-gray-400">No resumes uploaded yet</div>
           {% endif %}
         </div>
       </div>

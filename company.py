@@ -348,7 +348,7 @@ def company_application_review():
             'status': application.status,
             'application_id': application.id,  # Include application ID
             'resume_path': application.resume_path,
-            'certificate_path': application.certificate_path,
+            
         })
     
     applications = db.session.query(
