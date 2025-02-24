@@ -207,6 +207,9 @@
     <main>
         <!-- Left Panel (Navigation and Metrics) -->
         <div class="left-panel">
+            <a href="{{ url_for('college.college_dashboard') }}" >
+                <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
+            </a>
             <a href="{{ url_for('college.college_studenttraking') }}" >
                 <button><i class="fas fa-users"></i> Student Activity Tracking</button>
             </a>
