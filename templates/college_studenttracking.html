@@ -110,6 +110,36 @@
             border-collapse: collapse;
             text-align: left;
         }
+        .left-panel {
+            width: 20%;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .left-panel a {
+            text-decoration: none;
+        }
+
+        .left-panel button {
+            padding: 15px;
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .left-panel button:hover {
+            background-color: #005f73;
+        }
 
         .student-activity-list th,
         .student-activity-list td {
@@ -176,6 +206,23 @@
     </header>
 
     <main>
+        <div class="left-panel">
+            <a href="{{ url_for('college.college_dashboard') }}" >
+                <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
+            </a>
+            <a href="{{ url_for('college.college_studenttraking') }}" >
+                <button><i class="fas fa-users"></i> Student Activity Tracking</button>
+            </a>
+            <a href="{{ url_for('college.generate_coupon') }}">
+                <button><i class="fas fa-gift"></i> Coupon Code Management</button>
+            </a>
+            <a href="{{ url_for('college.college_collab') }}">
+                <button><i class="fas fa-chart-line"></i> Collaboration Reports</button>
+            </a>
+            <a href="{{ url_for('college.college_endorsement') }}">
+                <button><i class="fas fa-chart-line"></i> Endorsement</button>
+            </a>
+        </div>
         <div class="activity-tracking-container">
             <!-- Activity Tracking Header -->
             <div class="activity-header">
@@ -266,57 +313,72 @@
         const recordsPerPage = 4;
 
         function displayStudents(page) {
-            const start = (page - 1) * recordsPerPage;
-            const end = page * recordsPerPage;
-            const paginatedStudents = students.slice(start, end);
+    const start = (page - 1) * recordsPerPage;
+    const end = page * recordsPerPage;
+    const paginatedStudents = students.slice(start, end);
 
-            const list = document.getElementById('activityList');
-            list.innerHTML = '';
+    const list = document.getElementById('activityList');
+    list.innerHTML = '';
 
-            paginatedStudents.forEach(student => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${student.name}</td>
-                    <td>${student.id}</td>
-                    <td>${student.application}</td>
-                    <td>${student.company}</td>
-                    <td class="status-${student.status}">${student.status.charAt(0).toUpperCase() + student.status.slice(1)}</td>
-                `;
-                list.appendChild(row);
-            });
-        }
+    paginatedStudents.forEach(student => {
+        const row = document.createElement('tr');
+        
+        const nameCell = document.createElement('td');
+        nameCell.textContent = student.name;
+        row.appendChild(nameCell);
 
-        function searchStudents() {
-            const searchValue = document.getElementById('searchNameOrId').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
+        const idCell = document.createElement('td');
+        idCell.textContent = student.id;
+        row.appendChild(idCell);
 
-            const filteredStudents = students.filter(student => {
-                const matchesNameOrId = student.name.toLowerCase().includes(searchValue) || student.id.includes(searchValue);
-                const matchesStatus = statusFilter ? student.status === statusFilter : true;
-                return matchesNameOrId && matchesStatus;
-            });
+        const applicationCell = document.createElement('td');
+        applicationCell.textContent = student.application;
+        row.appendChild(applicationCell);
 
-            // Reset to page 1 when new search is performed
-            currentPage = 1;
-            displayFilteredStudents(filteredStudents);
-        }
+        const companyCell = document.createElement('td');
+        companyCell.textContent = student.company;
+        row.appendChild(companyCell);
 
-        function displayFilteredStudents(filteredStudents) {
-            const list = document.getElementById('activityList');
-            list.innerHTML = '';
+        const statusCell = document.createElement('td');
+        statusCell.classList.add(`status-${student.status}`);
+        statusCell.textContent = student.status.charAt(0).toUpperCase() + student.status.slice(1);
+        row.appendChild(statusCell);
 
-            filteredStudents.forEach(student => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${student.name}</td>
-                    <td>${student.id}</td>
-                    <td>${student.application}</td>
-                    <td>${student.company}</td>
-                    <td class="status-${student.status}">${student.status.charAt(0).toUpperCase() + student.status.slice(1)}</td>
-                `;
-                list.appendChild(row);
-            });
-        }
+        list.appendChild(row);
+    });
+}
+
+function displayFilteredStudents(filteredStudents) {
+    const list = document.getElementById('activityList');
+    list.innerHTML = '';
+
+    filteredStudents.forEach(student => {
+        const row = document.createElement('tr');
+        
+        const nameCell = document.createElement('td');
+        nameCell.textContent = student.name;
+        row.appendChild(nameCell);
+
+        const idCell = document.createElement('td');
+        idCell.textContent = student.id;
+        row.appendChild(idCell);
+
+        const applicationCell = document.createElement('td');
+        applicationCell.textContent = student.application;
+        row.appendChild(applicationCell);
+
+        const companyCell = document.createElement('td');
+        companyCell.textContent = student.company;
+        row.appendChild(companyCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.classList.add(`status-${student.status}`);
+        statusCell.textContent = student.status.charAt(0).toUpperCase() + student.status.slice(1);
+        row.appendChild(statusCell);
+
+        list.appendChild(row);
+    });
+}
 
         document.getElementById('searchButton').addEventListener('click', searchStudents);
 
@@ -338,4 +400,4 @@
         displayStudents(currentPage);
     </script>
 </body>
-</html>
+</html> 
