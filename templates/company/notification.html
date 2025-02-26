@@ -36,7 +36,7 @@
             <h2>Notifications</h2><br><br>
             <div class="notifications-container">
                 {% if notifications %}
-                    {% for notification in notifications if notification.hidden==false %}
+                    {% for notification in notifications %}
                     <div class="notification {% if notification.read_status %}read{% endif %}">
                         <div class="notification-icon">
                             <i class="fas fa-bell"></i>

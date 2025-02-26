@@ -92,11 +92,18 @@ def apply_for_job(job_id):
         job_id=job.job_id,
         status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
         resume_path=resume_certification.resume_path,
-      
+    )
+
+    message = f"{user.name} has applied for the job: {job.title}"
+    new_notification = Notification(
+        user_id=user.login_id,
+        company_id=job.created_by,
+        message=message,
     )
 
     # Add the application to the database
     db.session.add(new_application)
+    db.session.add(new_notification)
     db.session.commit()
 
     flash(f"Application for {job.title} submitted successfully!", 'success')
