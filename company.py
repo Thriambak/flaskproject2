@@ -92,7 +92,7 @@ def company_dashboard():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
@@ -148,7 +148,7 @@ def company_jobposting():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
@@ -275,7 +275,7 @@ def company_post_new_job():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
@@ -305,6 +305,11 @@ def company_application_review():
  
         application = JobApplication.query.get(application_id)
         if application:
+            if new_status == 'Rejected' and application.status == 'Hired':
+                job = application.job
+                job.filled_vacancy -= 1
+                db.session.commit()
+
             application.status = new_status
             db.session.commit()
             flash('Application status updated successfully!', 'success')
@@ -358,9 +363,9 @@ def company_application_review():
         Job.title,
         db.func.count(JobApplication.id).label('total_applications'),
         db.func.sum(db.case(
-                    [(JobApplication.status == 'Hired', 1)],
-                    else_=0
-                )).label('shortlisted_applications')
+                (JobApplication.status == 'Hired', 1),
+                else_=0
+            )).label('shortlisted_applications')
     ).join(JobApplication, Job.job_id == JobApplication.job_id)\
      .filter(Job.created_by == user_id)\
      .group_by(Job.title).all()
@@ -394,7 +399,7 @@ def company_application_review():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
@@ -554,7 +559,7 @@ def company_hiring_communication():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
@@ -719,7 +724,7 @@ def company_profile():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
         Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()

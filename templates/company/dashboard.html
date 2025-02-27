@@ -35,7 +35,7 @@
         <div class="activity">
             <div class="info-section">
                 <div class="info-box">
-                    <h3>Number of Applicants</h3>
+                    <h3>Number of Applicants (Max 200)</h3>
                     <p>Current applications received: <strong>{{ total_successful + total_unsuccessful }}</strong></p>
                     <div class="progress-bar">
                         <div style="width: {{ (total_successful + total_unsuccessful)/2 }}%;">{{ (total_successful + total_unsuccessful)/2 }}%</div>
@@ -62,35 +62,6 @@
                         {% else %}
                             <p>No job listings available at the moment.</p>
                         {% endif %}
-                        <!-- 
-                            <div class="post">
-                            <div class="post-header">
-                                <strong>Software Engineer</strong>
-                                <span class="status filled">Filled</span>
-                            </div>
-                            <p>Backend development and API integration.</p>
-                        </div>
-                        <div class="post">
-                            <div class="post-header">
-                                <strong>Data Scientist</strong>
-                                <span class="status vacant">Vacant</span>
-                            </div>
-                            <p>Analyze large datasets for actionable insights.</p>
-                        </div>
-                        <div class="post">
-                            <div class="post-header">
-                                <strong>Product Manager</strong>
-                                <span class="status filled">Filled</span>
-                            </div>
-                            <p>Manage high-end project and coordinate tasks between teams.</p>
-                        </div>
-                        <div class="post">
-                            <div class="post-header">
-                                <strong>UI/UX Designer</strong>
-                                <span class="status vacant">Vacant</span>
-                            </div>
-                            <p>Design aesthetic and efficient websites.</p>
-                        </div> -->
                     </div>
                 </div>
                 <div class="info-box">

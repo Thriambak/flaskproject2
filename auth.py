@@ -102,8 +102,7 @@ def login():
         # Check if the user exists in the Login table
         login = Login.query.filter_by(username=username).first()
         if not login or not login.check_password(password):
-            flash('Invalid username or password.', 'danger')
-            return redirect(url_for('auth.login'))
+            return render_template('login.html', error='Invalid username or password.')
 
         # Store session details
         session['login_id'] = login.id
@@ -114,32 +113,28 @@ def login():
         if login.role == 'user':
             user = User.query.filter_by(login_id=login.id).first()
             if not user:
-                flash('User details not found.', 'danger')
-                return redirect(url_for('auth.login'))
+                return render_template('login.html', error='User details not found.')
             session['user_id'] = user.id  
             return redirect(url_for('user.user_dashboard'))
         elif login.role == 'company':
             company = Company.query.filter_by(login_id=login.id).first()
-            
             if not company:
-                flash('Company details not found.', 'danger')
-                return redirect(url_for('auth.login'))
+                return render_template('login.html', error='Company details not found.')
             return redirect(url_for('company.company_dashboard'))
         elif login.role == 'admin':
             admin = Admin.query.filter_by(login_id=login.id).first()
             if not admin:
-                flash('Admin details not found.', 'danger')
-                return redirect(url_for('auth.login'))
+                return render_template('login.html', error='Admin details not found.')
             return redirect(url_for('admin_routes.admin_dashboard'))
         elif login.role == 'college':
             college = College.query.filter_by(login_id=login.id).first()
             session['college_id'] = college.id
             if not college:
-                flash('College details not found.', 'danger')
-                return redirect(url_for('auth.login'))
+                return render_template('login.html', error='College details not found.')
             return redirect(url_for('college.college_dashboard'))
 
     return render_template('login.html')
+
 
 # ith login function, ithil when logged in it checks the login table , and if present, it takes the role and goes to corresponding page,
 
