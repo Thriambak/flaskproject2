@@ -16,6 +16,8 @@ from utils import allowed_file  # Assuming your config file is named config.py
 
 
 user_blueprint = Blueprint('user', __name__)
+from flask import render_template, session, redirect, url_for, flash
+from flask_login import login_required
 
 def login_required(f):
     @wraps(f)
@@ -24,33 +26,60 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+@user_blueprint.route('/user_dashboard')
+@login_required
+def user_dashboard():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Ensure that only regular users access this page.
+    if session.get('role') != 'user':
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # Fetch jobs for display (all jobs ordered by creation date).
+    jobs = Job.query.order_by(Job.created_at.desc()).all()
+
+    # Calculate application status counts for this user.
+    hired = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
+    rejected = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
+    pending = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
+
+    user_success_rate = {
+        "hired": hired,
+        "rejected": rejected,
+        "pending": pending
+    }
+
+    # Prepare applications overview: group the number of applications by job title.
+    overview = db.session.query(
+        Job.title,
+        db.func.count(JobApplication.id).label('applications')
+    ).join(Job, Job.job_id == JobApplication.job_id)\
+     .filter(JobApplication.user_id == user_id)\
+     .group_by(Job.title).all()
+
+    labels = [row.title for row in overview]
+    applications = [row.applications for row in overview]
+    applications_overview = {"labels": labels, "applications": applications}
+
+    return render_template('user_dashboard.html',
+                           jobs=jobs,
+                           user_success_rate=user_success_rate,
+                           applications_overview=applications_overview)
+
+
+
+
 
 
 # Display the user dashboard
 
 
-@user_blueprint.route('/user_dashboard')
-@login_required
-def user_dashboard():
-    user_id = session.get('user_id')
-    
-    # Ensure the user_id is in session
-    ''' if not user_id:
-        flash("User is not logged in.", "error")
-        return redirect(url_for('auth.login'))'''
-
-    # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-   # Fetching jobs ordered by the creation date (newest first)
-    jobs = Job.query.order_by(Job.created_at.desc()).all()  # Assuming the column is named 'created_at'
-# If you want to show all jobs. If you need jobs posted by the user, filter by created_by
-    # jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
-    print(jobs)  # Debugging line
-
-    # Ensure the user is not an admin (or redirect to the admin dashboard)
-    if session.get('role') != 'user':
-        return redirect(url_for('admin.admin_dashboard'))
-    
-    return render_template('user_dashboard.html', jobs=jobs)
 
 # Handle job application
 @user_blueprint.route('/apply_for_job/<int:job_id>', methods=['POST'])
