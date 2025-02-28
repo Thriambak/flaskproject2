@@ -33,8 +33,6 @@
             <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
-
-
         <div class="activity">
             <div class="top-header">
                 <h2>Review Job Applications</h2>
@@ -42,30 +40,32 @@
             <div class="filter-bar">
                 <form method="GET" action="{{ url_for('company.company_application_review') }}">
                     <div class="search-container">
-                            <input type="text" id="search-bar" name="search_name" value="{{ search_name }}" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
-                            <button class="search-btn" type="submit"> <pre>Search </pre><i class="fas fa-search search-icon"></i></button>
+                        <input type="text" id="search-bar" name="search_name" value="{{ search_name }}" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
+                        <button class="search-btn" type="submit">
+                            <pre>Search </pre><i class="fas fa-search search-icon"></i>
+                        </button>
                     </div>
 
                     <!-- Filter Section -->
                     <div class="filter-container">
-                            <button class="filter-button"><pre>Filter <i class="fas fa-filter"></i></pre></button>
-                            <div class="filter-dropdown">
-                                <h4>Status</h4>
-                                <label><input type="checkbox" name="status" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
-                                <label><input type="checkbox" name="status" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
-                                <label><input type="checkbox" name="status" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
-                                <label><input type="checkbox" name="status" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
+                        <button class="filter-button"><pre>Filter <i class="fas fa-filter"></i></pre></button>
+                        <div class="filter-dropdown">
+                            <h4>Status</h4>
+                            <label><input type="checkbox" name="status" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
+                            <label><input type="checkbox" name="status" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
+                            <label><input type="checkbox" name="status" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
+                            <label><input type="checkbox" name="status" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
 
-                                <h4>Job Post</h4>
-                                {% if jobs %}
-                                    {% for application in jobs %}
-                                        <p style="overflow-wrap: break-word; max-width: 100%;">
-                                            <input type="checkbox" name="job_post" value="{{ application.title}}" {% if application.title in selected_jobs %}checked{% endif %}> 
-                                            {{ application.title }}
-                                        </p>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
+                            <h4>Job Post</h4>
+                            {% if jobs %}
+                                {% for application in jobs %}
+                                    <p style="overflow-wrap: break-word; max-width: 100%;">
+                                        <input type="checkbox" name="job_post" value="{{ application.title}}" {% if application.title in selected_jobs %}checked{% endif %}> 
+                                        {{ application.title }}
+                                    </p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
                     </div>
                 </form>
             </div>
@@ -78,7 +78,7 @@
                     {% if applications %}
                         {% for application in applications %}
                         <li>
-                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}',  '{{ application.status }}', '{{ application.application_id }}')">
+                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}', '{{ application.status }}', '{{ application.application_id }}', '{{ application.user_id }}')">
                                 <div class="candidate-name" style="overflow-wrap: break-word; max-width: 20%;">{{ application.candidate_name }}</div>
                                 <div class="candidate-profile" style="overflow-wrap: break-word; max-width: 60%;">{{ application.job_post }}</div>
                                 <div class="candidate-status" style="overflow-wrap: break-word; max-width: 20%;">{{ application.status }}</div>
@@ -86,34 +86,6 @@
                         </li>
                         {% endfor %}
                     {% endif %}
-                    <!--<li>
-                        <button class="candidate-item" onclick="selectCandidate('Jane Smith')">
-                            <div class="candidate-name">Jane Smith</div>
-                            <div class="candidate-profile">Data Scientist</div>
-                            <div class="candidate-status">Interviewed</div>
-                        </button>
-                    </li>
-                    <li>
-                        <button class="candidate-item" onclick="selectCandidate('Alex Brown')">
-                            <div class="candidate-name">Alex Brown</div>
-                            <div class="candidate-profile">UI/UX Designer</div>
-                            <div class="candidate-status">Hired</div>
-                        </button>
-                    </li>
-                    <li>
-                        <button class="candidate-item" onclick="selectCandidate('Emily Davis')">
-                            <div class="candidate-name">Emily Davis</div>
-                            <div class="candidate-profile">Product Manager</div>
-                            <div class="candidate-status">Pending</div>
-                        </button>
-                    </li>
-                    <li>
-                        <button class="candidate-item" onclick="selectCandidate('Michael Lee')">
-                            <div class="candidate-name">Michael Lee</div>
-                            <div class="candidate-profile">Backend Developer</div>
-                            <div class="candidate-status">Rejected</div>
-                        </button>
-                    </li>-->
                 </ul>
             </div>
 
@@ -138,66 +110,87 @@
                 </form>
             </div>
         </div>              
-        
 
         <div class="side-panel">
             <div class="boxes"  style="position: sticky; top: 14.1%;">
-                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
+                <div class="graph">
                     <h3>Success Rate</h3>
                     <canvas id="chart"></canvas>
                 </div>
-                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
+                <div class="live-feed">
                     <h3>Live Feed</h3>
                     {% if live_feed_notifications %}
                     <ul style="padding-left: 10px;">
                         {% for notification in live_feed_notifications %}
-                            <li> <p>{{ notification.message }}</p> </li>
+                            <li><p>{{ notification.message }}</p></li>
                         {% endfor %}
                     </ul>
                     {% else %}
                         <p>No new notifications in the past day.</p>
                     {% endif %}
-                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
                 </div>
-                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
+                <div class="calendar">
                     <h3>Upcoming Events</h3>
                     <ul style="padding-left: 10px;">
                         {% if pending_applications_count > 0 %}
-                            <li><p>Host Interview: </p>
-                                <p>Applications pending - {{pending_applications_count}}</p></li> 
+                            <li>
+                                <p>Host Interview:</p>
+                                <p>Applications pending - {{pending_applications_count}}</p>
+                            </li> 
                         {% endif %}
                         {% if interviewed_applications_count > 0 %}
-                            <li><p>Send hire/reject messages: </p>
-                                <p>Applicants waiting - {{interviewed_applications_count}}</p></li>
+                            <li>
+                                <p>Send hire/reject messages:</p>
+                                <p>Applicants waiting - {{interviewed_applications_count}}</p>
+                            </li>
                         {% endif %}
                     </ul>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Global variable to hold user certifications data -->
+    <script>
+        var userCertifications = {{ user_certifications|tojson }};
+    </script>
+
     <script>
         function toggleDropdown() {
             var dropdown = document.getElementById("filter-dropdown");
-            // Toggle the display of the dropdown
             if (dropdown.style.display === "none" || dropdown.style.display === "") {
-                dropdown.style.display = "block"; // Show the dropdown
+                dropdown.style.display = "block";
             } else {
-                dropdown.style.display = "none"; // Hide the dropdown
+                dropdown.style.display = "none";
             }
         }
 
-        function selectCandidate(name, jobPost, resumePath,  status, applicationId) {
-            // Populate the candidate details
+        function selectCandidate(name, jobPost, resumePath, status, applicationId, userId) {
+            // Build the certifications HTML
+            var certHtml = "";
+            if (userCertifications[userId] && userCertifications[userId].length > 0) {
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Certifications:</strong></p><ul>";
+                userCertifications[userId].forEach(function(cert) {
+                    certHtml += "<li style='font-family: monospace;font-size: 14.5px;'>" + cert.certification_name;
+                    if (cert.verified) {
+                        certHtml += " <i class='fas fa-check' style='color: green;'></i>";
+                    }
+                    certHtml += "</li>";
+                });
+                certHtml += "</ul>";
+            } else {
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No certifications available.</p>";
+            }
+
             const candidateDetails = `
-                <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong> ${name}</p>
-                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong> ${jobPost}</p>
-                <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong> <a href="${resumePath}" target="_blank">View Resume</a></p>
-              
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
+                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong>${jobPost}</p>
+                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Status: </strong>${status}</p>
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumePath}" target="_blank">View Resume</a></p>
+                ${certHtml}
             `;
             document.getElementById('selected-candidate').innerHTML = candidateDetails;
-            
             document.getElementById('application-id').value = applicationId;
-            // Update the dropdown to reflect the current status
             document.getElementById('status-update').value = status;
         }
 

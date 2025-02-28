@@ -17,13 +17,12 @@
   <!-- Balloon.css -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
   
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
     /* Global styles (matching dashboard/resume pages) */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
       background: #f1f3f6;
@@ -50,10 +49,7 @@
       font-weight: bold;
       gap: 10px;
     }
-    header .logo i {
-      font-size: 32px;
-      color: white;
-    }
+    header .logo i { font-size: 32px; color: white; }
     header .profile-settings {
       display: flex;
       gap: 15px;
@@ -71,19 +67,14 @@
       gap: 10px;
       transition: background-color 0.3s, color 0.3s;
     }
-    header .profile-settings button i {
-      color: #0a9396;
-    }
+    header .profile-settings button i { color: #0a9396; }
     header .profile-settings button:hover {
       background-color: #e6e6e6;
       color: #0a9396;
     }
     
     /* Layout */
-    main {
-      display: flex;
-      flex: 1;
-    }
+    main { display: flex; flex: 1; }
     
     /* Navigation Sidebar */
     .navigation {
@@ -109,10 +100,7 @@
       gap: 15px;
       transition: background 0.3s, transform 0.2s;
     }
-    .navigation button i, .navigation a button i {
-      font-size: 18px;
-      color: #005f73;
-    }
+    .navigation button i, .navigation a button i { font-size: 18px; color: #005f73; }
     .navigation button:hover, .navigation a button:hover {
       background: linear-gradient(90deg, #dce4ff, #f9faff);
       transform: scale(1.05);
@@ -144,10 +132,7 @@
       border-radius: 12px;
       margin-bottom: 20px;
     }
-    .activity .filters {
-      display: flex;
-      gap: 10px;
-    }
+    .activity .filters { display: flex; gap: 10px; }
     .activity .filters button.unread {
       padding: 12px 20px;
       font-size: 16px;
@@ -185,9 +170,7 @@
       background-color: #f9fafb;
       border-left: 4px solid #ddd;
     }
-    .activity .notification-item:hover {
-      transform: translateY(-3px);
-    }
+    .activity .notification-item:hover { transform: translateY(-3px); }
     .activity .notification-icon {
       font-size: 24px;
       margin-right: 15px;
@@ -259,7 +242,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100" x-data="{ darkMode: false }" x-bind:class="{'bg-gray-900 text-gray-100': darkMode}">
+<body class="bg-gray-100">
   <!-- Header -->
   <header>
     <div class="logo">
@@ -292,10 +275,10 @@
     </div>
     
     <!-- Main Content (Activity) -->
-    <div class="activity" data-aos="fade-up">
+    <div class="activity">
       <h2>Notifications</h2>
       
-      <!-- Search and Filters (without the "All" button) -->
+      <!-- Search and Filters -->
       <div class="flex justify-between items-center mb-4">
         <input type="text" id="search" onkeyup="searchNotifications()" placeholder="Search notifications..." class="search-bar" />
         <div class="filters">
@@ -337,7 +320,7 @@
       </div>
     </div>
     
-    <!-- Side Panel -->
+    <!-- Side Panel with Charts -->
     <div class="side-panel">
       <div class="graph-container">
         <h3>Success Rate</h3>
@@ -360,9 +343,8 @@
     </div>
   </main>
   
-  <!-- Scripts -->
+  <!-- Scripts for Search & Filters -->
   <script>
-    // Search Notifications
     function searchNotifications() {
       const searchInput = document.getElementById("search").value.toLowerCase();
       const notifications = document.querySelectorAll("#notifications-list .notification-item");
@@ -372,7 +354,6 @@
       });
     }
     
-    // Filter Notifications
     function filterNotifications(type) {
       const notifications = document.querySelectorAll("#notifications-list .notification-item");
       notifications.forEach(notification => {
@@ -380,6 +361,67 @@
           notification.style.display = notification.classList.contains("unread") ? "block" : "none";
         } else if (type === 'read') {
           notification.style.display = notification.classList.contains("read") ? "block" : "none";
+        }
+      });
+    }
+  </script>
+  
+  <!-- Chart Initialization (inside the notifications template) -->
+  <script>
+    // Convert the passed data into JavaScript objects
+    const userSuccessRateData = {{ user_success_rate|tojson }};
+    const applicationsOverviewData = {{ applications_overview|tojson }};
+
+    // Initialize the Success Rate Pie Chart
+    const successCanvas = document.getElementById('successRateChart');
+    if(successCanvas) {
+      const successCtx = successCanvas.getContext('2d');
+      new Chart(successCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Accepted', 'Rejected', 'Pending'],
+          datasets: [{
+            data: [
+              userSuccessRateData.hired,
+              userSuccessRateData.rejected,
+              userSuccessRateData.pending
+            ],
+            backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    // Initialize the Applications Overview Bar Chart
+    const applicationsCanvas = document.getElementById('applicationsChart');
+    if(applicationsCanvas) {
+      const appCtx = applicationsCanvas.getContext('2d');
+      new Chart(appCtx, {
+        type: 'bar',
+        data: {
+          labels: applicationsOverviewData.labels,
+          datasets: [{
+            label: 'Applications',
+            data: applicationsOverviewData.applications,
+            backgroundColor: '#264653',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { enabled: true }
+          },
+          scales: {
+            x: { beginAtZero: true },
+            y: { beginAtZero: true }
+          }
         }
       });
     }

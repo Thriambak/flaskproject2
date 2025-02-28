@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <!-- AOS -->
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
     /* Common Styles */
@@ -618,7 +620,7 @@
     </div>
   </main>
   
-  <!-- Scroll to Top Button -->
+  <!-- Scroll-to-Top Button -->
   <div class="scroll-to-top" id="scrollToTop" onclick="scrollToTop()">
     <i class="fas fa-chevron-up"></i>
   </div>
@@ -643,7 +645,6 @@
     
     // Dummy function for uploading profile picture
     function uploadProfilePic(input) {
-      // You can implement AJAX or form submission logic here
       alert('Profile picture updated!');
     }
     
@@ -659,6 +660,69 @@
     
     function scrollToTop() {
       window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  </script>
+  
+  <!-- Chart Initialization for Profile Page -->
+  <script>
+    // Convert passed data into JavaScript objects using Jinja's tojson filter
+    const userSuccessRateData = {{ user_success_rate|tojson }};
+    const applicationsOverviewData = {{ applications_overview|tojson }};
+
+    // Initialize Success Rate Pie Chart
+    const successCanvas = document.getElementById('successRateChart');
+    if (successCanvas) {
+      const successCtx = successCanvas.getContext('2d');
+      new Chart(successCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Accepted', 'Rejected', 'Pending'],
+          datasets: [{
+            data: [
+              userSuccessRateData.hired,
+              userSuccessRateData.rejected,
+              userSuccessRateData.pending
+            ],
+            backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // Initialize Applications Overview Bar Chart
+    const applicationsCanvas = document.getElementById('applicationsChart');
+    if (applicationsCanvas) {
+      const appCtx = applicationsCanvas.getContext('2d');
+      new Chart(appCtx, {
+        type: 'bar',
+        data: {
+          labels: applicationsOverviewData.labels,
+          datasets: [{
+            label: 'Applications',
+            data: applicationsOverviewData.applications,
+            backgroundColor: '#264653',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { enabled: true }
+          },
+          scales: {
+            x: { beginAtZero: true },
+            y: { beginAtZero: true }
+          }
+        }
+      });
     }
   </script>
 </body>

@@ -4,35 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upload Resume & Certifications</title>
-  
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Bootstrap 5 for Grid System -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
   <!-- AOS (Animate on Scroll) -->
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  
+
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Source+Sans+Pro:wght@400;600;700&display=swap" />
+
   <style>
-    /* Global and base styles as per dashboard */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: #f1f3f6;
-      color: #333;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    
-    /* Header styles */
+    /* Global Styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Roboto', sans-serif; background: #f1f3f6; color: #333; }
+
     header {
       background: linear-gradient(90deg, #005f73, #0a9396);
       color: white;
@@ -42,21 +34,9 @@
       align-items: center;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
-    header .logo {
-      display: flex;
-      align-items: center;
-      font-size: 28px;
-      font-weight: bold;
-      gap: 10px;
-    }
-    header .logo i {
-      font-size: 32px;
-      color: white;
-    }
-    header .profile-settings {
-      display: flex;
-      gap: 15px;
-    }
+    header .logo { display: flex; align-items: center; font-size: 28px; font-weight: bold; gap: 10px; }
+    header .logo i { font-size: 32px; color: white; }
+    header .profile-settings { display: flex; gap: 15px; }
     header .profile-settings button {
       background-color: white;
       border: none;
@@ -68,23 +48,15 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    header .profile-settings button i {
-      color: #0a9396;
+      transition: background-color 0.3s, color 0.3s, transform 0.2s;
     }
     header .profile-settings button:hover {
       background-color: #e6e6e6;
       color: #0a9396;
+      transform: scale(1.05);
     }
-    
-    /* Layout container */
-    main {
-      display: flex;
-      flex: 1;
-    }
-    
-    /* Navigation sidebar styling */
+
+    main { display: flex; flex: 1; }
     .navigation {
       width: 20%;
       background: linear-gradient(to bottom, #ffffff, #f0f4f9);
@@ -95,7 +67,7 @@
       border-right: 1px solid #ccc;
       box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
     }
-    .navigation button, .navigation a button {
+    .navigation button {
       padding: 12px 20px;
       border: none;
       background: linear-gradient(90deg, #f0f4ff, #ffffff);
@@ -108,16 +80,12 @@
       gap: 15px;
       transition: background 0.3s, transform 0.2s;
     }
-    .navigation button i, .navigation a button i {
-      font-size: 18px;
-      color: #005f73;
-    }
-    .navigation button:hover, .navigation a button:hover {
+    .navigation button i { font-size: 18px; color: #005f73; }
+    .navigation button:hover {
       background: linear-gradient(90deg, #dce4ff, #f9faff);
       transform: scale(1.05);
     }
-    
-    /* Main content area styles */
+
     .activity {
       width: 60%;
       padding: 20px;
@@ -126,125 +94,7 @@
       border-right: 1px solid #ccc;
       box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
     }
-    .activity h2 {
-      font-size: 22px;
-      font-family: 'Source Sans Pro', sans-serif;
-      font-weight: 600;
-      color: #0a3d62;
-      letter-spacing: 2px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .activity .form-label {
-      font-size: 15px;
-      color: #666;
-      margin-bottom: 8px;
-      display: block;
-    }
-    .activity .form-control {
-      font-size: 15px;
-      padding: 10px 15px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-    }
-    .activity .btn {
-      background-color: #1abc9c;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 25px;
-      text-transform: uppercase;
-      font-weight: bold;
-      font-size: 16px;
-      transition: background-color 0.3s ease-in-out, transform 0.3s ease;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 20px;
-    }
-    .activity .btn:hover {
-      background-color: #16a085;
-      transform: scale(1.05);
-    }
-    
-    /* Drag-and-Drop Upload Zone */
-    .upload-zone {
-      border: 2px dashed #ddd;
-      border-radius: 12px;
-      padding: 30px;
-      text-align: center;
-      color: #666;
-      transition: background 0.3s;
-    }
-    .upload-zone.dragover {
-      background: #f0f4ff;
-    }
-    
-    /* File list styling for uploaded resumes */
-    .file-list {
-      margin-top: 20px;
-    }
-    .file-item {
-      background-color: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 10px;
-      transition: transform 0.3s ease;
-    }
-    .file-item:hover {
-      transform: translateY(-3px);
-    }
-    .file-item a {
-      text-decoration: none;
-      font-weight: bold;
-      color: #2563eb;
-    }
-    .file-item a:hover {
-      text-decoration: underline;
-    }
-    
-    /* Certifications Section Styling */
-    .glass-card {
-      background: #ffffff;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .section-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    .certification-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-    }
-    .certification-card:last-child {
-      border-bottom: none;
-    }
-    .badge.verified {
-      background-color: #1abc9c;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    .badge.not-verified {
-      background-color: #f44336;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    
-    /* Side panel styling */
+
     .side-panel {
       width: 20%;
       background: linear-gradient(to bottom, #ffffff, #f3f5f9);
@@ -254,26 +104,64 @@
       gap: 25px;
       box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
     }
-    .side-panel h3 {
-      font-size: 18px;
-      font-weight: 600;
+    .side-panel .graph-container,
+    .side-panel .live-feed,
+    .side-panel .calendar {
+      background: linear-gradient(135deg, #ffffff, #f7f7f7);
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       color: #333;
-      margin-bottom: 10px;
-      text-transform: uppercase;
+      transition: transform 0.3s ease-in-out;
     }
-    .side-panel p {
-      font-size: 15px;
-      color: #666;
-      margin: 5px 0;
+    .side-panel .graph-container:hover,
+    .side-panel .live-feed:hover,
+    .side-panel .calendar:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     }
-    canvas {
+
+    canvas { width: 100%; max-width: 100%; height: auto; display: block; }
+
+    /* Resume & Certifications Styles */
+    .resume-container {
+      padding: 25px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease-in-out;
+    }
+    .resume-container:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      background: #f9f9f9;
+    }
+    .form-control {
       width: 100%;
-      max-width: 100%;
-      height: auto;
-      display: block;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border-color 0.3s;
     }
-    
-    /* Flash message styling */
+    .form-control:focus {
+      border-color: #0a9396;
+      outline: none;
+      box-shadow: 0 0 5px rgba(10, 147, 150, 0.5);
+    }
+    .btn { padding: 12px 20px; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; transition: all 0.3s ease-in-out; }
+    .btn-primary {
+      background: linear-gradient(90deg, #1abc9c, #16a085);
+      color: white;
+      width: 100%;
+    }
+    .btn-primary:hover { background: linear-gradient(90deg, #16a085, #0a9396); transform: scale(1.05); }
+    .btn-secondary {
+      background: linear-gradient(90deg, #0a9396, #005f73);
+      color: white;
+    }
+    .btn-secondary:hover { background: linear-gradient(90deg, #005f73, #003f8f); transform: translateY(-3px); }
     .flash-message {
       margin-bottom: 15px;
       padding: 15px 20px;
@@ -282,180 +170,153 @@
       font-weight: 500;
       color: #fff;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      position: relative;
-      animation: fadeIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
-    }
-    .flash-message.success {
-      background-color: #4caf50;
-      border-left: 5px solid #388e3c;
-    }
-    .flash-message.error {
-      background-color: #f44336;
-      border-left: 5px solid #d32f2f;
-    }
-    .flash-message.warning {
-      background-color: #ff9800;
-      border-left: 5px solid #f57c00;
-    }
-    .flash-message.info {
-      background-color: #2196f3;
-      border-left: 5px solid #1976d2;
-    }
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes fadeOut {
-      to {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-    }
-    
-    /* Responsive adjustments */
-    @media screen and (max-width: 768px) {
-      .navigation, .side-panel { display: none; }
-      .activity { width: 100%; }
-      header .logo { font-size: 24px; }
-      header .profile-settings button { padding: 8px 15px; font-size: 12px; }
-      .activity h2 { font-size: 20px; }
-      .activity .form-label, .activity .form-control, .activity .btn { font-size: 14px; }
-    }
-    
-    /* Modal for adding certification */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 50;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
       animation: fadeIn 0.5s ease;
-      position: relative;
     }
-    .modal-close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
+    .flash-message.success { background-color: #4caf50; border-left: 5px solid #388e3c; }
+    .flash-message.error { background-color: #f44336; border-left: 5px solid #d32f2f; }
+    .file-item {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      transition: background-color 0.3s;
+    }
+    .file-item:hover { background-color: #f0f4ff; }
+    .file-item a {
+      text-decoration: none;
+      font-weight: bold;
+      color: #1abc9c;
+    }
+    .file-item a:hover { text-decoration: underline; color: #16a085; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media screen and (max-width: 768px) {
+      main { flex-direction: column; }
+      .navigation, .activity, .side-panel { width: 100%; border: none; }
+      .resume-container { padding: 15px; }
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header>
     <div class="logo">
-      <i class="fas fa-globe"></i> Employee Recruitment
+      <i class="fas fa-globe"></i>
+      Employee Recruitment
     </div>
-    <div>Welcome, {{ session['username'] }}!</div>
-    <div class="profile-settings">
-      <button onclick="window.location.href='/user/profile'"><i class="fas fa-user"></i> Profile</button>
-      <button><i class="fas fa-cog"></i> Settings</button>
-      <a href="{{ url_for('auth.logout') }}"><button><i class="fas fa-sign-out-alt"></i> Logout</button></a>
-    </div>
-  </header>
-  
-  <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation">
-      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
-      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
-      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
-      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
-    </div>
-    
-    <!-- Main Content (Activity) -->
-    <div class="activity" data-aos="fade-up">
-      <h2>Upload Your Resume & Certifications</h2>
-      
+    <div>
+      Welcome, {{ session['username'] }}!
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="flash-message {{ category }} my-3">{{ message }}</div>
+            <div class="flash-message {{ category }}">{{ message }}</div>
           {% endfor %}
         {% endif %}
       {% endwith %}
-      
-      <!-- Drag-and-Drop Upload Zone -->
-      <div id="uploadZone" class="upload-zone mb-4" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-        <p>Drag and drop your resume here, or click to select a file.</p>
-        <input type="file" name="resume" id="resume" class="form-control hidden" onchange="updateFileName(this)">
-      </div>
-      <button type="button" class="btn" onclick="document.getElementById('resume').click()">Upload Resume</button>
-      
-      <!-- Uploaded Resumes Section -->
-      <div class="file-list my-4">
-        {% if resume_certifications %}
-          <h3 class="text-xl font-semibold text-gray-800">Uploaded Resumes:</h3>
-          <ul class="list-group">
-            {% for resume_cert in resume_certifications %}
-              <li class="file-item">
-                <strong>Resume:</strong>
-                <a href="{{ url_for('static', filename=resume_cert.resume_path.split('static/')[1]) }}" target="_blank">
-                  {{ resume_cert.resume_path.split('/')[-1] }}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="text-gray-600">No resumes uploaded yet.</p>
-        {% endif %}
-      </div>
-      
-      <!-- Certifications Section on Main Page -->
-      <div class="glass-card my-4">
-        <h2 class="section-title">Certifications</h2>
-        {% if certifications|length > 0 %}
-          {% for cert in certifications %}
-            <div class="certification-card">
-              <div>
-                <div class="font-bold">{{ cert.certification_name }}</div>
-                <div class="text-sm text-gray-500">{{ cert.issuing_organization or 'N/A' }}</div>
-              </div>
-              <div class="badge {{ 'verified' if cert.verification_status else 'not-verified' }}">
-                {{ 'Verified' if cert.verification_status else 'Not Verified' }}
-              </div>
+    </div>
+    <div class="profile-settings">
+      <button onclick="window.location.href='/user/profile'">
+        <i class="fas fa-user"></i> Profile
+      </button>
+      <button><i class="fas fa-cog"></i> Settings</button>
+      <a href="{{ url_for('auth.logout') }}">
+        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="navigation">
+      <a href="{{ url_for('user.user_dashboard') }}">
+        <button><i class="fas fa-bell"></i> Home</button>
+      </a>
+      <button onclick="window.location.href='/user/application_history'">
+        <i class="fas fa-history"></i> Application History
+      </button>
+      <a href="{{ url_for('user.notifications') }}">
+        <button><i class="fas fa-bell"></i> Notifications</button>
+      </a>
+      <a href="{{ url_for('user.resume_certifications') }}">
+        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
+      </a>
+    </div>
+
+    <div class="activity">
+      <div class="resume-container" data-aos="fade-up">
+        <h2 class="text-center text-2xl font-bold text-gray-800 mb-6">Upload Your Resume & Certifications</h2>
+        <!-- Upload Resume Form -->
+        <form action="{{ url_for('user.resume_certifications') }}" method="POST" enctype="multipart/form-data" class="my-4">
+          <div class="mb-4">
+            <label for="resume" class="text-gray-700 font-medium">Upload Resume:</label>
+            <input type="file" name="resume" id="resume" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Upload Resume</button>
+        </form>
+
+        <!-- Skills/Certifications Section -->
+        <h3 class="text-xl font-semibold text-gray-800 mt-5">Your Skills & Certifications</h3>
+        <button id="add-certification-btn" class="btn btn-secondary my-3">+ Add Certification</button>
+        <!-- Hidden Certification Form -->
+        <div id="certification-form-container" class="hidden">
+          <form action="{{ url_for('user.resume_certifications') }}" method="POST">
+            <div class="mb-4">
+              <label for="certification_name" class="text-gray-700 font-medium">Skill/Certification Name:</label>
+              <input type="text" name="certification_name" id="certification_name" class="form-control" placeholder="Enter Skill/Certification" required>
             </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-center text-gray-500">No certifications added yet.</p>
-        {% endif %}
-      </div>
-      
-      <!-- Add Certification Button -->
-      <div class="mt-6">
-        <button type="button" class="btn btn-primary" onclick="openCertificationModal()">
-          <i class="fas fa-plus"></i> Add Certification
-        </button>
+            <button type="submit" class="btn btn-primary">Save Certification</button>
+          </form>
+        </div>
+
+        <!-- Display Uploaded Resumes -->
+        <div class="file-list my-4">
+          {% if resume_certifications %}
+            <h3 class="text-xl font-semibold text-gray-800">Uploaded Resumes:</h3>
+            <ul>
+              {% for resume_cert in resume_certifications %}
+                <li class="file-item">
+                  <strong>Resume:</strong>
+                  <a href="{{ url_for('static', filename=resume_cert.resume_path.split('static/')[1]) }}" target="_blank">
+                    {{ resume_cert.resume_path.split('/')[-1] }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-600">No resumes uploaded yet.</p>
+          {% endif %}
+        </div>
+
+        <!-- Display Added Skills -->
+        <div class="file-list">
+          {% if certifications %}
+            <h3 class="text-xl font-semibold text-gray-800">Skills & Certifications:</h3>
+            <ul>
+              {% for cert in certifications %}
+                <li class="file-item">
+                  <strong>{{ cert.certification_name }}</strong>
+                  {% if cert.verification_status %}
+                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full ml-2">Verified</span>
+                  {% else %}
+                    <span class="bg-yellow-500 text-gray-800 text-xs px-2 py-1 rounded-full ml-2">Not Verified</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-600">No certifications added yet.</p>
+          {% endif %}
+        </div>
       </div>
     </div>
-    
-    <!-- Side Panel -->
+
+    <!-- Side Panel (same as user_dashboard) -->
     <div class="side-panel">
       <div class="graph-container">
-        <h3>Success Rate</h3>
+        <h3>Application Status</h3>
         <canvas id="successRateChart"></canvas>
       </div>
       <div class="graph-container">
@@ -464,8 +325,10 @@
       </div>
       <div class="live-feed">
         <h3>Live Feed</h3>
-        <p>New user signed up!</p>
-        <p>System maintenance scheduled at 5 PM.</p>
+        <div id="liveFeed">
+          <!-- Placeholder content -->
+          <p>Resume uploaded - Just now</p>
+        </div>
       </div>
       <div class="calendar">
         <h3>Upcoming Events</h3>
@@ -474,69 +337,69 @@
       </div>
     </div>
   </main>
-  
-  <!-- Certification Modal (Form Only) -->
-  <div id="certificationModal" class="modal-overlay">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeCertificationModal()">&times;</button>
-      <h3 class="mb-4">Add Certification</h3>
-      <form action="{{ url_for('user.resume_certifications') }}" method="POST">
-        <div class="mb-3">
-          <label class="form-label">Certification Name</label>
-          <input type="text" name="certification_name" class="form-control" required>
-        </div>
-        <!-- Note: Issuing Organization and Verification Status are managed by the college -->
-        <button type="submit" class="btn btn-primary">Add Certification</button>
-      </form>
-    </div>
-  </div>
-  
+
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script>
     AOS.init();
-    
-    // Drag and drop upload zone functions
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('resume');
-    
-    uploadZone.addEventListener('click', () => {
-      fileInput.click();
+
+    const addCertificationBtn = document.getElementById('add-certification-btn');
+    const certificationFormContainer = document.getElementById('certification-form-container');
+    addCertificationBtn.addEventListener('click', () => {
+      certificationFormContainer.classList.toggle('hidden');
     });
-    
-    function handleDragOver(e) {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    }
-    function handleDragLeave(e) {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-    }
-    function handleDrop(e) {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const files = e.dataTransfer.files;
-      if(files.length) {
-        fileInput.files = files;
-        // Optionally, display file name or preview here.
+
+    // Use dynamic data passed from Flask
+    const userSuccessRateData = {{ user_success_rate|tojson }};
+    const applicationsOverviewData = {{ applications_overview|tojson }};
+
+    // Application Status Pie Chart
+    const successCtx = document.getElementById('successRateChart').getContext('2d');
+    const successRateChart = new Chart(successCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Accepted', 'Rejected', 'Pending'],
+        datasets: [{
+          data: [
+            userSuccessRateData.hired,
+            userSuccessRateData.rejected,
+            userSuccessRateData.pending
+          ],
+          backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
       }
-    }
-    
-    function updateFileName(input) {
-      if(input.files.length) {
-        uploadZone.innerHTML = `<p>${input.files[0].name}</p>`;
+    });
+
+    // Applications Overview Bar Chart
+    const appCtx = document.getElementById('applicationsChart').getContext('2d');
+    const applicationsChart = new Chart(appCtx, {
+      type: 'bar',
+      data: {
+        labels: applicationsOverviewData.labels,
+        datasets: [{
+          label: 'Applications',
+          data: applicationsOverviewData.applications,
+          backgroundColor: '#264653',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: { beginAtZero: true },
+          y: { beginAtZero: true }
+        }
       }
-    }
-  
-    // Certification Modal Functions
-    function openCertificationModal() {
-      document.getElementById('certificationModal').style.display = 'flex';
-    }
-    function closeCertificationModal() {
-      document.getElementById('certificationModal').style.display = 'none';
-    }
+    });
   </script>
 </body>
 </html>
-s

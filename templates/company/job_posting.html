@@ -53,8 +53,13 @@
                         </div>
                         <p>{{ job.description }}</p>
                         <ul class="job-details">
-                            <li><i class="fas fa-tools" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Expected Skills: {{ job.skills }}</p></li>
-                            <li><i class="fas fa-certificate" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Required Certifications: {{ job.certifications }}</p></li>
+                            {% if job.skills %}
+                                <li><i class="fas fa-tools" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Expected Skills: {{ job.skills }}</p></li>
+                            {% endif %}
+                            <li><i class="fas fa-trophy" style="padding-left: 0.1%;"></i> <p style="padding-left: 0.2%;">Years of Experience: {{ job.years_of_exp }}</p></li>
+                            {% if job.certifications %}
+                                <li><i class="fas fa-certificate" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Required Certifications: {{ job.certifications }}</p></li>
+                            {% endif %}
                             <li><i class="fas fa-map-marker-alt" style="padding-left: 0.5%;"></i> <p style="padding-left: 0.6%;">Location: {{ job.location }}</p></li>
                             <li><i class="fas fa-dollar-sign" style="padding-left: 0.6%;"></i> <p style="padding-left: 0.7%;">Salary: ${{ job.salary }}</p></li>
                             <li><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <p style="padding-left: 0.3%;">Job Type: {{ job.job_type }}</p></li>

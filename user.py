@@ -121,36 +121,82 @@ def apply_for_job(job_id):
         job_id=job.job_id,
         status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
         resume_path=resume_certification.resume_path,
-      
+    )
+
+    message = f"{user.name} has applied for the job: {job.title}"
+    new_notification = Notification(
+        user_id=user.login_id,
+        company_id=job.created_by,
+        message=message,
     )
 
     # Add the application to the database
     db.session.add(new_application)
+    db.session.add(new_notification)
     db.session.commit()
 
     flash(f"Application for {job.title} submitted successfully!", 'success')
 
     # Redirect to the user dashboard
     return redirect(url_for('user.user_dashboard'))
+def get_chart_data_for_user(user_id):
+    """
+    Retrieves dynamic chart data from the JobApplication table for the given user.
+    Returns two dictionaries:
+      - user_success_rate: counts of applications by status (hired, rejected, pending)
+      - applications_overview: a breakdown of application counts by job title
+    """
+    # Calculate application status counts
+    hired = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
+    rejected = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
+    pending = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
+
+    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
+
+    # Prepare applications overview data grouped by job title
+    overview = db.session.query(
+        Job.title,
+        db.func.count(JobApplication.id).label('applications')
+    ).join(Job, Job.job_id == JobApplication.job_id)\
+     .filter(JobApplication.user_id == user_id)\
+     .group_by(Job.title).all()
+
+    labels = [row.title for row in overview]
+    applicationss = [row.applications for row in overview]
+    applications_overview = {"labels": labels, "applications": applicationss}
+
+    return user_success_rate, applications_overview
 
 
 from models import Communication
 
 from flask import session, render_template
 
-
 @user_blueprint.route('/notifications', methods=['GET'])
 def notifications():
     user_id = session.get('user_id')
-
     if not user_id:
         flash("Please log in to view notifications.", "danger")
         return redirect(url_for('auth.login'))
 
-    notifications = Communication.query.filter_by(user_id=user_id).order_by(Communication.timestamp.desc()).all()
+    notifications = Communication.query.filter_by(user_id=user_id)\
+        .order_by(Communication.timestamp.desc()).all()
     unread_count = Communication.query.filter_by(user_id=user_id, read_status=False).count()
 
-    return render_template('notification.html', notifications=notifications, unread_count=unread_count)
+    # Retrieve dynamic chart data
+    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
+
+    return render_template(
+        'notification.html',
+        notifications=notifications,
+        unread_count=unread_count,
+        user_success_rate=user_success_rate,
+        applications_overview=applications_overview
+    )
+
 from flask import session, render_template
 from models import Communication
 
@@ -169,9 +215,6 @@ def mark_all_read():
     return redirect(url_for('user.notifications'))
 
 # Helper function to check file type
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
-
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
 @login_required
 def resume_certifications():
@@ -183,7 +226,7 @@ def resume_certifications():
 
     # Fetch user data
     user = User.query.get(user_id)
-    print(user_id,user)
+    print(user_id, user)
     if not user:
         flash('User not found.', 'error')
         return redirect(url_for('login'))
@@ -224,6 +267,27 @@ def resume_certifications():
 
         return redirect(url_for('user.resume_certifications'))
 
+    # Compute dynamic data for charts (available for GET and POST)
+    hired = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
+    rejected = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
+    pending = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
+
+    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
+
+    overview = db.session.query(
+        Job.title,
+        db.func.count(JobApplication.id).label('applications')
+    ).join(Job, Job.job_id == JobApplication.job_id)\
+     .filter(JobApplication.user_id == user_id)\
+     .group_by(Job.title).all()
+
+    labels = [row.title for row in overview]
+    applications = [row.applications for row in overview]
+    applications_overview = {"labels": labels, "applications": applications}
+
     # Retrieve data for display
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
@@ -231,65 +295,88 @@ def resume_certifications():
     return render_template(
         'resume_certifications.html',
         resume_certifications=resumes,
-        certifications=certifications
+        certifications=certifications,
+        user_success_rate=user_success_rate,
+        applications_overview=applications_overview,
     )
+
 
 @user_blueprint.route('/application_history', methods=['GET'])
 @login_required
 def application_history():
     user_id = session.get('user_id')
     
-    # Ensure the user_id is in the session
     if not user_id:
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
 
     # Fetch all applications for the logged-in user
     applications = JobApplication.query.filter_by(user_id=user_id).all()
+    
+    # Retrieve chart data using the common helper function
+    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
 
-    # Render the template with the application data
-    return render_template('applicationhistory.html', applications=applications)
+    # Render the template with the application data and chart data
+    return render_template(
+        'applicationhistory.html',
+        applications=applications,
+        user_success_rate=user_success_rate,
+        applications_overview=applications_overview
+    )
 
-
-
-
-
-@user_blueprint.route('/jobsearch', methods=['GET', 'POST'])
+@user_blueprint.route('/job_search', methods=['GET', 'POST'])
 def job_search():
-    jobs = Job.query.filter(Job.status == 'open')  # Default: show all open jobs
-
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        location = request.form.get('location', '').strip()
-        job_type = request.form.get('job_type', '').strip()
-        skills = request.form.get('skills', '').strip()
-        certifications = request.form.get('certifications', '').strip()
-        salary = request.form.get('salary', '').strip()
-        deadline = request.form.get('deadline', '').strip()
-
-        # Apply filters only if values are provided
+        # Retrieve form data
+        title = request.form.get('title')
+        location = request.form.get('location')
+        job_type = request.form.get('job_type')
+        skills = request.form.get('skills')
+        certifications = request.form.get('certifications')
+        salary = request.form.get('salary')
+        deadline = request.form.get('deadline')
+        years_of_exp = request.form.get('years_of_exp')
+        description = request.form.get('description')
+        total_vacancy = request.form.get('total_vacancy')
+        filled_vacancy = request.form.get('filled_vacancy')
+        status = request.form.get('status')
+        
+        # Start building the query
+        query = Job.query
         if title:
-            jobs = jobs.filter(Job.title.ilike(f"%{title}%"))
+            query = query.filter(Job.title.ilike(f'%{title}%'))
         if location:
-            jobs = jobs.filter(Job.location.ilike(f"%{location}%"))
+            query = query.filter(Job.location.ilike(f'%{location}%'))
         if job_type:
-            jobs = jobs.filter(Job.job_type == job_type)
+            query = query.filter(Job.job_type == job_type)
         if skills:
-            jobs = jobs.filter(Job.skills.ilike(f"%{skills}%"))
+            query = query.filter(Job.skills.ilike(f'%{skills}%'))
         if certifications:
-            jobs = jobs.filter(Job.certifications.ilike(f"%{certifications}%"))
+            query = query.filter(Job.certifications.ilike(f'%{certifications}%'))
         if salary:
-            try:
-                jobs = jobs.filter(Job.salary <= salary)  # Ensure it's a valid number
-            except ValueError:
-                pass  # Ignore invalid salary input
+            # Convert salary string to a number if needed; here we assume it's a comparable value.
+            query = query.filter(Job.salary <= salary)
         if deadline:
-            jobs = jobs.filter(Job.deadline <= deadline)
-
-        jobs = jobs.all()  # Execute query
-
-    return render_template('jobsearch.html', jobs=jobs)
-
+            query = query.filter(Job.deadline <= deadline)
+        if years_of_exp:
+            query = query.filter(Job.years_of_exp == int(years_of_exp))
+        if description:
+            query = query.filter(Job.description.ilike(f'%{description}%'))
+        if total_vacancy:
+            query = query.filter(Job.total_vacancy == int(total_vacancy))
+        if filled_vacancy:
+            query = query.filter(Job.filled_vacancy == int(filled_vacancy))
+        if status:
+            query = query.filter(Job.status == status)
+        
+        # Order by most recent and get all matching jobs
+        jobs = query.order_by(Job.created_at.desc()).all()
+        
+        # Render a separate results page
+        return render_template('jobresults.html', jobs=jobs)
+    else:
+        # If GET, simply render the search form page
+        return render_template('jobsearch.html')
 
 @user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
 def mark_notification_read(notification_id):
@@ -338,11 +425,14 @@ def profile():
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
     
+    # Retrieve dynamic chart data using the common helper function
+    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
+    
     # Determine edit mode based on query parameter (?edit=true)
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
     if request.method == 'POST':
-        # Process the form submission from the edit form
+        # (Your existing POST processing code)
         user.phone = request.form.get('phone', user.phone)
         age_input = request.form.get('age', '')
         if age_input:
@@ -353,18 +443,15 @@ def profile():
                 return redirect(url_for('user.profile', edit='true'))
         user.about_me = request.form.get('about_me', user.about_me)
         
-        # Process coupon code and college name
         coupon_code = request.form.get('coupon_code', "").strip()
         manual_college = request.form.get('college_name', "").strip()
         if coupon_code:
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             if coupon:
-                # Create a mapping if one doesn't exist
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)
                     db.session.add(new_mapping)
-                # Update user's college_name based on the coupon's college if available
                 if coupon.college:
                     user.college_name = f"Connected to {coupon.college.college_name}"
                 else:
@@ -373,7 +460,6 @@ def profile():
                 flash("Invalid coupon code provided.", "error")
                 user.college_name = manual_college or user.college_name
         else:
-            # No coupon code provided: update college_name manually
             user.college_name = manual_college or user.college_name
 
         try:
@@ -385,4 +471,10 @@ def profile():
             flash(f"Error updating profile: {str(e)}", "error")
             return redirect(url_for('user.profile', edit='true'))
     
-    return render_template('profile.html', user=user, resumes=resumes, certifications=certifications, edit_mode=edit_mode)
+    return render_template('profile.html',
+                           user=user,
+                           resumes=resumes,
+                           certifications=certifications,
+                           edit_mode=edit_mode,
+                           user_success_rate=user_success_rate,
+                           applications_overview=applications_overview)

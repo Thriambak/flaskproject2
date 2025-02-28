@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Search Results</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Animate.css for smooth animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    /* Global Styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Roboto', sans-serif; background: #f1f3f6; color: #333; }
+    header, footer { background: #005f73; color: #fff; padding: 1rem 2rem; }
+    header .logo { font-size: 2rem; font-weight: bold; }
+    header nav ul { list-style: none; display: flex; gap: 1rem; }
+    header nav ul li a { color: #fff; text-decoration: none; font-weight: 500; }
+    
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 2rem;
+    }
+    .job-listings {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media(min-width: 768px) {
+      .job-listings { grid-template-columns: 1fr 1fr; }
+    }
+    
+    /* Job Card Styles */
+    .job-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .job-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    .job-card h3 {
+      color: #0a3d62;
+      margin-bottom: 0.5rem;
+    }
+    .job-card p {
+      margin-bottom: 0.4rem;
+    }
+    .apply-btn {
+      background: #005f73;
+      color: #fff;
+      border: none;
+      padding: 0.8rem 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .apply-btn:hover {
+      background: #0a9396;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      background: #1abc9c;
+      color: #fff;
+      padding: 0.8rem 1.2rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .back-btn:hover {
+      background: #16a085;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">CAREERS</div>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('user.user_dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('user.job_search') }}">Job Search</a></li>
+        <!-- Add other nav links as needed -->
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <a href="{{ url_for('user.job_search') }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Search</a>
+    <h2 class="text-2xl font-bold text-center text-[#005f73] mb-6">Job Search Results</h2>
+    <div class="job-listings">
+      {% if jobs %}
+        {% for job in jobs %}
+          <div class="job-card animate__animated animate__fadeInUp">
+            <h3>{{ job.title }}</h3>
+            <p><strong>Location:</strong> {{ job.location }}</p>
+            <p><strong>Salary:</strong> ₹{{ job.salary }}</p>
+            <p><strong>Job Type:</strong> {{ job.job_type }}</p>
+            <p><strong>Years of Experience:</strong> {{ job.years_of_exp }} years</p>
+            <p><strong>Skills Required:</strong> {{ job.skills }}</p>
+            <p><strong>Certifications:</strong> {{ job.certifications or 'None' }}</p>
+            <p><strong>Total Vacancies:</strong> {{ job.total_vacancy }}</p>
+            <p><strong>Filled Vacancies:</strong> {{ job.filled_vacancy }}</p>
+            <p><strong>Status:</strong> {{ job.status }}</p>
+            <p><strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+            {% if job.form_url %}
+              <p><strong>Application Form:</strong> 
+                <a href="{{ job.form_url }}" target="_blank">Open Form</a>
+              </p>
+            {% endif %}
+            <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
+              <button type="submit" class="apply-btn">Apply Now</button>
+            </form>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-center text-gray-600">No jobs found matching your criteria.</p>
+      {% endif %}
+    </div>
+  </main>
+
+  <footer>
+    <div>© 2024 CampusRecruit. All rights reserved.</div>
+    <nav>
+      <a href="#">FAQs</a>
+      <a href="#">Contact Support</a>
+      <a href="#">Privacy Policy</a>
+    </nav>
+  </footer>
+</body>
+</html>

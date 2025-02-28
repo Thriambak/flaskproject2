@@ -4,14 +4,14 @@ from functools import wraps
 import os
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
-#from models import Job, JobApplication, db,User,ResumeCertification, Notification
+# from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job, Company, Login, JobApplication, User, Communication, Notification, College
+from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -75,8 +75,8 @@ def company_dashboard():
     shortlisted_applications = []
 
     for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() # or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='Hired').scalar() # or 0
 
         total_applications.append(total_count)
         shortlisted_applications.append(shortlisted_count)
@@ -93,6 +93,7 @@ def company_dashboard():
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
     
@@ -148,6 +149,7 @@ def company_jobposting():
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
@@ -172,6 +174,7 @@ def company_post_new_job():
         title = request.form['job-title']
         description = request.form['description']
         skills = request.form['skill-sets']
+        exp = request.form['exp']
         certifications = request.form['certifications']
         job_type = request.form['job-type']
         locations = request.form['locations']
@@ -199,6 +202,7 @@ def company_post_new_job():
                 job.description = description
                 job.job_type = job_type
                 job.skills = skills
+                job.years_of_exp = exp
                 job.certifications = certifications
                 job.locations = locations
                 job.salary = salary
@@ -216,6 +220,7 @@ def company_post_new_job():
                 description=description,
                 job_type=job_type,
                 skills = skills,
+                years_of_exp = exp,
                 certifications = certifications,
                 location=locations,
                 salary=salary,
@@ -271,6 +276,7 @@ def company_post_new_job():
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
@@ -297,8 +303,6 @@ def company_application_review():
         application_id = request.form.get('application_id')
         new_status = request.form.get('status')
  
-        # print('\n',application_id,new_status,'\n')   # debug
-        # Update the application status in the database
         application = JobApplication.query.get(application_id)
         if application:
             application.status = new_status
@@ -314,7 +318,6 @@ def company_application_review():
                 if job.filled_vacancy == job.total_vacancy:
                     job.status = 'closed'
                     db.session.commit()
-
         else:
             flash('Application not found!', 'danger')
 
@@ -328,7 +331,7 @@ def company_application_review():
     # Query all job applications for the company's jobs
     query = JobApplication.query.join(Job).filter(Job.created_by == user_id)
 
-     # Apply search filters
+    # Apply search filters
     if search_name:
         query = query.join(User).filter(User.name.ilike(f'%{search_name}%'))
     if selected_status:
@@ -339,7 +342,7 @@ def company_application_review():
     # Get all job applications for the jobs created by the company
     job_applications = query.all()
     
-    # Create a list of applications with details for rendering
+    # Create a list of applications with details for rendering (including user_id)
     applications_data = []
     for application in job_applications:
         applications_data.append({
@@ -348,28 +351,20 @@ def company_application_review():
             'status': application.status,
             'application_id': application.id,  # Include application ID
             'resume_path': application.resume_path,
-            
+            'user_id': application.user_id     # Include user_id for certifications lookup
         })
     
     applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+        Job.title,
+        db.func.count(JobApplication.id).label('total_applications'),
+        db.func.sum(db.case(
+                    [(JobApplication.status == 'Hired', 1)],
+                    else_=0
+                )).label('shortlisted_applications')
+    ).join(JobApplication, Job.job_id == JobApplication.job_id)\
+     .filter(Job.created_by == user_id)\
+     .group_by(Job.title).all()
 
-    total_applications = []
-    shortlisted_applications = []
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
-
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
-    
-    # Process data for the pie chart
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
@@ -383,40 +378,46 @@ def company_application_review():
         .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
         .scalar()
     
+    # Fetch certifications for each candidate application
+    user_certifications = {}
+    for application in job_applications:
+        if application.user_id not in user_certifications:
+            certifications = Certification.query.filter_by(user_id=application.user_id).all()
+            cert_data = []
+            for cert in certifications:
+                cert_data.append({
+                    'certification_name': cert.certification_name,
+                    'verified': cert.verification_status
+                })
+            user_certifications[application.user_id] = cert_data
+
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('/company/application_review.html', applications=applications_data, 
-    profile=profile, search_name=search_name, selected_status=selected_status, jobs=jobs,
-    selected_jobs=selected_jobs, total_successful=total_successful, total_unsuccessful=total_unsuccessful,
-    pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
-    interviewed_applications_count=interviewed_applications_count)
+    return render_template('/company/application_review.html', 
+                           applications=applications_data, 
+                           profile=profile, 
+                           search_name=search_name, 
+                           selected_status=selected_status, 
+                           jobs=jobs,
+                           selected_jobs=selected_jobs, 
+                           total_successful=total_successful, 
+                           total_unsuccessful=total_unsuccessful,
+                           pending_applications_count=pending_applications_count, 
+                           live_feed_notifications=live_feed_notifications,
+                           interviewed_applications_count=interviewed_applications_count,
+                           user_certifications=user_certifications)
+
 
 # Hiring Communication
-'''@company_blueprint.route('/company_hiring_communication')
-@login_required
-def company_hiring_communication():
-    user_id = session.get('login_id')
-    
-    if 'login_id' not in session or session.get('role') != 'company':
-        return redirect(url_for('auth.login'))  # Ensure only company can access
-    
-    if request.method == 'POST':
-        application_id = request.form.get('application_id')
-
-        msg = Notification.query.filter_by(user_id=application_id).all()
-        
-    return render_template('company_hiring_message.html')'''
-
-
 from flask_mail import Message
 from flask import current_app
-# Hiring Communication
 @company_blueprint.route('/company_hiring_communication', methods=['GET', 'POST'])
 @login_required
 def company_hiring_communication():
@@ -554,6 +555,7 @@ def company_hiring_communication():
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
@@ -577,7 +579,7 @@ def company_notification():
         action = request.form.get('action')
 
         if notification_id and action:
-            notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
+            notification = Notification.query.filter_by(id=notification_id, company_id=user_id).first()
             if notification:
                 if action == 'mark_read':
                     notification.read_status = True
@@ -590,7 +592,7 @@ def company_notification():
 
 
     # Fetch notifications for the company
-    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).all()
+    notifications = Notification.query.filter_by(company_id=user_id,hidden=False).order_by(Notification.timestamp.desc()).all()
     
     pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
         .join(Job, JobApplication.job_id == Job.job_id)\
@@ -633,7 +635,8 @@ def company_notification():
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
-        Notification.user_id == user_id,
+        Notification.company_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
@@ -717,6 +720,7 @@ def company_profile():
     one_day_ago = datetime.utcnow() - timedelta(days=1)
     live_feed_notifications = Notification.query.filter(
         Notification.user_id == user_id,
+        Notification.hidden == False,
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
@@ -725,208 +729,3 @@ def company_profile():
         total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
         live_feed_notifications=live_feed_notifications)
 
-
-
-
-
-
-'''
-# Handle job application
-@company_blueprint.route('/apply_for_job/<int:job_id>', methods=['POST'])
-@login_required
-def apply_for_job(job_id):
-    user_id = session.get('user_id')
-    user = User.query.get(user_id)  # Fetch the user details from the database
-    
-    if not user:
-        flash("User not found.", 'error')
-        return redirect(url_for('user.user_dashboard'))
-
-    # Fetch the job that the user is applying for
-    job = Job.query.get(job_id)
-    if not job:
-        flash("Job not found.", 'error')
-        return redirect(url_for('user.user_dashboard'))
-    
-    # Fetch the user's resume from the ResumeCertification table
-    resume_certification = ResumeCertification.query.filter_by(user_id=user.id).first()
-    if resume_certification:
-        print("Debugging: resume_certification.resume_path:", resume_certification.resume_path)
-        flash("Application Successfull")
-    if not resume_certification or not resume_certification.resume_path:
-        flash("You must upload a resume to apply for a job.", 'error')
-        return redirect(url_for('user.resume_certifications'))
-
-    # Prepare the application
-    new_application = JobApplication(
-        user_id=user.id,
-        job_id=job.id,
-        status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
-        resume_path=resume_certification.resume_path  # Store the resume path
-    )
-
-    # Add the application to the database
-    db.session.add(new_application)
-    db.session.commit()
-
-    flash(f"Application for {job.title} submitted successfully!", 'success')
-
-    # Redirect to the user dashboard
-    return redirect(url_for('user.user_dashboard'))
-
-@user_blueprint.route('/notifications')
-@login_required
-def notifications():
-    from models import Notification  # Import the Notification model
-
-    # Fetch notifications for the logged-in user
-    user_id = session.get('user_id')
-    if not user_id:
-        flash("You need to log in to view your notifications.", "error")
-        return redirect(url_for('auth.login'))
-
-    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.timestamp.desc()).all()
-    return render_template('notification.html', notifications=notifications)
-
-# Helper function to check file type
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx'}
-
-@user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
-def resume_certifications():
-    # Ensure the user is logged in
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('You need to log in to access this page.', 'error')
-        return redirect(url_for('login'))  # Adjust as needed
-
-    # Fetch user data
-    user = User.query.get(user_id)
-    if not user:
-        flash('User not found.', 'error')
-        return redirect(url_for('login'))  # Adjust as needed
-
-    if request.method == 'POST':
-        # Ensure the upload folder exists
-        upload_folder = os.path.join('static', 'uploads')
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
-        # Get files from the form
-        resume = request.files.get('resume')
-        certification = request.files.get('certification')
-
-        # Initialize paths
-        resume_path = None
-        certification_path = None
-
-        # Handle Resume Upload
-        if resume and allowed_file(resume.filename):
-            resume_filename = secure_filename(resume.filename)
-            resume_path = os.path.join(upload_folder, f"resume_{user.username}_{resume_filename}")
-            resume.save(resume_path)
-            resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
-
-        # Handle Certification Upload
-        if certification and allowed_file(certification.filename):
-            cert_filename = secure_filename(certification.filename)
-            certification_path = os.path.join(upload_folder, f"certification_{user.username}_{cert_filename}")
-            certification.save(certification_path)
-            certification_path = certification_path.replace('\\', '/')  # Normalize path for web use
-
-        # Save to Database
-        resume_certification = ResumeCertification(
-            user_id=user.id,
-            resume_path=resume_path,
-            certification_path=certification_path
-        )
-        db.session.add(resume_certification)
-        db.session.commit()
-
-        flash('Files uploaded successfully!', 'success')
-        return redirect(url_for('user.resume_certifications'))
-
-    # Retrieve all resume/certifications for the user
-    resume_certifications = ResumeCertification.query.filter_by(user_id=user_id).all()
-
-    return render_template(
-        'resume_certifications.html',
-        resume_certifications=resume_certifications
-    )
-
-@user_blueprint.route('/profile')
-@login_required
-def profile():
-    from app import db
-    from models import User
-
-    # Get the current user's ID from the session
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('You need to log in to access your profile.', 'error')
-        return redirect(url_for('auth.login'))
-
-    # Query the database for the user's information
-    user = User.query.filter_by(id=user_id, role='user').first()
-
-    if user:
-        return render_template(
-            'profile.html',
-            user={
-                'name': user.name,
-                'role': user.role,
-                'email': user.email,
-                
-            }
-        )
-    else:
-        flash('User not found.', 'error')
-        return redirect(url_for('user.user_dashboard'))
-
-
-@user_blueprint.route('/load_application_history')
-@login_required
-def load_application_history():
-    return render_template('applicationhistory.html')
-
-@user_blueprint.route('/jobsearch')
-@login_required
-def jobsearch():
-    # Render the job search page
-    return render_template('jobsearch.html')
-
-@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
-@login_required
-def mark_notification_read(notification_id):
-    from models import Notification
-
-    # Fetch the notification
-    notification = Notification.query.get(notification_id)
-    user_id = session.get('user_id')
-
-    if notification and notification.user_id == user_id:
-        notification.read = True
-        db.session.commit()
-        flash("Notification marked as read.", "success")
-    else:
-        flash("Notification not found or unauthorized.", "error")
-    return redirect(url_for('user.notifications'))
-
-
-@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
-@login_required
-def delete_notification(notification_id):
-    from models import Notification
-
-    # Fetch the notification
-    notification = Notification.query.get(notification_id)
-    user_id = session.get('user_id')
-
-    if notification and notification.user_id == user_id:
-        db.session.delete(notification)
-        db.session.commit()
-        flash("Notification deleted successfully.", "success")
-    else:
-        flash("Notification not found or unauthorized.", "error")
-    return redirect(url_for('user.notifications'))
-'''

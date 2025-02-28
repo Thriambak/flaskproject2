@@ -11,8 +11,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'your_secret_key'  # For session management and CSRF protection
     
-    # Connection string for MySQL
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:thriambak@localhost:3306/new_database2'
+    # Connection string for PostgreSQL
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:root123*@localhost/new_database'
+    # MySql URI --> 'mysql+pymysql://username:password@localhost:3306/db_name'
 
     @staticmethod
     def allowed_file(filename):
