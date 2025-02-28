@@ -119,7 +119,7 @@ def apply_for_job(job_id):
     new_application = JobApplication(
         user_id=user.id,
         job_id=job.job_id,
-        status='pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
+        status='Pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
         resume_path=resume_certification.resume_path,
     )
 

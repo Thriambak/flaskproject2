@@ -96,6 +96,9 @@
                 <div id="selected-candidate">
                     <p style="font-family: monospace;font-size: 14.5px;">Select a candidate to view their details.</p>
                 </div>
+                <div id="error-message" style="color: red; font-family: monospace; font-size: 14px; display: none; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                    Please select a candidate before updating the status.
+                </div>
                 <form id="update-status-form" action="/company/company_application_review" method="POST">
                     <h4>Update Application Status</h4>
                     <br>
@@ -171,7 +174,7 @@
             if (userCertifications[userId] && userCertifications[userId].length > 0) {
                 certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Certifications:</strong></p><ul>";
                 userCertifications[userId].forEach(function(cert) {
-                    certHtml += "<li style='font-family: monospace;font-size: 14.5px;'>" + cert.certification_name;
+                    certHtml += "<li style='font-family: monospace;font-size: 14.5px;margin-left: 20px;'>" + cert.certification_name;
                     if (cert.verified) {
                         certHtml += " <i class='fas fa-check' style='color: green;'></i>";
                     }
@@ -182,11 +185,16 @@
                 certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No certifications available.</p>";
             }
 
+            // Construct the resume URL by extracting the part after 'static/'
+            const resumeFileName = resumePath.split('static/')[1];
+            const resumeUrl = `/static/${resumeFileName}`;
+
+            // Build candidate details with a working resume link
             const candidateDetails = `
                 <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
                 <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong>${jobPost}</p>
                 <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Status: </strong>${status}</p>
-                <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumePath}" target="_blank">View Resume</a></p>
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumeUrl}" target="_blank">View Resume</a></p>
                 ${certHtml}
             `;
             document.getElementById('selected-candidate').innerHTML = candidateDetails;
@@ -194,6 +202,18 @@
             document.getElementById('status-update').value = status;
         }
 
+        document.getElementById('update-status-form').addEventListener('submit', function(event) {
+            // Check if a candidate has been selected
+            var applicationId = document.getElementById('application-id').value;
+            
+            // If no candidate is selected, show error message and prevent form submission
+            if (!applicationId) {
+                event.preventDefault();  // Prevent the form from submitting
+                var errorMessage = document.getElementById('error-message');
+                errorMessage.style.display = 'block';  // Show the error message
+            }
+        });
+        
         const ctx = document.getElementById('chart').getContext('2d');
         new Chart(ctx, {
             type: 'pie',

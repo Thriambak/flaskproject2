@@ -8,7 +8,7 @@ body {
     font-family: 'Arial', sans-serif;
     display: flex;
     flex-direction: column;
-    height: 100vh; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
+    height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
     color: #333;
     background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
 }
