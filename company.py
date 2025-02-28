@@ -11,7 +11,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification
+from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification, ResumeCertification
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -290,6 +290,7 @@ def company_post_new_job():
         interviewed_applications_count=interviewed_applications_count)
 
 # Application Review
+# Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
 @login_required
 def company_application_review():
@@ -350,12 +351,16 @@ def company_application_review():
     # Create a list of applications with details for rendering (including user_id)
     applications_data = []
     for application in job_applications:
+        # Fetch the latest resume for this user from ResumeCertification
+        resume = ResumeCertification.query.filter_by(user_id=application.user_id).order_by(ResumeCertification.id.desc()).first()
+        resume_path = resume.resume_path if resume else None
+        
         applications_data.append({
             'candidate_name': application.user.name,
             'job_post': application.job.title,
             'status': application.status,
             'application_id': application.id,  # Include application ID
-            'resume_path': application.resume_path,
+            'resume_path': resume_path,        # Use resume_path from ResumeCertification
             'user_id': application.user_id     # Include user_id for certifications lookup
         })
     
