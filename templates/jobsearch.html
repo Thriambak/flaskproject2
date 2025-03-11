@@ -1,256 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Job Search</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Animate.css for smooth animations -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-  <!-- Font Awesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-  
-  <style>
-    /* Global and Reset */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Roboto', sans-serif; background: #f1f3f6; color: #333; }
-    
-    header, footer {
-      background: #005f73;
-      color: #fff;
-      padding: 1rem 2rem;
-    }
-    header .logo { font-size: 2rem; font-weight: bold; }
-    header nav ul { list-style: none; display: flex; gap: 1rem; }
-    header nav ul li a { color: #fff; text-decoration: none; font-weight: 500; }
-    
-    /* Main Layout */
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      padding: 2rem;
-    }
-    .form-section, .results-section {
-      background: #fff;
-      border-radius: 8px;
-      padding: 2rem;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    @media(min-width: 768px) {
-      .form-section { flex: 1 1 30%; }
-      .results-section { flex: 1 1 65%; }
-    }
-    
-    /* Form Section */
-    .form-section h1 {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      color: #005f73;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #005f73;
-      font-weight: 600;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    .submit-btn {
-      width: 100%;
-      background: linear-gradient(90deg, #1abc9c, #16a085);
-      color: #fff;
-      border: none;
-      padding: 0.8rem;
-      font-size: 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-    .submit-btn:hover { transform: scale(1.02); }
-    
-    /* Results Section */
-    .results-section h2 {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      color: #005f73;
-    }
-    .job-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    .job-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    }
-    .job-card h3 { color: #0a3d62; margin-bottom: 0.5rem; }
-    .job-card p { margin-bottom: 0.5rem; }
-    .job-card .apply-btn {
-      background: #005f73;
-      color: #fff;
-      border: none;
-      padding: 0.7rem 1.2rem;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .job-card .apply-btn:hover { background: #0a9396; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Job Search - CAREERS</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #141414;
+        }
+        .navbar-brand {
+            color: #00d1ff !important;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+        .form-section {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 10px;
+            transition: box-shadow 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .btn-custom {
+            background-color: #00d1ff;
+            border: none;
+            color: #141414;
+            transition: background 0.3s ease;
+        }
+        .btn-custom:hover {
+            background-color: #00b0e8;
+        }
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #00d1ff;
+            box-shadow: none;
+        }
+        .advanced-toggle {
+            color: #00d1ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .advanced-toggle:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-
-  <header>
-    <div class="logo">CAREERS</div>
-    <nav>
-      <ul>
-        <li><a href="#">Dashboard</a></li>
-        <li><a href="#">Discover</a></li>
-        <li><a href="#">Post a Job</a></li>
-        <li><a href="#">Find a Job</a></li>
-      </ul>
+    <nav class="navbar navbar-expand-lg navbar-dark shadow">
+        <div class="container">
+            <a class="navbar-brand" href="#">CAREERS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Discover</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Post a Job</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Find a Job</a></li>
+              </ul>
+            </div>
+        </div>
     </nav>
-  </header>
-
-  <main class="container">
-    <!-- Job Search Form Section -->
-    <section class="form-section animate__animated animate__fadeInLeft">
-      <h1>Find Your Dream Job</h1>
-      <form id="job-search-form" action="{{ url_for('user.job_search') }}" method="POST">
-        <!-- Title -->
-        <div class="form-group">
-          <label for="title"><i class="fas fa-briefcase"></i> Job Title</label>
-          <input type="text" id="title" name="title" placeholder="e.g., Software Engineer">
+    
+    <div class="container form-section">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="card-body">
+                        <h2 class="card-title mb-4">Find Your Dream Job</h2>
+                        <form id="job-search-form" action="{{ url_for('user.job_search') }}" method="POST">
+                            <div class="mb-3">
+                                <label for="keyword" class="form-label"><i class="fas fa-search"></i> Keyword</label>
+                                <input type="text" class="form-control" id="keyword" name="keyword" placeholder="e.g., Software Engineer, Python">
+                            </div>
+                            <div class="mb-3">
+                                <label for="location" class="form-label"><i class="fas fa-map-marker-alt"></i> Location</label>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="e.g., Bangalore">
+                            </div>
+                            <div class="mb-3">
+                                <label for="job_type" class="form-label"><i class="fas fa-briefcase"></i> Job Type</label>
+                                <select class="form-select" id="job_type" name="job_type">
+                                    <option value="">Any</option>
+                                    <option value="full-time">Full-time</option>
+                                    <option value="part-time">Part-time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="internship">Internship</option>
+                                </select>
+                            </div>
+                            <a class="advanced-toggle" data-bs-toggle="collapse" href="#advancedFilters" role="button" aria-expanded="false" aria-controls="advancedFilters">
+                                Advanced Filters <i class="fas fa-chevron-down"></i>
+                            </a>
+                            <div class="collapse mt-3" id="advancedFilters">
+                                <div class="mb-3">
+                                    <label for="years_of_exp" class="form-label"><i class="fas fa-briefcase"></i> Years of Experience</label>
+                                    <input type="number" class="form-control" id="years_of_exp" name="years_of_exp" placeholder="e.g., 3">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="salary" class="form-label"><i class="fas fa-wallet"></i> Max Salary (₹)</label>
+                                    <input type="text" class="form-control" id="salary" name="salary" placeholder="e.g., 1000000">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="deadline" class="form-label"><i class="fas fa-calendar-alt"></i> Deadline</label>
+                                    <input type="date" class="form-control" id="deadline" name="deadline">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                                <button type="submit" class="btn btn-custom">Search Jobs</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <!-- Location -->
-        <div class="form-group">
-          <label for="location"><i class="fas fa-map-marker-alt"></i> Location</label>
-          <input type="text" id="location" name="location" placeholder="e.g., Bangalore">
-        </div>
-        <!-- Job Type -->
-        <div class="form-group">
-          <label for="job_type"><i class="fas fa-user-tag"></i> Job Type</label>
-          <select id="job_type" name="job_type">
-            <option value="">Select Job Type</option>
-            <option value="full-time">Full-time</option>
-            <option value="part-time">Part-time</option>
-            <option value="contract">Contract</option>
-            <option value="internship">Internship</option>
-          </select>
-        </div>
-        <!-- Skills -->
-        <div class="form-group">
-          <label for="skills"><i class="fas fa-cogs"></i> Skills Required</label>
-          <input type="text" id="skills" name="skills" placeholder="e.g., Python, Machine Learning">
-        </div>
-        <!-- Certifications -->
-        <div class="form-group">
-          <label for="certifications"><i class="fas fa-certificate"></i> Certifications</label>
-          <input type="text" id="certifications" name="certifications" placeholder="e.g., AWS, Google Cloud">
-        </div>
-        <!-- Salary -->
-        <div class="form-group">
-          <label for="salary"><i class="fas fa-wallet"></i> Salary (Max)</label>
-          <input type="text" id="salary" name="salary" placeholder="e.g., ₹10,00,000">
-        </div>
-        <!-- Deadline -->
-        <div class="form-group">
-          <label for="deadline"><i class="fas fa-calendar-alt"></i> Application Deadline</label>
-          <input type="date" id="deadline" name="deadline">
-        </div>
-        <!-- Years of Experience -->
-        <div class="form-group">
-          <label for="years_of_exp"><i class="fas fa-briefcase"></i> Years of Experience</label>
-          <input type="number" id="years_of_exp" name="years_of_exp" placeholder="e.g., 3" required>
-        </div>
-        <!-- Description (Optional) -->
-        <div class="form-group">
-          <label for="description"><i class="fas fa-align-left"></i> Job Description Keywords</label>
-          <textarea id="description" name="description" rows="3" placeholder="Enter keywords related to job description"></textarea>
-        </div>
-        <!-- Total Vacancies (Optional) -->
-        <div class="form-group">
-          <label for="total_vacancy"><i class="fas fa-users"></i> Total Vacancies</label>
-          <input type="number" id="total_vacancy" name="total_vacancy" placeholder="e.g., 5">
-        </div>
-        <!-- Filled Vacancies (Optional) -->
-        <div class="form-group">
-          <label for="filled_vacancy"><i class="fas fa-user-check"></i> Filled Vacancies</label>
-          <input type="number" id="filled_vacancy" name="filled_vacancy" placeholder="e.g., 2">
-        </div>
-        <!-- Status (Optional) -->
-        <div class="form-group">
-          <label for="status"><i class="fas fa-info-circle"></i> Job Status</label>
-          <select id="status" name="status">
-            <option value="">Select Status</option>
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
-          </select>
-        </div>
-        <!-- Created By (Optional hidden field if needed) -->
-        <!-- You can include additional hidden fields as necessary -->
-        <button type="submit" class="submit-btn">Search Jobs</button>
-      </form>
-    </section>
-
-    <!-- Job Listings Section -->
-    <section class="job-listings animate__animated animate__fadeInRight">
-      <h2>Job Listings</h2>
-      {% if jobs %}
-        {% for job in jobs %}
-          <div class="job-card animate__animated animate__fadeInUp">
-            <h3>{{ job.title }}</h3>
-            <p><strong>Location:</strong> {{ job.location }}</p>
-            <p><strong>Salary:</strong> ₹{{ job.salary }}</p>
-            <p><strong>Job Type:</strong> {{ job.job_type }}</p>
-            <p><strong>Years of Experience:</strong> {{ job.years_of_exp }} years</p>
-            <p><strong>Skills Required:</strong> {{ job.skills }}</p>
-            <p><strong>Certifications:</strong> {{ job.certifications or 'None' }}</p>
-            <p><strong>Total Vacancies:</strong> {{ job.total_vacancy }}</p>
-            <p><strong>Filled Vacancies:</strong> {{ job.filled_vacancy }}</p>
-            <p><strong>Status:</strong> {{ job.status }}</p>
-            <p><strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
-            {% if job.form_url %}
-              <p><strong>Application Form:</strong> 
-                <a href="{{ job.form_url }}" target="_blank">Open Form</a>
-              </p>
-            {% endif %}
-            <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
-              <button type="submit" class="btn apply-btn">Apply Now</button>
-            </form>
-          </div>
-        {% endfor %}
-      {% else %}
-        <p>No job listings available based on your search criteria.</p>
-      {% endif %}
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div>© 2024 CampusRecruit. All rights reserved.</div>
-    <nav>
-      <a href="#">FAQs</a>
-      <a href="#">Contact Support</a>
-      <a href="#">Privacy Policy</a>
-    </nav>
-  </footer>
-
-  <!-- Custom JavaScript for Job Search (if needed) -->
-  <script src="{{ url_for('static', filename='js/jobsearch.js') }}"></script>
+    </div>
+    
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

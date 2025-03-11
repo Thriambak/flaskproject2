@@ -13,7 +13,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
   # Assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-
+from datetime import datetime
 
 user_blueprint = Blueprint('user', __name__)
 from flask import render_template, session, redirect, url_for, flash
@@ -29,25 +29,35 @@ def login_required(f):
 @user_blueprint.route('/user_dashboard')
 @login_required
 def user_dashboard():
-    user_id = session.get('user_id')
-    if not user_id:
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
         flash("User not logged in", "error")
         return redirect(url_for('auth.login'))
     
-    # Ensure that only regular users access this page.
+    # Ensure that only regular users access this page
     if session.get('role') != 'user':
         return redirect(url_for('admin.admin_dashboard'))
     
-    # Fetch jobs for display (all jobs ordered by creation date).
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
+    user_id = user.id  # This is the User table's id, used for job application queries
+    
+    db.session.commit()
+    db.session.expire_all()  # Forces fresh query results
+
+    # Fetch jobs for display (all jobs ordered by creation date)
     jobs = Job.query.order_by(Job.created_at.desc()).all()
 
-    # Calculate application status counts for this user.
+    # Calculate application status counts for this user using users.id
     hired = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
     rejected = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
     pending = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
 
     user_success_rate = {
         "hired": hired,
@@ -55,7 +65,7 @@ def user_dashboard():
         "pending": pending
     }
 
-    # Prepare applications overview: group the number of applications by job title.
+    # Prepare applications overview: group the number of applications by job title
     overview = db.session.query(
         Job.title,
         db.func.count(JobApplication.id).label('applications')
@@ -63,23 +73,25 @@ def user_dashboard():
      .filter(JobApplication.user_id == user_id)\
      .group_by(Job.title).all()
 
+    current_date = datetime.utcnow()
+    upcoming_events = db.session.query(Job.title, Job.deadline)\
+        .join(JobApplication, Job.job_id == JobApplication.job_id)\
+        .filter(JobApplication.user_id == user_id, Job.deadline > current_date)\
+        .order_by(Job.deadline.asc()).all()
+    recent_notifications = Notification.query.filter_by(user_id=user_id, hidden=False)\
+    .order_by(Notification.timestamp.desc()).limit(5).all()
     labels = [row.title for row in overview]
     applications = [row.applications for row in overview]
     applications_overview = {"labels": labels, "applications": applications}
-
+    print("Hired:", hired)
+    print("Rejected:", rejected)
+    print("Pending:", pending)
     return render_template('user_dashboard.html',
                            jobs=jobs,
                            user_success_rate=user_success_rate,
-                           applications_overview=applications_overview)
-
-
-
-
-
-
-# Display the user dashboard
-
-
+                           applications_overview=applications_overview,
+                           recent_notifications=recent_notifications,
+                           upcoming_events=upcoming_events)
 
 # Handle job application
 @user_blueprint.route('/apply_for_job/<int:job_id>', methods=['POST'])
@@ -139,41 +151,60 @@ def apply_for_job(job_id):
 
     # Redirect to the user dashboard
     return redirect(url_for('user.user_dashboard'))
+
+from models import Communication
+
+from flask import session, render_template
 def get_chart_data_for_user(user_id):
     """
-    Retrieves dynamic chart data from the JobApplication table for the given user.
-    Returns two dictionaries:
+    Retrieves dynamic chart data, recent activities, and live feed for the given user.
+    Returns four items:
       - user_success_rate: counts of applications by status (hired, rejected, pending)
       - applications_overview: a breakdown of application counts by job title
+      - recent_activities: list of user's recent job applications
+      - live_feed: list of recent job postings
     """
-    # Calculate application status counts
+    # Chart data: User success rate
     hired = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
     rejected = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
     pending = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
-
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
     user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
 
-    # Prepare applications overview data grouped by job title
+    # Chart data: Applications overview
     overview = db.session.query(
         Job.title,
         db.func.count(JobApplication.id).label('applications')
     ).join(Job, Job.job_id == JobApplication.job_id)\
      .filter(JobApplication.user_id == user_id)\
      .group_by(Job.title).all()
-
     labels = [row.title for row in overview]
     applicationss = [row.applications for row in overview]
     applications_overview = {"labels": labels, "applications": applicationss}
 
-    return user_success_rate, applications_overview
+    # Recent activities: Last 5 job applications by the user
+    recent_activities = db.session.query(JobApplication, Job.title)\
+        .join(Job, Job.job_id == JobApplication.job_id)\
+        .filter(JobApplication.user_id == user_id)\
+        .order_by(JobApplication.id.desc())\
+        .limit(5).all()
+    recent_activities_list = [
+        {'job_title': job_title, 'status': app.status}
+        for app, job_title in recent_activities
+    ]
 
+    # Live feed: Last 5 job postings
+    live_feed = db.session.query(Job)\
+        .order_by(Job.created_at.desc())\
+        .limit(5).all()
+    live_feed_list = [
+        {'job_title': job.title, 'posted_at': job.created_at}
+        for job in live_feed
+    ]
 
-from models import Communication
-
-from flask import session, render_template
+    return user_success_rate, applications_overview, recent_activities_list, live_feed_list
 
 @user_blueprint.route('/notifications', methods=['GET'])
 def notifications():
@@ -186,17 +217,18 @@ def notifications():
         .order_by(Communication.timestamp.desc()).all()
     unread_count = Communication.query.filter_by(user_id=user_id, read_status=False).count()
 
-    # Retrieve dynamic chart data
-    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
+    # Retrieve dynamic chart data, recent activities, and live feed
+    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
 
     return render_template(
         'notification.html',
         notifications=notifications,
         unread_count=unread_count,
         user_success_rate=user_success_rate,
-        applications_overview=applications_overview
+        applications_overview=applications_overview,
+        recent_activities=recent_activities,
+        live_feed=live_feed
     )
-
 from flask import session, render_template
 from models import Communication
 
@@ -214,7 +246,6 @@ def mark_all_read():
     flash("All notifications marked as read.", "success")
     return redirect(url_for('user.notifications'))
 
-# Helper function to check file type
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
 @login_required
 def resume_certifications():
@@ -267,26 +298,8 @@ def resume_certifications():
 
         return redirect(url_for('user.resume_certifications'))
 
-    # Compute dynamic data for charts (available for GET and POST)
-    hired = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'hired').scalar() or 0
-    rejected = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'rejected').scalar() or 0
-    pending = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'pending').scalar() or 0
-
-    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
-
-    overview = db.session.query(
-        Job.title,
-        db.func.count(JobApplication.id).label('applications')
-    ).join(Job, Job.job_id == JobApplication.job_id)\
-     .filter(JobApplication.user_id == user_id)\
-     .group_by(Job.title).all()
-
-    labels = [row.title for row in overview]
-    applications = [row.applications for row in overview]
-    applications_overview = {"labels": labels, "applications": applications}
+    # Retrieve dynamic chart data, recent activities, and live feed using the helper function
+    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
 
     # Retrieve data for display
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
@@ -298,9 +311,9 @@ def resume_certifications():
         certifications=certifications,
         user_success_rate=user_success_rate,
         applications_overview=applications_overview,
+        recent_activities=recent_activities,
+        live_feed=live_feed
     )
-
-
 @user_blueprint.route('/application_history', methods=['GET'])
 @login_required
 def application_history():
@@ -313,69 +326,63 @@ def application_history():
     # Fetch all applications for the logged-in user
     applications = JobApplication.query.filter_by(user_id=user_id).all()
     
-    # Retrieve chart data using the common helper function
-    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
+    # Retrieve chart data, recent activities, and live feed using the common helper function
+    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
 
-    # Render the template with the application data and chart data
+    # Render the template with the application data, chart data, recent activities, and live feed
     return render_template(
         'applicationhistory.html',
         applications=applications,
         user_success_rate=user_success_rate,
-        applications_overview=applications_overview
+        applications_overview=applications_overview,
+        recent_activities=recent_activities,
+        live_feed=live_feed
     )
+
+from sqlalchemy import or_
+
+from sqlalchemy import or_
+
+from sqlalchemy import or_
+
+from sqlalchemy import or_
 
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
 def job_search():
     if request.method == 'POST':
-        # Retrieve form data
-        title = request.form.get('title')
+        keyword = request.form.get('keyword')
         location = request.form.get('location')
         job_type = request.form.get('job_type')
-        skills = request.form.get('skills')
-        certifications = request.form.get('certifications')
+        years_of_exp = request.form.get('years_of_exp')
         salary = request.form.get('salary')
         deadline = request.form.get('deadline')
-        years_of_exp = request.form.get('years_of_exp')
-        description = request.form.get('description')
-        total_vacancy = request.form.get('total_vacancy')
-        filled_vacancy = request.form.get('filled_vacancy')
-        status = request.form.get('status')
         
-        # Start building the query
         query = Job.query
-        if title:
-            query = query.filter(Job.title.ilike(f'%{title}%'))
+        
+        if keyword:
+            query = query.filter(
+                or_(
+                    Job.title.ilike(f'%{keyword}%'),
+                    Job.description.ilike(f'%{keyword}%'),
+                    Job.skills.ilike(f'%{keyword}%'),
+                    Job.certifications.ilike(f'%{keyword}%')
+                )
+            )
         if location:
             query = query.filter(Job.location.ilike(f'%{location}%'))
         if job_type:
-            query = query.filter(Job.job_type == job_type)
-        if skills:
-            query = query.filter(Job.skills.ilike(f'%{skills}%'))
-        if certifications:
-            query = query.filter(Job.certifications.ilike(f'%{certifications}%'))
+            # Using ilike ensures "full-time" (or variations) match the stored value.
+            query = query.filter(Job.job_type.ilike(f'%{job_type}%'))
+        if years_of_exp:
+            query = query.filter(Job.years_of_exp == int(years_of_exp))
         if salary:
-            # Convert salary string to a number if needed; here we assume it's a comparable value.
             query = query.filter(Job.salary <= salary)
         if deadline:
             query = query.filter(Job.deadline <= deadline)
-        if years_of_exp:
-            query = query.filter(Job.years_of_exp == int(years_of_exp))
-        if description:
-            query = query.filter(Job.description.ilike(f'%{description}%'))
-        if total_vacancy:
-            query = query.filter(Job.total_vacancy == int(total_vacancy))
-        if filled_vacancy:
-            query = query.filter(Job.filled_vacancy == int(filled_vacancy))
-        if status:
-            query = query.filter(Job.status == status)
         
-        # Order by most recent and get all matching jobs
         jobs = query.order_by(Job.created_at.desc()).all()
-        
-        # Render a separate results page
         return render_template('jobresults.html', jobs=jobs)
     else:
-        # If GET, simply render the search form page
         return render_template('jobsearch.html')
 
 @user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
@@ -425,8 +432,8 @@ def profile():
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
     
-    # Retrieve dynamic chart data using the common helper function
-    user_success_rate, applications_overview = get_chart_data_for_user(user_id)
+    # Retrieve dynamic chart data, recent activities, and live feed using the common helper function
+    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
     
     # Determine edit mode based on query parameter (?edit=true)
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
@@ -477,4 +484,6 @@ def profile():
                            certifications=certifications,
                            edit_mode=edit_mode,
                            user_success_rate=user_success_rate,
-                           applications_overview=applications_overview)
+                           applications_overview=applications_overview,
+                           recent_activities=recent_activities,
+                           live_feed=live_feed)

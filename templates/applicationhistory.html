@@ -332,16 +332,21 @@
         <h3>Applications Overview</h3>
         <canvas id="applicationsChart"></canvas>
       </div>
-      <div class="live-feed">
-        <h3>Live Feed</h3>
-        <p>New user signed up!</p>
-        <p>System maintenance scheduled at 5 PM.</p>
-      </div>
-      <div class="calendar">
-        <h3>Upcoming Events</h3>
-        <p>Team Meeting - Dec 15, 2024</p>
-        <p>Project Deadline - Dec 20, 2024</p>
-      </div>
+  <!-- Recent Activities -->
+<h2>Recent Activities</h2>
+<ul>
+{% for activity in recent_activities %}
+    <li>{{ activity.job_title }} - Status: {{ activity.status }}</li>
+{% endfor %}
+</ul>
+
+<!-- Live Feed -->
+<h2>Live Feed</h2>
+<ul>
+{% for item in live_feed %}
+    <li>{{ item.job_title }} - Posted: {{ item.posted_at }}</li>
+{% endfor %}
+</ul>
     </div>
   </main>
   

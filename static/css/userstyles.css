@@ -136,13 +136,7 @@ body {
     background: #f9f9f9; /* Slight background change on hover */
 }
 
-/* Micro-interaction effects */
-.activity .job-posting p:hover {
-    color: #1abc9c;
-    cursor: pointer;
-    transform: scale(1.05);
-    transition: all 0.3s ease-in-out;
-}
+
 
 /* Animations */
 @keyframes fadeInUp {

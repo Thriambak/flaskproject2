@@ -114,15 +114,26 @@
       </div>
       
       <div class="live-feed">
-        <h3>Live Feed</h3>
-        <div id="liveFeed">
-          <!-- Live feed content goes here if needed -->
-        </div>
+        <h3>Recent Activities</h3>
+        {% if recent_notifications %}
+            {% for notification in recent_notifications %}
+                <p>{{ notification.message }} - {{ notification.timestamp.strftime('%b %d, %Y %H:%M') }}</p>
+            {% endfor %}
+        {% else %}
+            <p>No recent activities.</p>
+        {% endif %}
+    </div>
+     
+        <div class="calendar">
+          <h3>Upcoming Events</h3>
+          {% if upcoming_events %}
+              {% for event in upcoming_events %}
+                  <p>{{ event.title }} - {{ event.deadline.strftime('%b %d, %Y') }}</p>
+              {% endfor %}
+          {% else %}
+              <p>No upcoming events.</p>
+          {% endif %}
       </div>
-      <div class="calendar">
-        <h3>Upcoming Events</h3>
-        <p>Team Meeting - Dec 15, 2024</p>
-        <p>Project Deadline - Dec 20, 2024</p>
       </div>
     </div>
   </main>
@@ -141,7 +152,7 @@
     const successRateChart = new Chart(successCtx, {
       type: 'pie',
       data: {
-        labels: ['accepted', 'Rejected', 'Pending'],
+        labels: ['Hired', 'Rejected', 'Pending'],
         datasets: [{
           data: [
             userSuccessRateData.hired,
@@ -185,6 +196,24 @@
         }
       }
     });
+    function updateChart(chart, newData) {
+      chart.data.datasets[0].data = [
+          newData.hired,
+          newData.rejected,
+          newData.pending
+      ];
+      chart.update();
+  }
+  
+  // Fetch new data periodically
+  setInterval(() => {
+      fetch('/get_application_data') // API that returns updated JSON
+          .then(response => response.json())
+          .then(data => {
+              updateChart(successRateChart, data);
+          });
+  }, 5000);  // Fetch new data every 5 seconds
+  
   </script>
 </body>
 </html>
