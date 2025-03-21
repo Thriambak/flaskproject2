@@ -5,8 +5,6 @@ import re
 
 auth_blueprint = Blueprint('auth', __name__)
 
-auth_blueprint = Blueprint('auth', __name__)
-
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
