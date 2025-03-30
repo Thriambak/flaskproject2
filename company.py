@@ -1,17 +1,16 @@
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from functools import wraps
 import os
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
-# from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import db  # Ensure 'db' is the instance of SQLAlchemy
-# Assuming your model is in 'models.py'
+from models import db  # Ensure 'db' is the instance of SQLAlchemy, assuming your model is in 'models.py'
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification, ResumeCertification
+import re
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -664,29 +663,59 @@ def company_profile():
     if 'login_id' not in session or session.get('role') != 'company':
         return redirect(url_for('auth.login'))  # Ensure only companies can access
 
-    if request.method == 'POST':
+    companies = Company.query.filter_by(login_id=user_id).first()
+
+    message = None
+    message_type = None
+
+    if request.method == 'POST' and companies:
         # Get form data
         company_id = request.form.get('logId')  # Hidden input for company ID
-        company_name = request.form['company-name']
-        description = request.form['company-description']
-        email = request.form['contact-email']
-        address = request.form['company-address']
-        website = request.form['company-website']
-        logo = request.form['company-logo']
+        company_name = request.form['company-name'].strip()
+        email = request.form['contact-email'].strip()
+        description = request.form['company-description'].strip()
+        address = request.form['company-address'].strip()
+        website = request.form['company-website'].strip()
+        logo = request.form['company-logo'].strip()
+        industry = request.form['industries'].strip()
 
-        # Fetch the company profile by ID and update its fields
-        profile = Company.query.filter_by(id=company_id, login_id=user_id).first()
-        if profile:
-            profile.company_name = company_name
-            profile.description = description
-            profile.email = email
-            profile.address = address
-            profile.website = website
-            profile.logo = logo
-            db.session.commit()
-            flash('Profile updated successfully!', 'success')
+        # Check if any change is made
+        if (
+            company_name == companies.company_name and
+            email == companies.email and
+            description == companies.description and
+            address == companies.address and
+            website == companies.website and
+            logo == companies.logo and
+            industry == companies.industry
+        ):
+            return redirect(url_for('company.company_profile'))  # No changes, just reload page silently
+
+        # Validate Data
+        if not (3 <= len(company_name) <= 255):
+            message = "Company Name must be between 3-255 characters!"
+            message_type = "error"
+        elif not re.match(r"^\S+@\S+\.\S+$", email):
+            message = "Invalid email format!"
+            message_type = "error"
+        elif len(description) > 1000:
+            message = "Description must be under 1000 characters!"
+            message_type = "error"
+        elif len(address) > 500:
+            message = "Address must be under 500 characters!"
+            message_type = "error"
         else:
-            flash('Profile not found or unauthorized access.', 'danger')
+            # Update the company profile
+            companies.company_name = company_name
+            companies.description = description
+            companies.email = email
+            companies.address = address
+            companies.website = website
+            companies.logo = logo
+            companies.industry = industry
+            db.session.commit()
+            message = "Profile updated successfully!"
+            message_type = "success"
 
     pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
         .join(Job, JobApplication.job_id == Job.job_id)\
@@ -701,30 +730,16 @@ def company_profile():
     jobs = Job.query.filter_by(created_by=user_id).all()
 
     applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+        Job.title,
+        db.func.count(JobApplication.id).label('total_applications'),
+        db.func.sum(db.case(
+            (JobApplication.status == 'Hired', 1),
+            else_=0
+        )).label('shortlisted_applications')
+    ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
 
-    total_applications = []
-    shortlisted_applications = []
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
-
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
-    
-    # Process data for the pie chart
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
-
-    # Fetch the company profile to display in the form
-    companies = Company.query.filter_by(login_id=user_id).first()
-    profile = Company.query.filter_by(login_id=user_id).first()
 
     # Fetch notifications within the past day for the live feed
     one_day_ago = datetime.utcnow() - timedelta(days=1)
@@ -734,8 +749,35 @@ def company_profile():
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
-    return render_template('/company/profile.html', companies=companies, login_id=user_id, profile=profile,
+    industries = [
+        "Agriculture, Forestry, and Fishing",
+        "Mining and Quarrying",
+        "Manufacturing",
+        "Electricity, Gas, Steam, and Air Conditioning Supply",
+        "Water Supply; Sewerage, Waste Management, and Remediation Activities",
+        "Construction",
+        "Wholesale and Retail Trade; Repair of Motor Vehicles and Motorcycles",
+        "Transportation and Storage",
+        "Accommodation and Food Service Activities",
+        "Information and Communication",
+        "Financial and Insurance Activities",
+        "Real Estate Activities",
+        "Professional, Scientific, and Technical Activities",
+        "Administrative and Support Service Activities",
+        "Public Administration and Defence; Compulsory Social Security",
+        "Education",
+        "Human Health and Social Work Activities",
+        "Arts, Entertainment, and Recreation",
+        "Other Service Activities",
+        "Activities of Households as Employers",
+        "Activities of Extraterritorial Organizations and Bodies"
+    ]
+
+    return render_template('/company/profile.html', companies=companies, profile=companies, login_id=user_id,
         pending_applications_count=pending_applications_count, total_successful=total_successful, 
         total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
-        live_feed_notifications=live_feed_notifications)
+        live_feed_notifications=live_feed_notifications, industries=industries, message=message, 
+        message_type=message_type)
+
+
 

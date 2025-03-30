@@ -68,7 +68,7 @@ main {
 }
 
 .navigation {
-    width: 20%;
+    width: 26%;
     background: linear-gradient(to bottom, #ffffff, #f0f4f9);
     padding: 20px;
     display: flex;
@@ -103,7 +103,7 @@ main {
 }
 
 .activity {
-    width: 60%;
+    width: 100%;
     padding: 20px;
     background: linear-gradient(to bottom, #ffffff, #f7f7f7);
     border-left: 1px solid #ccc;
@@ -147,6 +147,7 @@ main {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 8px;
+    font-family: monospace;
     font-size: 16px;
     color: #333;
     width: 100%;
@@ -154,6 +155,7 @@ main {
 
 .profile-form textarea {
     min-height: 120px;
+    resize: vertical;
 }
 
 .profile-form .form-submit {
@@ -177,7 +179,46 @@ main {
     background-color: #007f8c;
 }
 
-.side-panel {
+#industries {
+    width: 100%;
+    border-radius: 8px;
+    padding: 10px 10px;
+    font-family:monospace;
+    font-size: 14px;
+}
+
+option {
+    padding: 8px 10px;
+    font-size: 16px;
+    color: #333;
+    background-color: #fff;
+}
+
+.popup {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    font-size: 16px;
+    text-align: center;
+}
+.popup.success { background-color: #28a745; }
+.popup.error { background-color: #dc3545; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+/*.side-panel {
     width: 20%;
     background: linear-gradient(to bottom, #ffffff, #f3f5f9);
     padding: 20px;
@@ -212,4 +253,4 @@ canvas {
     max-width: 100%;
     height: auto;
     display: block;
-}
+}*/

@@ -80,6 +80,7 @@ class Company(db.Model):
     website = db.Column(db.Text)
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
+    industry = db.Column(db.Text)
 
     login = db.relationship('Login', backref=db.backref('company', uselist=False))
 
