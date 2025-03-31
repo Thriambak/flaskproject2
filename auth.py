@@ -2,7 +2,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from config import Config
 from models import Admin, College, db, User, Job, Login, Company
 import re
-
+import random
+import string
+from extensions import mail
+from flask_mail import Message
+from werkzeug.security import generate_password_hash
 auth_blueprint = Blueprint('auth', __name__)
 
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
@@ -220,3 +224,68 @@ def logout():
     
     return response
 
+@auth_blueprint.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            otp = ''.join(random.choices(string.digits, k=6))  # Generate OTP
+            session['otp'] = otp
+            session['email'] = email  # Store email temporarily
+
+            # Send OTP via email
+            msg = Message("Password Reset OTP", recipients=[email])
+            msg.body = f"Your OTP for password reset is: {otp}"
+            mail.send(msg)
+
+            flash("OTP has been sent to your email.", "success")
+            return redirect(url_for('auth.verify_otp'))
+        else:
+            flash("Email not found. Please check and try again.", "danger")
+
+    return render_template('forgot_password.html')
+
+
+# OTP Verification Route
+@auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        entered_otp = request.form['otp']
+        if entered_otp == session.get('otp'):
+            return redirect(url_for('auth.reset_password'))
+        else:
+            flash("Invalid OTP. Please try again.", "danger")
+
+    return render_template('verify_otp.html')
+
+
+# Password Reset Route
+@auth_blueprint.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if 'email' not in session:
+        flash("Session expired. Please request a new OTP.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            flash("Passwords do not match. Please try again.", "danger")
+            return redirect(url_for('auth.reset_password'))
+
+        hashed_password = generate_password_hash(new_password)
+        user = User.query.filter_by(email=session['email']).first()
+        if user:
+            user.password = hashed_password
+            db.session.commit()
+
+            session.pop('email', None)
+            session.pop('otp', None)
+
+            flash("Password reset successful! You can now log in.", "success")
+            return redirect(url_for('auth.login'))
+
+    return render_template('reset_password.html')

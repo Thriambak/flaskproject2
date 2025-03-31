@@ -56,8 +56,6 @@
         .form-group button:hover {
             background-color: #005f73;
         }
-
-        /* Aesthetic Error Message */
         .error-message {
             color: red;
             font-size: 14px;
@@ -68,29 +66,24 @@
             margin-bottom: 20px;
             text-align: center;
         }
-
-        .signup-link {
+        .signup-link, .forgot-password {
             text-align: center;
             margin-top: 20px;
             font-size: 1em;
         }
-
-        .signup-link a {
+        .signup-link a, .forgot-password a {
             color: #4A90E2;
             text-decoration: none;
         }
-
-        .signup-link a:hover {
+        .signup-link a:hover, .forgot-password a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
-  
     <div class="login-container">
         <h2>Login</h2>
         <form action="{{ url_for('auth.login') }}" method="POST">
-
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
@@ -111,6 +104,7 @@
             </div>
         {% endif %}
 
+        <p class="forgot-password"><a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a></p>
         <p class="signup-link">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
     </div>
 </body>
