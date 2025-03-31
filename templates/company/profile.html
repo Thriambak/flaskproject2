@@ -11,25 +11,30 @@
 <body>
     <div id="popup-message" class="popup"></div> <!-- Popup Message -->
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
             <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <button><i class="fas fa-user"></i> Profile</button>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <a href="{{ url_for('company.company_profile') }}" class="profile-btn" style="text-decoration: none;">
+                <button><i class="fas fa-user"></i> <span class="btn-text">Profile</span></button>
+            </a>
+            <button class="settings-btn"><i class="fas fa-cog"></i> <span class="btn-text">Settings</span></button>
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn" style="text-decoration: none;">
+                <button><i class="fas fa-sign-out-alt"></i> <span class="btn-text">Logout</span></button>
             </a>
         </div>
     </header>
     <main>
-        <div class="navigation">
-            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
-            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/company/company_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_notification'"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
         <div class="activity">
@@ -82,16 +87,109 @@
                         <button type="submit">Save Profile</button>
                     </div>
 
-
-
                 {% else %}
                     <p>No company profile found.</p>
                 {% endif %}
             </form>
-
         </div>
+    </main>
+    <script>
+        let initialFormData = {};
 
-        <!--<div class="side-panel">
+        window.onload = function() {
+            // Store initial form values
+            initialFormData = {
+                "company-name": document.getElementById("company-name").value.trim(),
+                "contact-email": document.getElementById("contact-email").value.trim(),
+                "company-description": document.getElementById("company-description").value.trim(),
+                "company-address": document.getElementById("company-address").value.trim(),
+                "company-website": document.getElementById("company-website").value.trim(),
+                "company-logo": document.getElementById("company-logo").value.trim(),
+                "industries": document.getElementById("industries").value.trim()
+            };
+        };
+
+        function showPopup(message, type) {
+            if (!message) return; // Don't show popup if message is empty
+            var popup = document.getElementById("popup-message");
+            popup.innerHTML = message;
+            popup.className = "popup " + type;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 3000);
+        }
+
+        function validateForm() {
+            let changed = false;
+
+            let currentFormData = {
+                "company-name": document.getElementById("company-name").value.trim(),
+                "contact-email": document.getElementById("contact-email").value.trim(),
+                "company-description": document.getElementById("company-description").value.trim(),
+                "company-address": document.getElementById("company-address").value.trim(),
+                "company-website": document.getElementById("company-website").value.trim(),
+                "company-logo": document.getElementById("company-logo").value.trim(),
+                "industries": document.getElementById("industries").value.trim()
+            };
+
+            for (let key in currentFormData) {
+                if (currentFormData[key] !== initialFormData[key]) {
+                    changed = true;
+                    break;
+                }
+            }
+
+            if (!changed) {
+                return false; // Prevent form submission if no changes
+            }
+
+            // Form validation
+            if (currentFormData["company-name"].length < 3 || currentFormData["company-name"].length > 255) {
+                showPopup("Company Name must be between 3-255 characters!", "error");
+                return false;
+            }
+            if (!currentFormData["contact-email"].match(/^\S+@\S+\.\S+$/)) {
+                showPopup("Invalid email format!", "error");
+                return false;
+            }
+            if (currentFormData["company-description"].length > 1000) {
+                showPopup("Description must be under 1000 characters!", "error");
+                return false;
+            }
+            if (currentFormData["company-address"].length > 500) {
+                showPopup("Address must be under 500 characters!", "error");
+                return false;
+            }
+
+            return true; // Allow form submission
+        }
+
+        {% if message and request.method == 'POST' %}
+            showPopup("{{ message }}", "{{ message_type }}");
+        {% endif %}
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
+
+<!--<div class="side-panel">
             <div class="boxes"  style="position: sticky; top: 14.1%;">
                 <div class="graph"> <!-- style="position: sticky; top: 14.1%;" ->
                     <h3>Success Rate</h3>
@@ -125,83 +223,8 @@
                 </div>
             </div>
         </div>-->
-    </main>
-    <script>
-    let initialFormData = {};
 
-    window.onload = function() {
-        // Store initial form values
-        initialFormData = {
-            "company-name": document.getElementById("company-name").value.trim(),
-            "contact-email": document.getElementById("contact-email").value.trim(),
-            "company-description": document.getElementById("company-description").value.trim(),
-            "company-address": document.getElementById("company-address").value.trim(),
-            "company-website": document.getElementById("company-website").value.trim(),
-            "company-logo": document.getElementById("company-logo").value.trim(),
-            "industries": document.getElementById("industries").value.trim()
-        };
-    };
-
-    function showPopup(message, type) {
-        if (!message) return; // Don't show popup if message is empty
-        var popup = document.getElementById("popup-message");
-        popup.innerHTML = message;
-        popup.className = "popup " + type;
-        popup.style.display = "block";
-        setTimeout(() => { popup.style.display = "none"; }, 3000);
-    }
-
-    function validateForm() {
-        let changed = false;
-
-        let currentFormData = {
-            "company-name": document.getElementById("company-name").value.trim(),
-            "contact-email": document.getElementById("contact-email").value.trim(),
-            "company-description": document.getElementById("company-description").value.trim(),
-            "company-address": document.getElementById("company-address").value.trim(),
-            "company-website": document.getElementById("company-website").value.trim(),
-            "company-logo": document.getElementById("company-logo").value.trim(),
-            "industries": document.getElementById("industries").value.trim()
-        };
-
-        for (let key in currentFormData) {
-            if (currentFormData[key] !== initialFormData[key]) {
-                changed = true;
-                break;
-            }
-        }
-
-        if (!changed) {
-            return false; // Prevent form submission if no changes
-        }
-
-        // Form validation
-        if (currentFormData["company-name"].length < 3 || currentFormData["company-name"].length > 255) {
-            showPopup("Company Name must be between 3-255 characters!", "error");
-            return false;
-        }
-        if (!currentFormData["contact-email"].match(/^\S+@\S+\.\S+$/)) {
-            showPopup("Invalid email format!", "error");
-            return false;
-        }
-        if (currentFormData["company-description"].length > 1000) {
-            showPopup("Description must be under 1000 characters!", "error");
-            return false;
-        }
-        if (currentFormData["company-address"].length > 500) {
-            showPopup("Address must be under 500 characters!", "error");
-            return false;
-        }
-
-        return true; // Allow form submission
-    }
-
-    {% if message and request.method == 'POST' %}
-        showPopup("{{ message }}", "{{ message_type }}");
-    {% endif %}
-</script>
-
-    <!--<script>
+            <!--<script>
         // Success rate chart (example)
         const ctx = document.getElementById('chart').getContext('2d');
         new Chart(ctx, {
@@ -225,5 +248,3 @@
             }
         });
     </script>-->
-</body>
-</html>

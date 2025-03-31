@@ -9,7 +9,8 @@ body {
     background-color: tr;
     display: flex;
     flex-direction: column;
-    height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
+    height: auto;
+    min-height: 100vh;
     color: #333;
     background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
 }
