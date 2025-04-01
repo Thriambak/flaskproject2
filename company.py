@@ -108,54 +108,15 @@ def company_dashboard():
 def company_jobposting():
     from app import db
     user_id = session.get('login_id')
-    # Retrieve all jobs
+    
+    if 'login_id' not in session or session.get('role') != 'company':
+        return redirect(url_for('auth.login'))  # Ensure only companies can access
+    
+    # Retrieve all jobs ordered by most recent
     jobs = Job.query.filter_by(created_by=user_id).order_by(Job.created_at.desc()).all()
     profile = Company.query.filter_by(login_id=user_id).first()
 
-
-    applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1), else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
-
-    total_applications = []
-    shortlisted_applications = []
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
-
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
-    
-    # Process data for the pie chart
-    total_successful = sum(app.shortlisted_applications for app in applications)
-    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
-
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
-        .scalar()
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
-        .scalar()
-    
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
-
-    return render_template('/company/job_posting.html', jobs=jobs, profile=profile,
-        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
-        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
-        interviewed_applications_count=interviewed_applications_count)
+    return render_template('/company/job_posting.html', jobs=jobs, profile=profile,)
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
@@ -165,130 +126,223 @@ def company_post_new_job():
     user_id = session.get('login_id')
 
     if 'login_id' not in session or session.get('role') != 'company':
-        return redirect(url_for('auth.login'))  # Ensure only admins can access
+        return redirect(url_for('auth.login'))  # Ensure only companies can access
 
+    message = None
+    message_type = None
+    form_data = {}  # Initialize form_data dictionary
+    
+    # Check if we're editing an existing job
+    job = None
+    job_id = request.args.get('job_id')
+    
     if request.method == 'POST':
         # Get form data
         job_id = request.form.get('jobId')
-        title = request.form['job-title']
-        description = request.form['description']
-        skills = request.form['skill-sets']
-        exp = request.form['exp']
-        certifications = request.form['certifications']
-        job_type = request.form['job-type']
-        locations = request.form['locations']
-        salary = request.form['salary']
-        total_vacancy = request.form['vacancy']
-        form_url = request.form.get('form-url')
-        deadline_str = request.form['deadline']
-        created_by = session['login_id']  # Get admin's user ID from session
-        total_vacancy = int(total_vacancy)
-        filled_vacancy = 0
-
-        status = "open" if total_vacancy > filled_vacancy else "closed"
-
-        # Convert the deadline string to a Python date object
-        try:
-            deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
-        except ValueError:
-            flash('Invalid date format for the deadline. Please use YYYY-MM-DD.', 'danger')
-            return redirect(url_for('company.company_post_new_job'))
-
-        if job_id:  # Update the job
-            job = Job.query.get(job_id)
-            if job:
-                job.title = title
-                job.description = description
-                job.job_type = job_type
-                job.skills = skills
-                job.years_of_exp = exp
-                job.certifications = certifications
-                job.locations = locations
-                job.salary = salary
-                job.total_vacancy = total_vacancy
-                job.deadline = deadline
-                job.form_url = form_url
-                db.session.commit()
-                flash('Job updated successfully!', 'success')
+        title = request.form.get('job-title', '').strip()
+        description = request.form.get('description', '').strip()
+        skills = request.form.get('skill-sets', '').strip()
+        exp_str = request.form.get('exp', '').strip()
+        certifications = request.form.get('certifications', '').strip()
+        job_type = request.form.get('job-type', '').strip()
+        locations = request.form.get('locations', '').strip()
+        salary_str = request.form.get('salary', '').strip()
+        vacancy_str = request.form.get('vacancy', '').strip()
+        form_url = request.form.get('form-url', '').strip()
+        deadline_str = request.form.get('deadline', '').strip()
+        created_by = session['login_id']
+        
+        # Store form data to preserve it in case of validation errors
+        form_data = {
+            'title': title,
+            'description': description,
+            'skills': skills,
+            'exp': exp_str,
+            'certifications': certifications,
+            'job_type': job_type,
+            'locations': locations,
+            'salary': salary_str,
+            'vacancy': vacancy_str,
+            'form_url': form_url,
+            'deadline': deadline_str
+        }
+        
+        # Validate inputs
+        if len(title) < 3 or len(title) > 255:
+            message = "Job Title must be between 3-255 characters!"
+            message_type = "error"
+        elif len(description) < 10 or len(description) > 2000:
+            message = "Job Description must be between 10-2000 characters!"
+            message_type = "error"
+        elif not exp_str or not exp_str.isdigit():
+            message = "Years of Experience must be a valid number!"
+            message_type = "error"
+        elif not vacancy_str or not vacancy_str.isdigit():
+            message = "Vacancy must be a valid number!"
+            message_type = "error"
+        elif not deadline_str:
+            message = "Application deadline is required!"
+            message_type = "error"
+        elif form_url and not is_valid_url(form_url):
+            message = "Please enter a valid URL for the questionnaire form!"
+            message_type = "error"
+        else:
+            try:
+                # Convert string values to appropriate types
+                exp = int(exp_str)
+                total_vacancy = int(vacancy_str)
+                salary = int(salary_str) if salary_str else None
                 
+                # Additional validations
+                if exp < 0 or exp > 50:
+                    message = "Years of Experience must be between 0-50!"
+                    message_type = "error"
+                elif total_vacancy < 1 or total_vacancy > 1000:
+                    message = "Vacancy must be between 1-1000!"
+                    message_type = "error"
+                else:
+                    # Convert the deadline string to a Python date object
+                    try:
+                        deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+                        current_date = date.today()
+                        
+                        if deadline < current_date:
+                            message = "Deadline cannot be in the past!"
+                            message_type = "error"
+                        else:
+                            filled_vacancy = 0
+                            status = "open" if total_vacancy > filled_vacancy else "closed"
+                            
+                            if job_id:  # Update the job
+                                job = Job.query.get(job_id)
+                                if job and job.created_by == user_id:  # Security check
+                                    # Save current filled_vacancy
+                                    filled_vacancy = job.filled_vacancy
+                                    
+                                    job.title = title
+                                    job.description = description
+                                    job.job_type = job_type
+                                    job.skills = skills
+                                    job.years_of_exp = exp
+                                    job.certifications = certifications
+                                    job.location = locations
+                                    job.salary = salary
+                                    job.total_vacancy = total_vacancy
+                                    job.deadline = deadline
+                                    job.form_url = form_url
+                                    
+                                    # Update status based on vacancies
+                                    job.status = "open" if total_vacancy > filled_vacancy else "closed"
+                                    
+                                    db.session.commit()
+                                    message = "Job updated successfully!"
+                                    message_type = "success"
+                                else:
+                                    message = "Job not found or you don't have permission to edit it."
+                                    message_type = "error"
+                            else:  # Add a new job
+                                new_job = Job(
+                                    title=title,
+                                    description=description,
+                                    job_type=job_type,
+                                    skills=skills,
+                                    years_of_exp=exp,
+                                    certifications=certifications,
+                                    location=locations,
+                                    salary=salary,
+                                    total_vacancy=total_vacancy,
+                                    filled_vacancy=filled_vacancy,
+                                    status=status,
+                                    form_url=form_url,
+                                    deadline=deadline,
+                                    created_by=created_by
+                                )
+                                db.session.add(new_job)
+                                db.session.commit()
+                                message = "Job added successfully!"
+                                message_type = "success"
+                            
+                            if message_type == "success":
+                                return redirect(url_for('company.company_jobposting'))
+                    except ValueError:
+                        message = "Invalid date format for the deadline. Please use YYYY-MM-DD."
+                        message_type = "error"
+            except ValueError:
+                message = "Please ensure all numeric fields contain valid numbers!"
+                message_type = "error"
+    else:  # GET request
+        if job_id:
+            job = Job.query.get(job_id)
+            if job and job.created_by == user_id:  # Security check
+                # Prefill form_data from existing job
+                form_data = {
+                    'title': job.title,
+                    'description': job.description,
+                    'skills': job.skills,
+                    'exp': job.years_of_exp,
+                    'certifications': job.certifications,
+                    'job_type': job.job_type,
+                    'locations': job.location,
+                    'salary': job.salary if job.salary else '',
+                    'vacancy': job.total_vacancy,
+                    'form_url': job.form_url if job.form_url else '',
+                    'deadline': job.deadline.strftime('%Y-%m-%d') if job.deadline else ''
+                }
             else:
-                flash('Job not found.', 'danger')
-        else:  # Add a new job
-            new_job = Job(
-                title=title,
-                description=description,
-                job_type=job_type,
-                skills = skills,
-                years_of_exp = exp,
-                certifications = certifications,
-                location=locations,
-                salary=salary,
-                total_vacancy=total_vacancy,
-                filled_vacancy=filled_vacancy,
-                status=status,
-                form_url=form_url,
-                deadline=deadline,
-                created_by=created_by
-            )
-            print(title)
-            db.session.add(new_job)
-            db.session.commit()
-            flash('Job added successfully!', 'success')
+                return redirect(url_for('company.company_jobposting'))
 
-        return redirect(url_for('company.company_jobposting'))
-
+    # Get jobs and application statistics
     jobs = Job.query.filter_by(created_by=user_id).all()
 
-    applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
+    # Calculate statistics for the dashboard/sidebar
+    total_successful = db.session.query(db.func.count(JobApplication.id)).filter(
+        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
+        JobApplication.status == 'Hired'
+    ).scalar() or 0
 
-    total_applications = []
-    shortlisted_applications = []
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
+    total_unsuccessful = db.session.query(db.func.count(JobApplication.id)).filter(
+        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
+        JobApplication.status == 'Rejected'
+    ).scalar() or 0
 
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
-    
-    # Process data for the pie chart
-    total_successful = sum(app.shortlisted_applications for app in applications)
-    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id)).filter(
+        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
+        JobApplication.status == 'Pending'
+    ).scalar() or 0
 
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
-        .scalar()
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id)).filter(
+        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
+        JobApplication.status == 'Interviewed'
+    ).scalar() or 0
 
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
-        .scalar()
-    
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
+    # You'd need to define live_feed_notifications based on your app's requirements
+    live_feed_notifications = []  # Replace with appropriate query
 
-    # Retrieve all jobs
-    # jobs = Job.query.all()
-    current_date = date.today().strftime('%Y-%m-%d')   # Get today's date in 'DD-MM-YYYY' format
+    # Get today's date in 'YYYY-MM-DD' format
+    current_date = date.today().strftime('%Y-%m-%d')
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('/company/post_new_job.html',current_date=current_date, profile=profile,
-        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
-        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
-        interviewed_applications_count=interviewed_applications_count)
+    
+    return render_template('/company/post_new_job.html', 
+                           current_date=current_date, 
+                           profile=profile,
+                           job_id=job_id,
+                           form_data=form_data,  # Pass form data for populating fields
+                           total_successful=total_successful, 
+                           total_unsuccessful=total_unsuccessful,
+                           pending_applications_count=pending_applications_count, 
+                           live_feed_notifications=live_feed_notifications,
+                           interviewed_applications_count=interviewed_applications_count,
+                           message=message,
+                           message_type=message_type)
 
-# Application Review
+# Helper function to validate URLs
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
 # Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
 @login_required
@@ -326,9 +380,13 @@ def company_application_review():
         else:
             flash('Application not found!', 'danger')
 
-    search_name = request.args.get('search_name', '').strip()  # Get the search name
+    # Get filter parameters from request
+    # For the filter dropdown
     selected_status = request.args.getlist('status')  # Get selected status filters
     selected_jobs = request.args.getlist('job_post')  # Get selected job filters
+    
+    # For the search functionality
+    search_query = request.args.get('search_query', '').strip()
 
     # Get all jobs created by the company
     jobs = Job.query.filter_by(created_by=user_id).all()
@@ -336,18 +394,26 @@ def company_application_review():
     # Query all job applications for the company's jobs
     query = JobApplication.query.join(Job).filter(Job.created_by == user_id)
 
-    # Apply search filters
-    if search_name:
-        query = query.join(User).filter(User.name.ilike(f'%{search_name}%'))
+    # Apply filters based on dropdown selections
     if selected_status:
         query = query.filter(JobApplication.status.in_(selected_status))
     if selected_jobs:
         query = query.filter(Job.title.in_(selected_jobs))
 
-    # Get all job applications for the jobs created by the company
+    # Apply search filter - search across candidate name, job title, and status
+    if search_query:
+        query = query.join(User).filter(
+            or_(
+                User.name.ilike(f'%{search_query}%'),
+                Job.title.ilike(f'%{search_query}%'),
+                JobApplication.status.ilike(f'%{search_query}%')
+            )
+        )
+
+    # Get all filtered job applications
     job_applications = query.all()
     
-    # Create a list of applications with details for rendering (including user_id)
+    # Create a list of applications with details for rendering
     applications_data = []
     for application in job_applications:
         # Fetch the latest resume for this user from ResumeCertification
@@ -358,70 +424,39 @@ def company_application_review():
             'candidate_name': application.user.name,
             'job_post': application.job.title,
             'status': application.status,
-            'application_id': application.id,  # Include application ID
-            'resume_path': resume_path,        # Use resume_path from ResumeCertification
-            'user_id': application.user_id     # Include user_id for certifications lookup
+            'application_id': application.id,
+            'resume_path': resume_path,
+            'user_id': application.user_id
         })
     
-    applications = db.session.query(
-        Job.title,
-        db.func.count(JobApplication.id).label('total_applications'),
-        db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-    ).join(JobApplication, Job.job_id == JobApplication.job_id)\
-     .filter(Job.created_by == user_id)\
-     .group_by(Job.title).all()
-
-    total_successful = sum(app.shortlisted_applications for app in applications)
-    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
-
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
-        .scalar()
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
-        .scalar()
-    
-    # Fetch certifications for each candidate application
+    # Fetch certifications for each candidate
     user_certifications = {}
-    for application in job_applications:
-        if application.user_id not in user_certifications:
-            certifications = Certification.query.filter_by(user_id=application.user_id).all()
-            cert_data = []
-            for cert in certifications:
-                cert_data.append({
-                    'certification_name': cert.certification_name,
-                    'verified': cert.verification_status
-                })
-            user_certifications[application.user_id] = cert_data
-
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
+    user_ids = [app['user_id'] for app in applications_data]
+    
+    # Using a single query to get all certifications for all relevant users
+    all_certifications = Certification.query.filter(Certification.user_id.in_(user_ids)).all()
+    
+    # Organize certifications by user_id
+    for cert in all_certifications:
+        if cert.user_id not in user_certifications:
+            user_certifications[cert.user_id] = []
+        
+        user_certifications[cert.user_id].append({
+            'certification_name': cert.certification_name,
+            'verified': cert.verification_status
+        })
 
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('/company/application_review.html', 
-                           applications=applications_data, 
-                           profile=profile, 
-                           search_name=search_name, 
-                           selected_status=selected_status, 
-                           jobs=jobs,
-                           selected_jobs=selected_jobs, 
-                           total_successful=total_successful, 
-                           total_unsuccessful=total_unsuccessful,
-                           pending_applications_count=pending_applications_count, 
-                           live_feed_notifications=live_feed_notifications,
-                           interviewed_applications_count=interviewed_applications_count,
-                           user_certifications=user_certifications)
+    
+    return render_template(
+        '/company/application_review.html',
+        applications=applications_data,
+        profile=profile,
+        selected_status=selected_status,
+        jobs=jobs,
+        selected_jobs=selected_jobs,
+        user_certifications=user_certifications
+    )
 
 
 # Hiring Communication
@@ -778,6 +813,3 @@ def company_profile():
         total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
         live_feed_notifications=live_feed_notifications, industries=industries, message=message, 
         message_type=message_type)
-
-
-

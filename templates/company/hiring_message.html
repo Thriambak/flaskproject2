@@ -87,70 +87,6 @@
                 {% endfor %}
             </div>
         </form> 
-        <!--
-        <div class="activity">  
-            <h2>Candidate Communication</h2>
-            <div class="search-bar">
-                <input type="text" placeholder="Search candidates..." id="search-input">
-                <div class="select-btn" onclick="toggleDropdown()">Select Candidates</div>
-                <div class="dropdown-menu" id="dropdown-menu">
-                    <label><input type="checkbox" value="John Doe" onclick="updateSearchText()"> John Doe</label>
-                    <label><input type="checkbox" value="Jane Smith" onclick="updateSearchText()"> Jane Smith</label>
-                    <label><input type="checkbox" value="Robert Brown" onclick="updateSearchText()"> Robert Brown</label>
-                </div>
-            </div>
-            <div class="message-history">
-                <div class="message-entry"><strong>John Doe - 12 Dec 2024</strong>Thank you for applying. We will review your profile.</div>
-                <div class="message-entry"><strong>Jane Smith - 10 Dec 2024</strong>We would like to schedule an interview. Please let us know your availability.</div>
-                <div class="message-entry"><strong>Robert Brown - 8 Dec 2024</strong>Congratulations! We are pleased to offer you the position.</div>
-            </div>
-            <textarea id="message-box" class="message-box" placeholder="Type your message here..."></textarea>
-            <div class="controls">
-                <select id="template-dropdown" onchange="populateTemplate()">
-                    <option value="">Select Template</option>
-                    <option value="Thank you for applying. We will review your profile.">Thank You</option>
-                    <option value="We would like to schedule an interview. Please let us know your availability.">Interview Scheduling</option>
-                    <option value="Congratulations! We are pleased to offer you the position.">Offer Letter</option>
-                    <option value="Sorry for the inconvenience. Your application has been rejected.">Reject Letter</option>
-                </select>
-                <button onclick="sendMessage()">Send Message</button>
-            </div>             
-        </div> -->
-
-        <div class="side-panel">
-            <div class="boxes"  style="position: sticky; top: 14.1%;">
-                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
-                    <h3>Success Rate</h3>
-                    <canvas id="chart"></canvas>
-                </div>
-                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
-                    <h3>Live Feed</h3>
-                    {% if live_feed_notifications %}
-                    <ul style="padding-left: 10px;">
-                        {% for notification in live_feed_notifications %}
-                            <li> <p>{{ notification.message }}</p> </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                        <p>No new notifications in the past day.</p>
-                    {% endif %}
-                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
-                </div>
-                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
-                    <h3>Upcoming Events</h3>
-                    <ul style="padding-left: 10px;">
-                        {% if pending_applications_count > 0 %}
-                            <li><p>Host Interview: </p>
-                                <p>Applications pending - {{pending_applications_count}}</p></li> 
-                        {% endif %}
-                        {% if interviewed_applications_count > 0 %}
-                            <li><p>Send hire/reject messages: </p>
-                                <p>Applicants waiting - {{interviewed_applications_count}}</p></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
     </main>
     <script>
         function updateSearchText(id, name, type) {
@@ -179,15 +115,6 @@
             dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
         }
 
-        /*function updateSearchText() {
-            const selectedCandidates = [];
-            const checkboxes = document.querySelectorAll(".dropdown-menu input[type='checkbox']:checked");
-            checkboxes.forEach(checkbox => {
-                selectedCandidates.push(checkbox.value);
-            });
-            document.getElementById("search-input").value = selectedCandidates.join(", ");
-        }*/
-
         function populateTemplate() {
             const templateDropdown = document.getElementById('template-dropdown');
             const messageBox = document.getElementById('message-box');
@@ -199,28 +126,6 @@
             alert('Message sent: ' + messageBox.value);
             messageBox.value = '';
         }
-
-        const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Successful Applications', 'Unsuccessful Applications'],
-                datasets: [{
-                    label: 'Success Rate',
-                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
-                    backgroundColor: ['#f4a261', '#0a9396'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
     </script>
 </body>
 </html>
