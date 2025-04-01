@@ -135,9 +135,147 @@ body {
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
     background: #f9f9f9; /* Slight background change on hover */
 }
+main {
+    display: flex;
+    flex: 1;
+  }
+  
+ /* Header */
+header {
+    background: linear-gradient(90deg, #005f73, #0a9396);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
 
+header .logo {
+    display: flex;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
+    gap: 10px;
+}
 
+header .logo i {
+    font-size: 32px;
+    color: white;
+}
 
+header .profile-settings {
+    display: flex;
+    gap: 15px;
+}
+
+header .profile-settings button {
+    background-color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #005f73;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+header .profile-settings button i {
+    color: #0a9396;
+}
+
+header .profile-settings button:hover {
+    background-color: #e6e6e6;
+    color: #0a9396;
+}
+
+/* Navigation */
+.navigation {
+    width: 20%;
+    background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-right: 1px solid #ccc;
+    box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.navigation button {
+    padding: 12px 20px;
+    border: none;
+    background: linear-gradient(90deg, #f0f4ff, #ffffff);
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 8px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.navigation button i {
+    font-size: 18px;
+    color: #005f73;
+}
+
+.navigation button:hover {
+    background: linear-gradient(90deg, #dce4ff, #f9faff);
+    transform: scale(1.05);
+}
+
+/* Main Layout (to ensure navigation and activity areas match visually) */
+main {
+    display: flex;
+    flex: 1;
+}
+
+.activity {
+    flex: 1;
+    padding: 20px;
+    background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+    border-left: 1px solid #ccc;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Apply hover effect and animation from activity to both header and navigation */
+.navigation button:hover, header .profile-settings button:hover {
+    background-color: #e6e6e6;
+    transform: scale(1.05);
+}
+
+  /* Remove all .side-panel styles */
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .pagination button {
+    padding: 8px 15px;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .pagination button:hover {
+    background-color: #16a085;
+  }
+  
+  .pagination span {
+    font-size: 16px;
+    color: #333;
+  }
 /* Animations */
 @keyframes fadeInUp {
     from {
@@ -317,31 +455,6 @@ main {
 }
 
 
-.side-panel {
-    width: 20%;
-    background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
-    background: linear-gradient(135deg, #ffffff, #f7f7f7);
-    border: 1px solid #ddd;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: #333;
-}
-
-.side-panel .graph {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 canvas {
     width: 100%;
     max-width: 180px;
@@ -426,7 +539,12 @@ a{
         transform: translateY(0);
     }
 }
-
+.activity .job-posting:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    background: #f9f9f9;
+    border-color: #1abc9c; /* Added */
+  }
 /* Fade-out Animation */
 @keyframes fadeOut {
     to {
@@ -456,54 +574,4 @@ a{
 .activity .info-box:hover {
     background: linear-gradient(135deg, #f0f0f0, #ffffff);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-}
-
-.side-panel {
-    width: 20%;
-    background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
-    background: linear-gradient(135deg, #ffffff, #f7f7f7);
-    border: 1px solid #ddd;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: #333;
-}
-
-.side-panel .graph {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-canvas {
-    width: 100%;
-    max-width: 100%; /*this controls the width of the bar graph(canvas) relative to the info-box*/
-    height: auto;
-    display: block;
-}
-
-.progress-bar {
-    background-color: #ddd;
-    border-radius: 25px;
-    overflow: hidden;
-    height: 20px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.progress-bar div {
-    height: 100%;
-    background-color: #0a9396;
-    width: 70%;
-    text-align: center;
-    line-height: 20px;
-    color: white;
 }

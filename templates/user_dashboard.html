@@ -6,19 +6,161 @@
   <title>User Dashboard</title>
   <!-- Link to external CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/userstyles.css') }}">
-  <!-- Chart.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Ensure canvas elements have a defined height so that the charts are visible */
-    canvas {
-      width: 100% !important;
-      height: 300px !important;
+    /* Flash Message Container - fixed at top center */
+    /* Flash Message Container - fixed at top center */
+  .flash-container {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 500px;
+    z-index: 1050;
+    pointer-events: none; /* So it doesn't block clicks underneath */
+  }
+  .flash-message {
+    pointer-events: auto;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    animation: fadeInOut 3s ease-in-out forwards;
+  }
+  /* Complementary colors for alerts */
+  .alert-success.flash-message {
+    background-color: #2ecc71; /* Vibrant green */
+    color: #fff;
+    border: 1px solid #27ae60;
+  }
+  .alert-error.flash-message {
+    background-color: #e74c3c; /* Bold red */
+    color: #fff;
+    border: 1px solid #c0392b;
+  }
+  .alert-warning.flash-message {
+    background-color: #f39c12; /* Warm orange */
+    color: #fff;
+    border: 1px solid #d35400;
+  }
+  .alert-info.flash-message {
+    background-color: #3498db; /* Bright blue */
+    color: #fff;
+    border: 1px solid #2980b9;
+  }
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+    header {
+      background: linear-gradient(90deg, #005f73, #0a9396);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    header .logo {
+      display: flex;
+      align-items: center;
+      font-size: 28px;
+      font-weight: bold;
+      gap: 10px;
+    }
+    header .logo i { font-size: 32px; color: white; }
+    header .profile-settings {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    header .profile-settings button {
+      background-color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #005f73;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    header .profile-settings button i { color: #0a9396; }
+    header .profile-settings button:hover {
+      background-color: #e6e6e6;
+      color: #0a9396;
+    }
+    .navigation {
+      width: 20%;
+      background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      border-right: 1px solid #ccc;
+      box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .navigation button {
+      padding: 12px 20px;
+      border: none;
+      background: linear-gradient(90deg, #f0f4ff, #ffffff);
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 8px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .navigation button i {
+      font-size: 18px;
+      color: #005f73;
+    }
+    .navigation button:hover {
+      background: linear-gradient(90deg, #dce4ff, #f9faff);
+      transform: scale(1.05);
+    }
+    .activity {
+      width: 80%;
+      padding: 20px;
+      background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+    .activity h2 {
+      font-size: 22px;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 600;
+      color: #0a3d62;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
+  <!-- Flash Message Container (placed outside header) -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+  
   <header>
     <div class="logo">
       <i class="fas fa-globe"></i>
@@ -26,19 +168,12 @@
     </div>
     <div>
       Welcome, {{ session['username'] }}!
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="flash-message {{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
     </div>
     <div class="profile-settings">
       <button onclick="window.location.href='/user/profile'">
         <i class="fas fa-user"></i> Profile
       </button>
-      <button><i class="fas fa-cog"></i> Settings</button>
+      <button onclick="window.location.href='/user/settings'"><i class="fas fa-cog"></i> Settings</button>
       <a href="{{ url_for('auth.logout') }}">
         <button><i class="fas fa-sign-out-alt"></i> Logout</button>
       </a>
@@ -46,7 +181,7 @@
   </header>
   <main>
     <div class="navigation">
-      <button><i class="fas fa-home"></i> Home</button>
+      <button onclick="location.reload();"><i class="fas fa-home"></i> Home</button>
       <button onclick="window.location.href='/user/application_history'">
         <i class="fas fa-history"></i> Application History
       </button>
@@ -56,6 +191,9 @@
       <a href="{{ url_for('user.resume_certifications') }}">
         <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
       </a>
+      <button onclick="window.location.href='/user/analytics'">
+        <i class="fas fa-chart-line"></i> Analytics
+      </button>
     </div>
     <div class="activity">
       <div class="top-buttons">
@@ -81,7 +219,7 @@
               <p><i class="fas fa-wallet"></i> <strong>Salary:</strong> ₹{{ job.salary }}</p>
               <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
               <p><i class="fas fa-cogs"></i> <strong>Skills Required:</strong> {{ job.skills }}</p>
-              <p><i class="fas fa-certificate"></i> <strong>Certifications:</strong> {{ job.certifications }}</p>
+              <p><i class="fas fa-briefcase"></i> <strong>Years of Experience:</strong> {{ job.years_of_exp }}</p>
               {% if job.form_url %}
                 <p>
                   <i class="fas fa-external-link-alt"></i>
@@ -94,6 +232,16 @@
               </form>
             </div>
           {% endfor %}
+          <!-- Pagination Controls -->
+          <div class="pagination" style="text-align: center; margin-top: 30px;">
+            {% if page > 1 %}
+              <a href="?page={{ page - 1 }}"><button class="btn apply-btn" style="width: auto; margin: 0 5px;">Previous</button></a>
+            {% endif %}
+            <span style="font-size: 16px; margin: 0 10px;">Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+              <a href="?page={{ page + 1 }}"><button class="btn apply-btn" style="width: auto; margin: 0 5px;">Next</button></a>
+            {% endif %}
+          </div>
         {% else %}
           <div class="alert alert-info" role="alert">
             No job listings available at the moment.
@@ -101,119 +249,9 @@
         {% endif %}
       </div>
     </div>
-        
-    <div class="side-panel">
-      <div class="graph-container">
-        <h3>Application Status</h3>
-        <canvas id="successRateChart"></canvas>
-      </div>
-  
-      <div class="graph-container">
-        <h3>Applications Overview</h3>
-        <canvas id="applicationsChart"></canvas>
-      </div>
-      
-      <div class="live-feed">
-        <h3>Recent Activities</h3>
-        {% if recent_notifications %}
-            {% for notification in recent_notifications %}
-                <p>{{ notification.message }} - {{ notification.timestamp.strftime('%b %d, %Y %H:%M') }}</p>
-            {% endfor %}
-        {% else %}
-            <p>No recent activities.</p>
-        {% endif %}
-    </div>
-     
-        <div class="calendar">
-          <h3>Upcoming Events</h3>
-          {% if upcoming_events %}
-              {% for event in upcoming_events %}
-                  <p>{{ event.title }} - {{ event.deadline.strftime('%b %d, %Y') }}</p>
-              {% endfor %}
-          {% else %}
-              <p>No upcoming events.</p>
-          {% endif %}
-      </div>
-      </div>
-    </div>
   </main>
   
   <!-- Link to external JavaScript -->
   <script src="{{ url_for('static', filename='/js/userjs.js') }}"></script>
-  
-  <!-- Initialize Charts Using Embedded Data -->
-  <script>
-    // Data passed from the view as JSON.
-    const userSuccessRateData = {{ user_success_rate|tojson }};
-    const applicationsOverviewData = {{ applications_overview|tojson }};
-    
-    // Initialize the Application Status Pie Chart.
-    const successCtx = document.getElementById('successRateChart').getContext('2d');
-    const successRateChart = new Chart(successCtx, {
-      type: 'pie',
-      data: {
-        labels: ['Hired', 'Rejected', 'Pending'],
-        datasets: [{
-          data: [
-            userSuccessRateData.hired,
-            userSuccessRateData.rejected,
-            userSuccessRateData.pending
-          ],
-          backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' }
-        }
-      }
-    });
-    
-    // Initialize the Applications Overview Bar Chart.
-    const appCtx = document.getElementById('applicationsChart').getContext('2d');
-    const applicationsChart = new Chart(appCtx, {
-      type: 'bar',
-      data: {
-        labels: applicationsOverviewData.labels,
-        datasets: [{
-          label: 'Applications',
-          data: applicationsOverviewData.applications,
-          backgroundColor: '#264653',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: { enabled: true }
-        },
-        scales: {
-          x: { beginAtZero: true },
-          y: { beginAtZero: true }
-        }
-      }
-    });
-    function updateChart(chart, newData) {
-      chart.data.datasets[0].data = [
-          newData.hired,
-          newData.rejected,
-          newData.pending
-      ];
-      chart.update();
-  }
-  
-  // Fetch new data periodically
-  setInterval(() => {
-      fetch('/get_application_data') // API that returns updated JSON
-          .then(response => response.json())
-          .then(data => {
-              updateChart(successRateChart, data);
-          });
-  }, 5000);  // Fetch new data every 5 seconds
-  
-  </script>
 </body>
 </html>

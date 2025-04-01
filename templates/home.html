@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+h1, h2, h3 {
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    color: #007BFF;
+}
+
+/* Button Styles */
+.btn {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Header and Navigation */
+header {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li a {
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #007BFF;
+}
+
+.login-btn {
+    background-color: #007BFF;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+}
+
+.login-btn:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(to right, #007BFF, #0056b3);
+    color: white;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.hero-content h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.hero-content p {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+/* General Section Styles */
+.company-info, .features, .why-choose-us, .testimonials {
+    padding: 50px 20px;
+    text-align: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Company Info */
+.company-info p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.1em;
+    color: #6C757D;
+}
+
+/* Features Section */
+.feature-grid {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.feature-card {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-card h3 {
+    color: #007BFF;
+    margin-bottom: 10px;
+}
+
+/* Why Choose Us */
+.why-choose-us ul {
+    list-style: none;
+    padding: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.why-choose-us li {
+    margin: 10px 0;
+    font-size: 1.1em;
+    color: #6C757D;
+}
+
+/* Testimonials */
+.testimonial-grid {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.testimonial {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial p:first-child {
+    font-style: italic;
+    color: #333;
+}
+
+.testimonial p:last-child {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #6C757D;
+}
+
+/* Footer */
+footer {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.contact, .quick-links {
+    width: 40%;
+}
+
+.quick-links ul {
+    list-style: none;
+    padding: 0;
+}
+
+.quick-links ul li a {
+    color: white;
+    transition: color 0.3s;
+}
+
+.quick-links ul li a:hover {
+    color: #007BFF;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero {
+        padding: 50px 20px;
+    }
+    .hero-content h1 {
+        font-size: 2em;
+    }
+    .hero-content p {
+        font-size: 1em;
+    }
+    .feature-grid, .testimonial-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    .feature-card, .testimonial {
+        width: 80%;
+    }
+    .footer-content {
+        flex-direction: column;
+        align-items: center;
+    }
+    .contact, .quick-links {
+        width: 100%;
+        margin: 10px 0;
+    }
+    nav ul {
+        gap: 10px;
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- Header with Navigation -->
+    <header>
+        <nav>
+            <div class="logo">Recruitment Platform</div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#footer">Contact</a></li>
+                <li><button class="login-btn" onclick="window.location.href='/auth/login'">Login</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Welcome to Our Recruitment Platform</h1>
+            <p>Connecting talent with opportunities</p>
+            <button class="btn" onclick="window.location.href='/auth/signup'">Sign Up Now</button>
+        </div>
+    </section>
+
+    <!-- Company Information Section -->
+    <section class="company-info" id="about">
+        <h2>About Us</h2>
+        <p>We are a leading recruitment platform dedicated to bridging the gap between talented individuals and innovative companies. Our mission is to make the hiring process seamless and efficient for candidates, companies, colleges, and administrators alike.</p>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2>Features</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>For Candidates</h3>
+                <p>Browse and apply for jobs, showcase your skills and certifications, and get endorsements from your college.</p>
+            </div>
+            <div class="feature-card">
+                <h3>For Companies</h3>
+                <p>Post job openings, view candidate profiles, and send hiring messages directly through our platform.</p>
+            </div>
+            <div class="feature-card">
+                <h3>For Colleges</h3>
+                <p>View student profiles, earn commissions from companies hiring your students, and generate unique codes for student registration.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us Section -->
+    <section class="why-choose-us">
+        <h2>Why Choose Us</h2>
+        <ul>
+            <li>Extensive network of companies and candidates</li>
+            <li>Advanced matching algorithms for better job fits</li>
+            <li>User-friendly interface for easy navigation</li>
+            <li>Dedicated support team available 24/7</li>
+        </ul>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <h2>What Our Users Say</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial">
+                <p>"This platform helped me find my dream job in no time!"</p>
+                <p>- John Doe, Candidate</p>
+            </div>
+            <div class="testimonial">
+                <p>"We've hired top talent efficiently using this service."</p>
+                <p>- Jane Smith, HR Manager</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content" id="footer">
+            <div class="contact">
+                <h3>Contact Us</h3>
+                <p>Email: info@recruitmentplatform.com</p>
+                <p>Phone: 123-456-7890</p>
+            </div>
+            <div class="quick-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">FAQs</a></li>
+                </ul>
+            </div>
+        </div>
+        <p>&copy; 2025 Recruitment Platform. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,198 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
-  <style>
-    /* Global Styles */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      width: 500px;  /* Increased width */
-      margin: 50px auto;
-      background: #fff;
-      padding: 40px;  /* Increased padding */
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);  /* More prominent shadow */
-      border: 1px solid #ddd;  /* Light border for visibility */
-      border-radius: 8px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    /* Flash Messages */
-    .flash-messages {
-      margin-bottom: 20px;
-    }
-    .alert {
-      padding: 15px;
-      margin-bottom: 15px;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    .alert-success {
-      color: #3c763d;
-      background-color: #dff0d8;
-      border-color: #d6e9c6;
-    }
-    .alert-danger {
-      color: #a94442;
-      background-color: #f2dede;
-      border-color: #ebccd1;
-    }
-    .alert-info {
-      color: #31708f;
-      background-color: #d9edf7;
-      border-color: #bce8f1;
-    }
-    .alert-warning {
-      color: #8a6d3b;
-      background-color: #fcf8e3;
-      border-color: #faebcc;
-    }
-
-    /* Form Styles */
-    .signup-form {
-      display: flex;
-      flex-direction: column;
-    }
-    .form-group {
-      margin-bottom: 15px;
-      display: flex;
-      flex-direction: column;
-    }
-    .form-group label {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    .form-group input, 
-    .form-group select {
-      height: 40px;
-      padding: 0 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    /* Password Field & Toggle */
-    .password-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .password-wrapper input {
-      flex: 1;
-      padding-right: 50px; /* Room for the toggle button */
-    }
-    .toggle-password {
-      position: absolute;
-      right: 10px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #007bff;
-      font-size: 14px;
-    }
-
-    /* Signup Button */
-    .btn {
-      height: 45px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .btn:hover {
-      background-color: #0056b3;
-    }
-
-    /* Login Link */
-    .login-link {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-    .login-link a {
-      color: #007bff;
-      text-decoration: none;
-    }
-    .login-link a:hover {
-      text-decoration: underline;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
 </head>
 <body>
-  <div class="container">
-    <div class="flash-messages">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+    <div class="container">
+        <h1>Create an Account</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('auth.signup') }}" method="POST" class="signup-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" required>
+                <label class="checkbox-label">
+                    <input type="checkbox" onclick="togglePassword()"> Show Password
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Role</label><br>
+                <select name="role" id="role" required class="select-styled">
+                    <option value="user">Job Seeker</option>
+                    <option value="company">Company</option>
+                    <option value="college">College</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <button type="submit" class="btn">Sign Up</button>
+        </form>
+        <p class="login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
     </div>
 
-    <h1>Create an Account</h1>
-    <form action="{{ url_for('auth.signup') }}" method="POST" class="signup-form">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username" required>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <div class="password-wrapper">
-          <input type="password" name="password" id="password" required>
-          <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">Show</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="role">User Account Type</label>
-        <select name="role" id="role" required>
-          <option value="user">User</option>
-          <option value="company">Company</option>
-          <option value="college">College</option>
-          <!-- 'admin' option intentionally omitted -->
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" name="email" id="email" required>
-      </div>
-
-      <button type="submit" class="btn">Sign Up</button>
-    </form>
-    <p class="login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
-  </div>
-
-  <script>
-    function togglePasswordVisibility() {
-      var passwordField = document.getElementById("password");
-      var toggleButton = document.querySelector(".toggle-password");
-      if (passwordField.type === "password") {
-        passwordField.type = "text";
-        toggleButton.textContent = "Hide";
-      } else {
-        passwordField.type = "password";
-        toggleButton.textContent = "Show";
-      }
-    }
-  </script>
+    <script>
+        function togglePassword() {
+            var passwordField = document.getElementById("password");
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+            } else {
+                passwordField.type = "password";
+            }
+        }
+    </script>
 </body>
 </html>

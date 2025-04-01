@@ -14,33 +14,96 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            position: relative;
         }
+
+        /* Flash message styling to avoid impacting page layout */
+        .flash-message-container {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            left: 0;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+        }
+
+        .flash-message {
+            pointer-events: auto;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeInOut 3s ease-in-out forwards;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        /* Complementary colors for alerts */
+        .alert-success.flash-message {
+            background-color: #2ecc71; /* Vibrant green */
+            color: #fff;
+            border: 1px solid #27ae60;
+        }
+
+        .alert-error.flash-message {
+            background-color: #e74c3c; /* Bold red */
+            color: #fff;
+            border: 1px solid #c0392b;
+        }
+
+        .alert-warning.flash-message {
+            background-color: #f39c12; /* Warm orange */
+            color: #fff;
+            border: 1px solid #d35400;
+        }
+
+        .alert-info.flash-message {
+            background-color: #3498db; /* Bright blue */
+            color: #fff;
+            border: 1px solid #2980b9;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-10px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
         .login-container {
             background-color: white;
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 350px;
+            z-index: 1;
         }
+
         .login-container h2 {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         .form-group label {
             display: block;
             font-size: 14px;
             margin-bottom: 5px;
         }
+
         .form-group input, .form-group select {
-            width: 100%;
+            width: 90%;
             padding: 10px;
+            padding-right: 25px;
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+
         .form-group button {
             width: 100%;
             padding: 10px;
@@ -52,6 +115,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
+
         .form-group button:hover {
             background-color: #005f73;
         }
@@ -85,11 +149,23 @@
     </style>
 </head>
 <body>
-  
+    <!-- Flash Message Container -->
+    <div class="flash-message-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <div class="login-container">
         <h2>Login</h2>
         <form action="{{ url_for('auth.login') }}" method="POST">
-
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
@@ -114,3 +190,4 @@
     </div>
 </body>
 </html>
+

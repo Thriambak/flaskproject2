@@ -17,9 +17,6 @@
   <!-- Balloon.css -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
   
-  <!-- Chart.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
   <style>
     /* Global styles (matching dashboard/resume pages) */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,10 +70,13 @@
       color: #0a9396;
     }
     
-    /* Layout */
-    main { display: flex; flex: 1; }
+    /* Layout: Navigation and Activity */
+    main {
+      display: flex;
+      flex-wrap: nowrap;
+      flex: 1;
+    }
     
-    /* Navigation Sidebar */
     .navigation {
       width: 20%;
       background: linear-gradient(to bottom, #ffffff, #f0f4f9);
@@ -86,8 +86,9 @@
       gap: 15px;
       border-right: 1px solid #ccc;
       box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .navigation button, .navigation a button {
+  }
+  
+  .navigation button {
       padding: 12px 20px;
       border: none;
       background: linear-gradient(90deg, #f0f4ff, #ffffff);
@@ -99,20 +100,23 @@
       align-items: center;
       gap: 15px;
       transition: background 0.3s, transform 0.2s;
-    }
-    .navigation button i, .navigation a button i { font-size: 18px; color: #005f73; }
-    .navigation button:hover, .navigation a button:hover {
+  }
+  
+  .navigation button i {
+      font-size: 18px;
+      color: #005f73;
+  }
+  
+  .navigation button:hover {
       background: linear-gradient(90deg, #dce4ff, #f9faff);
       transform: scale(1.05);
-    }
-    
-    /* Main Content (Activity) */
+  }
+    /* Activity Section */
     .activity {
-      width: 60%;
+      flex: 1;  /* Fills remaining space */
       padding: 20px;
       background: linear-gradient(to bottom, #ffffff, #f7f7f7);
       border-left: 1px solid #ccc;
-      border-right: 1px solid #ccc;
       box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
     }
     .activity h2 {
@@ -154,13 +158,12 @@
       transition: background 0.3s, transform 0.2s;
     }
     
-    /* Notification Item */
     .activity .notification-item {
       padding: 15px;
       border-radius: 12px;
       margin-bottom: 15px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
+      transition: transform 0.3s ease;
     }
     .activity .notification-item.unread {
       background-color: #e0f2fe;
@@ -202,38 +205,45 @@
       color: white;
     }
     
-    /* Side Panel */
-    .side-panel {
-      width: 20%;
-      background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-      padding: 20px;
+    /* Pagination */
+    .pagination {
       display: flex;
-      flex-direction: column;
-      gap: 25px;
-      box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 20px;
     }
-    .side-panel h3 {
-      font-size: 18px;
-      font-weight: 600;
+    .pagination button {
+      padding: 8px 15px;
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .pagination button:hover {
+      background-color: #16a085;
+    }
+    .pagination span {
+      font-size: 16px;
       color: #333;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    .side-panel p {
-      font-size: 15px;
-      color: #666;
-      margin: 5px 0;
-    }
-    canvas {
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      display: block;
     }
     
-    /* Responsive adjustments */
+    /* Animations for job postings (if any) */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .activity .job-posting {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    .activity .job-posting:nth-child(even) { animation-delay: 0.2s; }
+    .activity .job-posting:nth-child(odd) { animation-delay: 0.4s; }
+    
+    /* Enhanced mobile responsiveness */
     @media screen and (max-width: 768px) {
-      .navigation, .side-panel { display: none; }
+      .navigation { display: none; }
       .activity { width: 100%; }
       header .logo { font-size: 24px; }
       header .profile-settings button { padding: 8px 15px; font-size: 12px; }
@@ -244,6 +254,18 @@
 </head>
 <body class="bg-gray-100">
   <!-- Header -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
   <header>
     <div class="logo">
       <i class="fas fa-globe"></i> Employee Recruitment
@@ -253,29 +275,28 @@
       <button onclick="window.location.href='/user/profile'">
         <i class="fas fa-user"></i> Profile
       </button>
-      <button>
-        <i class="fas fa-cog"></i> Settings
-      </button>
+      <button><i class="fas fa-cog"></i> Settings</button>
       <a href="{{ url_for('auth.logout') }}">
-        <button>
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
+        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
       </a>
     </div>
   </header>
   
   <!-- Layout -->
   <main>
-    <!-- Navigation Sidebar -->
+    <!-- Navigation Sidebar (static, same as user dashboard) -->
     <div class="navigation">
       <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
       <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
       <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
       <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
+      <button onclick="window.location.href='/user/analytics'">
+        <i class="fas fa-chart-line"></i> Analytics
+      </button>
     </div>
     
-    <!-- Main Content (Activity) -->
-    <div class="activity">
+    <!-- Activity Section (only this part can be reloaded) -->
+    <div class="activity" id="activityContent">
       <h2>Notifications</h2>
       
       <!-- Search and Filters -->
@@ -319,36 +340,9 @@
         {% endif %}
       </div>
     </div>
-    
-    <!-- Side Panel with Charts -->
-    <div class="side-panel">
-      <div class="graph-container">
-        <h3>Success Rate</h3>
-        <canvas id="successRateChart"></canvas>
-      </div>
-      <div class="graph-container">
-        <h3>Applications Overview</h3>
-        <canvas id="applicationsChart"></canvas>
-      </div>
-    <!-- Recent Activities -->
-<h2>Recent Activities</h2>
-<ul>
-{% for activity in recent_activities %}
-    <li>{{ activity.job_title }} - Status: {{ activity.status }}</li>
-{% endfor %}
-</ul>
-
-<!-- Live Feed -->
-<h2>Live Feed</h2>
-<ul>
-{% for item in live_feed %}
-    <li>{{ item.job_title }} - Posted: {{ item.posted_at }}</li>
-{% endfor %}
-</ul>
-    </div>
   </main>
   
-  <!-- Scripts for Search & Filters -->
+  <!-- Scripts for Search & Filters and Optional Activity Reload -->
   <script>
     function searchNotifications() {
       const searchInput = document.getElementById("search").value.toLowerCase();
@@ -369,67 +363,22 @@
         }
       });
     }
-  </script>
-  
-  <!-- Chart Initialization (inside the notifications template) -->
-  <script>
-    // Convert the passed data into JavaScript objects
-    const userSuccessRateData = {{ user_success_rate|tojson }};
-    const applicationsOverviewData = {{ applications_overview|tojson }};
-
-    // Initialize the Success Rate Pie Chart
-    const successCanvas = document.getElementById('successRateChart');
-    if(successCanvas) {
-      const successCtx = successCanvas.getContext('2d');
-      new Chart(successCtx, {
-        type: 'pie',
-        data: {
-          labels: ['Accepted', 'Rejected', 'Pending'],
-          datasets: [{
-            data: [
-              userSuccessRateData.hired,
-              userSuccessRateData.rejected,
-              userSuccessRateData.pending
-            ],
-            backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
+    
+    // Optional: Function to reload only the activity section via AJAX
+    function reloadActivity() {
+      const activityContainer = document.getElementById("activityContent");
+      fetch(window.location.href + " #activityContent")
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const newContent = doc.getElementById("activityContent").innerHTML;
+          activityContainer.innerHTML = newContent;
+        })
+        .catch(err => console.error(err));
     }
-
-    // Initialize the Applications Overview Bar Chart
-    const applicationsCanvas = document.getElementById('applicationsChart');
-    if(applicationsCanvas) {
-      const appCtx = applicationsCanvas.getContext('2d');
-      new Chart(appCtx, {
-        type: 'bar',
-        data: {
-          labels: applicationsOverviewData.labels,
-          datasets: [{
-            label: 'Applications',
-            data: applicationsOverviewData.applications,
-            backgroundColor: '#264653',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { position: 'top' },
-            tooltip: { enabled: true }
-          },
-          scales: {
-            x: { beginAtZero: true },
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    }
+    // Uncomment below to auto-reload activity section every 60 seconds (optional)
+    // setInterval(reloadActivity, 60000);
   </script>
 </body>
 </html>

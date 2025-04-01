@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Certification, Coupon, Couponuser, Job, JobApplication,User,ResumeCertification, Notification #, JobApplication
+from models import Certification, Coupon, Couponuser, Job, JobApplication, Login,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
@@ -26,6 +26,8 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+from flask import request  # Ensure this is imported at the top
+
 @user_blueprint.route('/user_dashboard')
 @login_required
 def user_dashboard():
@@ -48,65 +50,44 @@ def user_dashboard():
     db.session.commit()
     db.session.expire_all()  # Forces fresh query results
 
-    # Fetch jobs for display (all jobs ordered by creation date)
-    jobs = Job.query.order_by(Job.created_at.desc()).all()
+    # Paginate the jobs query
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Adjust as needed
+    jobs_pagination = Job.query.order_by(Job.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    jobs = jobs_pagination.items
+    total_pages = jobs_pagination.pages
 
-    # Calculate application status counts for this user using users.id
-    hired = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
-    rejected = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
-    pending = db.session.query(db.func.count(JobApplication.id))\
-        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
-
-    user_success_rate = {
-        "hired": hired,
-        "rejected": rejected,
-        "pending": pending
-    }
-
-    # Prepare applications overview: group the number of applications by job title
-    overview = db.session.query(
-        Job.title,
-        db.func.count(JobApplication.id).label('applications')
-    ).join(Job, Job.job_id == JobApplication.job_id)\
-     .filter(JobApplication.user_id == user_id)\
-     .group_by(Job.title).all()
-
+    # Remove chart data; only upcoming events and notifications remain
     current_date = datetime.utcnow()
     upcoming_events = db.session.query(Job.title, Job.deadline)\
         .join(JobApplication, Job.job_id == JobApplication.job_id)\
         .filter(JobApplication.user_id == user_id, Job.deadline > current_date)\
         .order_by(Job.deadline.asc()).all()
     recent_notifications = Notification.query.filter_by(user_id=user_id, hidden=False)\
-    .order_by(Notification.timestamp.desc()).limit(5).all()
-    labels = [row.title for row in overview]
-    applications = [row.applications for row in overview]
-    applications_overview = {"labels": labels, "applications": applications}
-    print("Hired:", hired)
-    print("Rejected:", rejected)
-    print("Pending:", pending)
+        .order_by(Notification.timestamp.desc()).limit(5).all()
+    
     return render_template('user_dashboard.html',
                            jobs=jobs,
-                           user_success_rate=user_success_rate,
-                           applications_overview=applications_overview,
+                           upcoming_events=upcoming_events,
                            recent_notifications=recent_notifications,
-                           upcoming_events=upcoming_events)
+                           page=page,
+                           total_pages=total_pages)
+from datetime import datetime
 
-# Handle job application
+from models import db, User, Job, JobApplication, ResumeCertification, Notification
+
 @user_blueprint.route('/apply_for_job/<int:job_id>', methods=['POST'])
-@login_required
+
 def apply_for_job(job_id):
     user_id = session.get('user_id')
-    user = User.query.get(user_id)  # Fetch the user details from the database
-    
+    user = User.query.get(user_id)  
+
     if not user:
         flash("User not found.", 'error')
         return redirect(url_for('user.user_dashboard'))
 
     # Fetch the job that the user is applying for
     job = Job.query.get(job_id)
-   
 
     if not job:
         flash("Job not found.", 'error')
@@ -114,12 +95,12 @@ def apply_for_job(job_id):
     
     # Fetch the user's resume from the ResumeCertification table
     resume_certification = ResumeCertification.query.filter_by(user_id=user.id).first()
-    if resume_certification:
-        print("Debugging: resume_certification.resume_path:", resume_certification.resume_path)
-        flash("Application Successfull")
+    
     if not resume_certification or not resume_certification.resume_path:
         flash("You must upload a resume to apply for a job.", 'error')
         return redirect(url_for('user.resume_certifications'))
+
+    print("Debugging: Resume Path:", resume_certification.resume_path)  # ✅ Debugging Output
 
     # Check if the user has already applied for this job
     existing_application = JobApplication.query.filter_by(user_id=user.id, job_id=job_id).first()
@@ -127,40 +108,96 @@ def apply_for_job(job_id):
         flash(f"You have already applied for the job {job.title}.", 'error')
         return redirect(url_for('user.user_dashboard'))
 
-    # Prepare the application
+    # ✅ Ensure date_applied and status_updated_at are set properly
     new_application = JobApplication(
         user_id=user.id,
         job_id=job.job_id,
-        status='Pending',  # You can modify the status later (e.g., 'accepted', 'rejected')
+        status='Pending',  
         resume_path=resume_certification.resume_path,
+        
     )
 
+    # ✅ Send notification to company
     message = f"{user.name} has applied for the job: {job.title}"
     new_notification = Notification(
         user_id=user.login_id,
         company_id=job.created_by,
-        message=message,
+        message=message
     )
 
-    # Add the application to the database
+    # Add and commit changes to the database
     db.session.add(new_application)
     db.session.add(new_notification)
     db.session.commit()
 
     flash(f"Application for {job.title} submitted successfully!", 'success')
 
-    # Redirect to the user dashboard
     return redirect(url_for('user.user_dashboard'))
 
-from models import Communication
+@user_blueprint.route('/apply1_for_job/<int:job_id>', methods=['POST'])
 
-from flask import session, render_template
+def apply1_for_job(job_id):
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)  
+
+    if not user:
+        flash("User not found.", 'error')
+        return redirect(url_for('user.user_dashboard'))
+
+    # Fetch the job that the user is applying for
+    job = Job.query.get(job_id)
+
+    if not job:
+        flash("Job not found.", 'error')
+        return redirect(url_for('user.job_search'))
+    
+    # Fetch the user's resume from the ResumeCertification table
+    resume_certification = ResumeCertification.query.filter_by(user_id=user.id).first()
+    
+    if not resume_certification or not resume_certification.resume_path:
+        flash("You must upload a resume to apply for a job.", 'error')
+        return redirect(url_for('user.resume_certifications'))
+
+    print("Debugging: Resume Path:", resume_certification.resume_path)  # ✅ Debugging Output
+
+    # Check if the user has already applied for this job
+    existing_application = JobApplication.query.filter_by(user_id=user.id, job_id=job_id).first()
+    if existing_application:
+        flash(f"You have already applied for the job {job.title}.", 'error')
+        return redirect(url_for('user.job_search'))
+
+    # ✅ Ensure date_applied and status_updated_at are set properly
+    new_application = JobApplication(
+        user_id=user.id,
+        job_id=job.job_id,
+        status='Pending',  
+        resume_path=resume_certification.resume_path,
+        
+    )
+
+    # ✅ Send notification to company
+    message = f"{user.name} has applied for the job: {job.title}"
+    new_notification = Notification(
+        user_id=user.login_id,
+        company_id=job.created_by,
+        message=message
+    )
+
+    # Add and commit changes to the database
+    db.session.add(new_application)
+    db.session.add(new_notification)
+    db.session.commit()
+
+    flash(f"Application for {job.title} submitted successfully!", 'success')
+
+    return redirect(url_for('user.jobsearch'))
+
 def get_chart_data_for_user(user_id):
     """
     Retrieves dynamic chart data, recent activities, and live feed for the given user.
     Returns four items:
       - user_success_rate: counts of applications by status (hired, rejected, pending)
-      - applications_overview: a breakdown of application counts by job title
+      - application_trends: daily count of applications (as a trend over time)
       - recent_activities: list of user's recent job applications
       - live_feed: list of recent job postings
     """
@@ -173,16 +210,16 @@ def get_chart_data_for_user(user_id):
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
     user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
 
-    # Chart data: Applications overview
-    overview = db.session.query(
-        Job.title,
-        db.func.count(JobApplication.id).label('applications')
-    ).join(Job, Job.job_id == JobApplication.job_id)\
-     .filter(JobApplication.user_id == user_id)\
-     .group_by(Job.title).all()
-    labels = [row.title for row in overview]
-    applicationss = [row.applications for row in overview]
-    applications_overview = {"labels": labels, "applications": applicationss}
+    # Chart data: Application trends (daily count)
+    trend_data = db.session.query(
+        db.func.date(JobApplication.date_applied).label('date'),
+        db.func.count(JobApplication.id).label('count')
+    ).filter(JobApplication.user_id == user_id)\
+     .group_by(db.func.date(JobApplication.date_applied))\
+     .order_by(db.func.date(JobApplication.date_applied)).all()
+    trend_labels = [row.date.strftime('%Y-%m-%d') for row in trend_data]
+    trend_counts = [row.count for row in trend_data]
+    application_trends = {"labels": trend_labels, "counts": trend_counts}
 
     # Recent activities: Last 5 job applications by the user
     recent_activities = db.session.query(JobApplication, Job.title)\
@@ -204,7 +241,20 @@ def get_chart_data_for_user(user_id):
         for job in live_feed
     ]
 
-    return user_success_rate, applications_overview, recent_activities_list, live_feed_list
+    return user_success_rate, application_trends, recent_activities_list, live_feed_list
+
+@user_blueprint.route('/analytics')
+@login_required
+def analytics():
+    user_id = session.get('user_id')
+    user_success_rate, application_trends, recent_activities, live_feed = get_chart_data_for_user(user_id)
+    return render_template(
+        'analytics.html',
+        user_success_rate=user_success_rate,
+        application_trends=application_trends,
+        recent_activities=recent_activities,
+        live_feed=live_feed
+    )
 
 @user_blueprint.route('/notifications', methods=['GET'])
 def notifications():
@@ -414,8 +464,6 @@ def delete_notification(notification_id):
 
     flash("Notification deleted.", "success")
     return redirect(url_for('user.notifications'))
-
-
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -432,14 +480,11 @@ def profile():
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
     
-    # Retrieve dynamic chart data, recent activities, and live feed using the common helper function
-    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
-    
-    # Determine edit mode based on query parameter (?edit=true)
+    # Other data for charts, etc.
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
     if request.method == 'POST':
-        # (Your existing POST processing code)
+        # Update phone, age, etc.
         user.phone = request.form.get('phone', user.phone)
         age_input = request.form.get('age', '')
         if age_input:
@@ -449,9 +494,8 @@ def profile():
                 flash("Invalid age provided.", "error")
                 return redirect(url_for('user.profile', edit='true'))
         user.about_me = request.form.get('about_me', user.about_me)
-        
+        manual_college = request.form.get('college_name', '').strip()
         coupon_code = request.form.get('coupon_code', "").strip()
-        manual_college = request.form.get('college_name', "").strip()
         if coupon_code:
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             if coupon:
@@ -468,7 +512,12 @@ def profile():
                 user.college_name = manual_college or user.college_name
         else:
             user.college_name = manual_college or user.college_name
-
+        
+        # NEW: Get the profile picture URL from the form and update the field
+        profile_pic_url = request.form.get('profile_pic_url')
+        if profile_pic_url:
+            user.profile_picture = profile_pic_url
+        
         try:
             db.session.commit()
             flash("Profile updated successfully!", "success")
@@ -482,8 +531,29 @@ def profile():
                            user=user,
                            resumes=resumes,
                            certifications=certifications,
-                           edit_mode=edit_mode,
-                           user_success_rate=user_success_rate,
-                           applications_overview=applications_overview,
-                           recent_activities=recent_activities,
-                           live_feed=live_feed)
+                           edit_mode=edit_mode)
+from flask import jsonify
+
+@user_blueprint.route('/get_application_details/<int:application_id>', methods=['GET'])
+def get_application_details(application_id):
+    application = JobApplication.query.get(application_id)
+    
+    if not application:
+        return jsonify({"error": "Application not found"}), 404
+
+    print("Debug - Application Found:", application)  # ✅ Debugging Output
+    print("Debug - Date Applied:", application.date_applied)
+    print("Debug - Status Updated:", application.status_updated_at)
+
+    application_data = {
+        "jobTitle": application.job.title,
+        "company": application.job.company_name,
+        "status": application.status,
+        "resumePath": application.resume_path if application.resume_path else None,
+        "dateApplied": application.date_applied.strftime('%Y-%m-%d %H:%M:%S') if application.date_applied else None,
+        "dateStatusChanged": application.status_updated_at.strftime('%Y-%m-%d %H:%M:%S') if application.status_updated_at else None
+    }
+
+    print("Debug - JSON Response:", application_data)  # ✅ Debugging Output
+
+    return jsonify(application_data)

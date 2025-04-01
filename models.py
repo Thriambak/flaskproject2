@@ -80,6 +80,7 @@ class Company(db.Model):
     website = db.Column(db.Text)
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
+    industry = db.Column(db.Text)
 
     login = db.relationship('Login', backref=db.backref('company', uselist=False))
 
@@ -146,6 +147,8 @@ class Job(db.Model):
 
 
 # Job Application Table
+from datetime import datetime
+
 class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
@@ -154,17 +157,20 @@ class JobApplication(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # 'pending', 'accepted', 'rejected'
     resume_path = db.Column(db.Text, nullable=True)  # Store path to the resume file
-   
+    date_applied = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Timestamp when application is submitted
+    status_updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Timestamp when status is changed
+
     # Relationships
     user = db.relationship('User', backref='applications')
     job = db.relationship('Job', backref='applications')
 
-    def __init__(self, user_id, job_id, status, resume_path):
+    def __init__(self, user_id, job_id, status='Pending', resume_path=None):
         self.user_id = user_id
         self.job_id = job_id
         self.status = status
         self.resume_path = resume_path
-      
+        self.date_applied = datetime.utcnow()
+        self.status_updated_at = datetime.utcnow()
 
 # Communication Table
 class Communication(db.Model):
