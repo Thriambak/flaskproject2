@@ -55,3 +55,21 @@ document.addEventListener('DOMContentLoaded', () => {
         messages.forEach(message => message.style.display = 'none');
     }, 5000); // Adjust timing if needed
 
+    window.addEventListener('click', function(event) {
+        const dropdown = document.querySelector('.profile-dropdown');
+        const dropdownBtn = document.querySelector('.profile-icon-btn');
+        
+        if (!dropdown.contains(event.target)) {
+            const dropdownContent = document.querySelector('.dropdown-content');
+            if (dropdownContent.style.display === 'block') {
+                dropdownContent.style.display = 'none';
+            }
+        }
+    });
+    
+    // Toggle dropdown on click (alternative to hover)
+    document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+        event.stopPropagation();
+        const dropdownContent = document.querySelector('.dropdown-content');
+        dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+    });

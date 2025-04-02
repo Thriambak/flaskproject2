@@ -49,9 +49,9 @@
     header .profile-settings {
       display: flex;
       gap: 15px;
-      align-items: center;
-    }
-    header .profile-settings button {
+  }
+  
+  header .profile-settings button {
       background-color: white;
       border: none;
       border-radius: 20px;
@@ -63,12 +63,68 @@
       align-items: center;
       gap: 10px;
       transition: background-color 0.3s, color 0.3s;
-    }
-    header .profile-settings button i { color: #0a9396; }
-    header .profile-settings button:hover {
+  }
+  
+  .profile-dropdown {
+      position: relative;
+      display: inline-block;
+  }
+  
+  .profile-icon-btn {
+      background-color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+  }
+  
+  .profile-icon-btn i {
+      font-size: 30px;
+      color: #005f73;
+  }
+  
+  .profile-icon-btn:hover {
       background-color: #e6e6e6;
+  }
+  
+  .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+  }
+  
+  .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s;
+  }
+  
+  .dropdown-content a i {
       color: #0a9396;
-    }
+  }
+  
+  .dropdown-content a:hover {
+      background-color: #f1f1f1;
+  }
+  
+  .profile-dropdown:hover .dropdown-content {
+      display: block;
+  }
     .dark-toggle {
       background: transparent;
       border: 1px solid white;
@@ -233,14 +289,18 @@
     </div>
     <div>Welcome, {{ session['username'] }}!</div>
     <div class="profile-settings">
-      <button onclick="window.location.href='/user/profile'">
-        <i class="fas fa-user"></i> Profile
-      </button>
-      <button><i class="fas fa-cog"></i> Settings</button>
-      <a href="{{ url_for('auth.logout') }}">
-        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </a>
-    </div>
+      <div class="profile-dropdown">
+          <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+          <div class="dropdown-content">
+              <a href="{{ url_for('user.profile') }}">
+                  <i class="fas fa-user"></i> Profile
+              </a>
+              <a href="{{ url_for('auth.logout') }}">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+          </div>
+      </div>
+  </div>
   </header>
   
   <!-- Layout -->
@@ -386,6 +446,24 @@
       closeDetails();
     }
   }
+  window.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.profile-dropdown');
+    const dropdownBtn = document.querySelector('.profile-icon-btn');
+    
+    if (!dropdown.contains(event.target)) {
+        const dropdownContent = document.querySelector('.dropdown-content');
+        if (dropdownContent.style.display === 'block') {
+            dropdownContent.style.display = 'none';
+        }
+    }
+});
+
+// Toggle dropdown on click (alternative to hover)
+document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+    event.stopPropagation();
+    const dropdownContent = document.querySelector('.dropdown-content');
+    dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+});
 </script>
 
 </body>

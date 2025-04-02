@@ -557,3 +557,95 @@ def get_application_details(application_id):
     print("Debug - JSON Response:", application_data)  # ✅ Debugging Output
 
     return jsonify(application_data)
+
+from models import User, Job, Favorite
+from datetime import datetime
+
+
+
+# Save Job Route
+@user_blueprint.route('/save_job/<int:job_id>', methods=['POST'])
+
+def save_job(job_id):
+    login_id = session.get('login_id')
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Check if job is already saved
+    existing_favorite = Favorite.query.filter_by(user_id=user.id, job_id=job_id).first()
+    if existing_favorite:
+        flash("Job already saved", "info")
+        return redirect(url_for('user.user_dashboard'))
+    
+    # Create new favorite entry
+    new_favorite = Favorite(user_id=user.id, job_id=job_id)
+    db.session.add(new_favorite)
+    db.session.commit()
+    
+    flash("Job saved to favorites", "success")
+    return redirect(url_for('user.user_dashboard'))
+
+
+# Favorites Page Route
+@user_blueprint.route('/favorites')
+
+def favorites():
+    login_id = session.get('login_id')
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Join Favorite with Job so that all job details are available.
+    favorites_data = (
+        db.session.query(Favorite, Job)
+        .join(Job, Favorite.job_id == Job.job_id)
+        .filter(Favorite.user_id == user.id)
+        .order_by(Favorite.saved_at.desc())
+        .all()
+    )
+    
+    # Extract the Job objects from the tuple results.
+    favorites = [job for favorite, job in favorites_data]
+    
+    return render_template('favorites.html', favorites=favorites)
+@user_blueprint.route('/remove_favorite/<int:job_id>', methods=['POST'])
+def remove_favorite(job_id):
+    login_id = session.get('login_id')
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Look for the favorite entry matching the user and job
+    favorite = Favorite.query.filter_by(user_id=user.id, job_id=job_id).first()
+    if not favorite:
+        flash("Favorite not found", "error")
+        return redirect(url_for('user.favorites'))
+    
+    db.session.delete(favorite)
+    db.session.commit()
+    
+    flash("Job removed from favorites", "success")
+    return redirect(url_for('user.favorites'))
+@user_blueprint.route('/view_job/<int:job_id>')
+def view_job(job_id):
+    job = Job.query.get(job_id)
+    if not job:
+        flash("Job not found", "error")
+        return redirect(url_for('user.user_dashboard'))
+    return render_template('view_job.html', job=job)
