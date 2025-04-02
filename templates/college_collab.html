@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaboration Reports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+
+        header {
+            background: #0a9396;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        header .profile-settings button {
+            background-color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #0a9396;
+            transition: background-color 0.3s;
+        }
+
+        header .profile-settings button:hover {
+            background-color: #e0f4f1;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Collaboration Reports Section */
+        .collaboration-reports-container {
+            width: 80%;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .collaboration-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .collaboration-header h2 {
+            font-size: 28px;
+            color: #333;
+        }
+
+        /* Percentage and Statistics */
+        .statistics {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .statistics .stat-box {
+            width: 48%;
+            background-color: #0a9396;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .left-panel {
+            width: 20%;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .left-panel a {
+            text-decoration: none;
+        }
+
+        .left-panel button {
+            padding: 15px;
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .left-panel button:hover {
+            background-color: #005f73;
+        }
+
+
+        .statistics .stat-box h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .statistics .stat-box p {
+            font-size: 18px;
+        }
+
+        /* Partnered Companies List */
+        .partnered-companies-container {
+            margin-top: 30px;
+        }
+
+        .partnered-companies-header {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .partnered-companies-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .partnered-companies-list li {
+            font-size: 18px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .partnered-companies-list li:hover {
+            background-color: #e0f4f1;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-handshake"></i> Collaboration Reports
+        </div>
+        <div class="profile-settings">
+            <button><i class="fas fa-user"></i> Profile</button>
+            <button><i class="fas fa-cog"></i> Settings</button>
+            <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="left-panel">
+            <a href="{{ url_for('college.college_dashboard') }}" >
+                <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
+            </a>
+            <a href="{{ url_for('college.college_studenttraking') }}" >
+                <button><i class="fas fa-users"></i> Student Activity Tracking</button>
+            </a>
+            <a href="{{ url_for('college.generate_coupon') }}">
+                <button><i class="fas fa-gift"></i> Coupon Code Management</button>
+            </a>
+            <a href="{{ url_for('college.college_collab') }}">
+                <button><i class="fas fa-chart-line"></i> Collaboration Reports</button>
+            </a>
+            <a href="{{ url_for('college.college_endorsement') }}">
+                <button><i class="fas fa-chart-line"></i> Endorsement</button>
+            </a>
+        </div>
+        <div class="collaboration-reports-container">
+            <!-- Collaboration Reports Header -->
+            <div class="collaboration-header">
+                <h2>Collaboration Reports</h2>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="statistics">
+                <div class="stat-box">
+                    <h3>Placed Students</h3>
+                    <p id="placedStudentsPercentage">Percentage of Students Placed: 70%</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Total Students</h3>
+                    <p id="totalStudents">Total Students in the College: 1000</p>
+                </div>
+            </div>
+
+            <!-- Partnered Companies List -->
+            <div class="partnered-companies-container">
+                <div class="partnered-companies-header">
+                    <h3>Partnered Companies</h3>
+                </div>
+                <ul class="partnered-companies-list" id="partneredCompaniesList">
+                    <!-- Placeholder for dynamic company data -->
+                    <li>Company A</li>
+                    <li>Company B</li>
+                    <li>Company C</li>
+                    <li>Company D</li>
+                    <li>Company E</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Hardcoded data for the page
+        const totalStudents = 1000;
+        const placedStudents = 700;
+        const partneredCompanies = [
+            'Company A', 'Company B', 'Company C', 'Company D', 'Company E'
+        ];
+
+        // Calculating percentage of students placed
+        const placedPercentage = (placedStudents / totalStudents) * 100;
+
+        // Update statistics
+        document.getElementById('placedStudentsPercentage').innerText = `Percentage of Students Placed: ${placedPercentage.toFixed(2)}%`;
+        document.getElementById('totalStudents').innerText = `Total Students in the College: ${totalStudents}`;
+
+        // Dynamically populate the partnered companies list
+        const companiesListElement = document.getElementById('partneredCompaniesList');
+        companiesListElement.innerHTML = '';  // Clear existing list
+        partneredCompanies.forEach(company => {
+            const li = document.createElement('li');
+            li.textContent = company;
+            companiesListElement.appendChild(li);
+        });
+    </script>
+</body>
+</html>

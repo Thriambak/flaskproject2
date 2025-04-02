@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/userstyles.css') }}">
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Ensure canvas elements have a defined height so that the charts are visible */
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <i class="fas fa-globe"></i>
+      Employee Recruitment
+    </div>
+    <div>
+      Welcome, {{ session['username'] }}!
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+    <div class="profile-settings">
+      <button onclick="window.location.href='/user/profile'">
+        <i class="fas fa-user"></i> Profile
+      </button>
+      <button><i class="fas fa-cog"></i> Settings</button>
+      <a href="{{ url_for('auth.logout') }}">
+        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </a>
+    </div>
+  </header>
+  <main>
+    <div class="navigation">
+      <button><i class="fas fa-home"></i> Home</button>
+      <button onclick="window.location.href='/user/application_history'">
+        <i class="fas fa-history"></i> Application History
+      </button>
+      <a href="{{ url_for('user.notifications') }}">
+        <button><i class="fas fa-bell"></i> Notifications</button>
+      </a>
+      <a href="{{ url_for('user.resume_certifications') }}">
+        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
+      </a>
+    </div>
+    <div class="activity">
+      <div class="top-buttons">
+        <button><i class="fas fa-star"></i> For You</button>
+        <a href="{{ url_for('user.job_search') }}">
+          <button><i class="fas fa-compass"></i> Explore</button>
+        </a>
+        <button><i class="fas fa-heart"></i> Favourites</button>
+      </div>
+      
+      <div class="job-postings">
+        {% if jobs %}
+          {% for job in jobs %}
+            <div class="job-posting">
+              <div class="job-header">
+                <h3>{{ job.title }}</h3>
+                <div class="job-type">
+                  <i class="fas fa-briefcase"></i> {{ job.job_type }}
+                </div>
+              </div>
+              <p>{{ job.description }}</p>
+              <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ job.location }}</p>
+              <p><i class="fas fa-wallet"></i> <strong>Salary:</strong> ₹{{ job.salary }}</p>
+              <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+              <p><i class="fas fa-cogs"></i> <strong>Skills Required:</strong> {{ job.skills }}</p>
+              <p><i class="fas fa-certificate"></i> <strong>Certifications:</strong> {{ job.certifications }}</p>
+              {% if job.form_url %}
+                <p>
+                  <i class="fas fa-external-link-alt"></i>
+                  <strong>Application Form:</strong>
+                  <a href="{{ job.form_url }}" target="_blank" class="form-link">Open Application Form</a>
+                </p>
+              {% endif %}
+              <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
+                <button type="submit" class="btn apply-btn">Apply Now</button>
+              </form>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="alert alert-info" role="alert">
+            No job listings available at the moment.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+        
+    <div class="side-panel">
+      <div class="graph-container">
+        <h3>Application Status</h3>
+        <canvas id="successRateChart"></canvas>
+      </div>
+  
+      <div class="graph-container">
+        <h3>Applications Overview</h3>
+        <canvas id="applicationsChart"></canvas>
+      </div>
+      
+      <div class="live-feed">
+        <h3>Recent Activities</h3>
+        {% if recent_notifications %}
+            {% for notification in recent_notifications %}
+                <p>{{ notification.message }} - {{ notification.timestamp.strftime('%b %d, %Y %H:%M') }}</p>
+            {% endfor %}
+        {% else %}
+            <p>No recent activities.</p>
+        {% endif %}
+    </div>
+     
+        <div class="calendar">
+          <h3>Upcoming Events</h3>
+          {% if upcoming_events %}
+              {% for event in upcoming_events %}
+                  <p>{{ event.title }} - {{ event.deadline.strftime('%b %d, %Y') }}</p>
+              {% endfor %}
+          {% else %}
+              <p>No upcoming events.</p>
+          {% endif %}
+      </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Link to external JavaScript -->
+  <script src="{{ url_for('static', filename='/js/userjs.js') }}"></script>
+  
+  <!-- Initialize Charts Using Embedded Data -->
+  <script>
+    // Data passed from the view as JSON.
+    const userSuccessRateData = {{ user_success_rate|tojson }};
+    const applicationsOverviewData = {{ applications_overview|tojson }};
+    
+    // Initialize the Application Status Pie Chart.
+    const successCtx = document.getElementById('successRateChart').getContext('2d');
+    const successRateChart = new Chart(successCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Hired', 'Rejected', 'Pending'],
+        datasets: [{
+          data: [
+            userSuccessRateData.hired,
+            userSuccessRateData.rejected,
+            userSuccessRateData.pending
+          ],
+          backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+    
+    // Initialize the Applications Overview Bar Chart.
+    const appCtx = document.getElementById('applicationsChart').getContext('2d');
+    const applicationsChart = new Chart(appCtx, {
+      type: 'bar',
+      data: {
+        labels: applicationsOverviewData.labels,
+        datasets: [{
+          label: 'Applications',
+          data: applicationsOverviewData.applications,
+          backgroundColor: '#264653',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: { beginAtZero: true },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+    function updateChart(chart, newData) {
+      chart.data.datasets[0].data = [
+          newData.hired,
+          newData.rejected,
+          newData.pending
+      ];
+      chart.update();
+  }
+  
+  // Fetch new data periodically
+  setInterval(() => {
+      fetch('/get_application_data') // API that returns updated JSON
+          .then(response => response.json())
+          .then(data => {
+              updateChart(successRateChart, data);
+          });
+  }, 5000);  // Fetch new data every 5 seconds
+  
+  </script>
+</body>
+</html>

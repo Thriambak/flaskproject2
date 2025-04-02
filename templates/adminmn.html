@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Job Management</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='/css/adminmn.css')}}">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Admin: Manage Jobs</h1>
+
+            <!-- Job Creation Form -->
+            <button class="show-form-button" onclick="toggleForm()">Add New Job</button>
+           <!-- Job Creation/Update Form -->
+<div class="form-container" id="jobFormContainer">
+    <h2 id="formTitle">Add New Job</h2>
+    <form id="jobForm" action="/admin/adminmn" method="POST">
+        <input type="hidden" id="jobId" name="jobId" value=""> <!-- Hidden field for job ID -->
+        <div class="form-field">
+            <label for="jobTitle">Job Title</label>
+            <input type="text" id="jobTitle" name="jobTitle" placeholder="Enter a new job title..." required>
+        </div>
+        <div class="form-field">
+            <label for="jobDescription">Job Description</label>
+            <textarea id="jobDescription" name="jobDescription" placeholder="Describe the job..." required></textarea>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+        <div class="form-field">
+            <label for="jobType">Job Type</label>
+            <select id="jobType" name="jobType">
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Contract</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" placeholder="Enter job location..." required>
+        </div>
+        <div class="form-field">
+            <label for="salary">Salary Range</label>
+            <input type="text" id="salary" name="salary" placeholder="Enter salary range..." required>
+        </div>
+        <div class="form-field">
+            <label for="deadline">Application Deadline</label>
+            <input type="date" id="deadline" name="deadline" required>
+        </div>
+        <button type="submit" id="formSubmitButton">Add Job</button>
+    </form>
+</div>
+
+        
+            <!-- Job Listings -->
+        <!-- Job Listings -->
+<div class="job-list-container">
+    <h2>Current Job Listings</h2>
+    <ul id="jobList" class="job-list">
+        {% for job in jobs %}
+        <li>
+            <h3>{{ job.title }}</h3>
+            <p>{{ job.description }}</p>
+            <p>Type: {{ job.job_type }}</p>
+            <p>Location: {{ job.location }}</p>
+            <p>Salary: {{ job.salary }}</p>
+            <p>Deadline: {{ job.deadline }}</p>
+            
+            <!-- Update and Delete Buttons -->
+            <div class="job-actions">
+                <!-- Update Button -->
+                <button 
+                    class="update-button" 
+                    onclick="editJob('{{ job.id }}', '{{ job.title }}', '{{ job.description }}', '{{ job.job_type }}', '{{ job.location }}', '{{ job.salary }}', '{{ job.deadline }}')">
+                    Update
+                </button>
+
+                <!-- Delete Button -->
+                <form action="{{ url_for('admin_routes.delete_job', job_id=job.id) }}" method="POST" style="display:inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="delete-button">Delete</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+    <script src="{{url_for('static', filename='/js/adminnm.js')}}"></script>
+</body>
+</html>
