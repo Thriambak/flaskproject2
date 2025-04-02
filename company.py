@@ -35,14 +35,11 @@ def company_dashboard():
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
     
-    # print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
-
-    # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-    # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
-    
-    jobs = Job.query.filter_by(created_by=user_id).all()  # Uncomment this to only show jobs posted by the user
+    # Query to fetch all jobs posted by the user
+    jobs = Job.query.filter_by(created_by=user_id).all()
     profile = Company.query.filter_by(login_id=user_id).first()
     
+    # Get pending and interviewed applications counts
     pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
         .join(Job, JobApplication.job_id == Job.job_id)\
         .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
@@ -53,53 +50,35 @@ def company_dashboard():
         .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
         .scalar()
 
-    '''print("Pending count:",pending_applications_count)
-    print("Interviewed count:",interviewed_applications_count)'''
-
-    # Fetch the application data
-    applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
-
-
-
     # Process data for the bar graph
     labels = [job.title for job in jobs]
     total_applications = []
     shortlisted_applications = []
 
     for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() # or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='Hired').scalar() # or 0
+        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
+        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='Hired').scalar() or 0
 
         total_applications.append(total_count)
         shortlisted_applications.append(shortlisted_count)
     
-    # Process data for the pie chart
-    total_successful = sum(app.shortlisted_applications for app in applications)
-    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+    # Calculate total successful and unsuccessful applications
+    total_successful = sum(shortlisted_applications)
+    total_unsuccessful = sum(total_applications) - total_successful
 
-    # Ensure the user is not an admin (or redirect to the admin dashboard)
+    # Ensure the user is not an admin
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
-
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
     
-    return render_template('/company/dashboard.html', jobs=jobs, profile=profile, labels=labels,
-        total_applications=total_applications, shortlisted_applications=shortlisted_applications,
-        total_successful=total_successful, total_unsuccessful=total_unsuccessful,
-        pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
+    return render_template('/company/dashboard.html', 
+        jobs=jobs, 
+        profile=profile, 
+        labels=labels,
+        total_applications=total_applications, 
+        shortlisted_applications=shortlisted_applications,
+        total_successful=total_successful, 
+        total_unsuccessful=total_unsuccessful,
+        pending_applications_count=pending_applications_count,
         interviewed_applications_count=interviewed_applications_count)
 
 # Job Posting
@@ -471,85 +450,121 @@ def company_hiring_communication():
     if 'login_id' not in session or session.get('role') != 'company':
         return redirect(url_for('auth.login'))  # Ensure only company can access
 
+    # For the filter dropdown
+    selected_status = request.args.getlist('status')  # Get selected status filters
+    selected_jobs = request.args.getlist('job_post')  # Get selected job filters
+    
+    # For the search functionality
+    search_query = request.args.get('search_query', '').strip()
+
+    # Get all jobs created by the company
+    jobs = Job.query.filter_by(created_by=user_id).all()
+
     # Fetch all users who applied for the company's jobs
     applied_users = (
-        db.session.query(User.id, User.name)
+        db.session.query(
+            User.id, 
+            User.name,
+            User.login_id,  # Add this line to include login_id
+            Job.title.label('job_title'), 
+            JobApplication.status
+        )
         .join(JobApplication, JobApplication.user_id == User.id)
         .join(Job, JobApplication.job_id == Job.job_id)
         .filter(Job.created_by == user_id)
+        .order_by(User.id, JobApplication.id.desc())
+        .distinct(User.id)
         .all()
     )
+    
+    if selected_status or selected_jobs or search_query:
+        filtered_query = (
+            db.session.query(User.id, User.name, User.login_id, Job.title.label('job_title'), JobApplication.status)
+            .join(JobApplication, JobApplication.user_id == User.id)
+            .join(Job, JobApplication.job_id == Job.job_id)
+            .filter(Job.created_by == user_id)
+        )
+        
+        if selected_status:
+            filtered_query = filtered_query.filter(JobApplication.status.in_(selected_status))
+        if selected_jobs:
+            filtered_query = filtered_query.filter(Job.title.in_(selected_jobs))
+        if search_query:
+            filtered_query = filtered_query.filter(
+                or_(
+                    User.name.ilike(f'%{search_query}%'),
+                    Job.title.ilike(f'%{search_query}%'),
+                    JobApplication.status.ilike(f'%{search_query}%')
+                )
+            )
 
-    # Fetch communication history
-    messages = (
+        applied_users = filtered_query.all()
+
+    # Fetch communication history with structured data for JavaScript
+    messages_query = (
         db.session.query(
             Communication, 
             db.case(
-                (Communication.user_id.isnot(None), User.name),  # Fixed argument passing
+                (Communication.user_id.isnot(None), User.name),
                 else_=College.college_name
-            ).label("recipient_name")
+            ).label("recipient_name"),
+            db.case(
+                (Communication.user_id.isnot(None), 'candidate'),
+                else_='college'
+            ).label("recipient_type"),
+            db.case(
+                (Communication.user_id.isnot(None), Communication.user_id),  # Change from User.login_id
+                else_=Communication.college_id  # Change from College.login_id
+            ).label("recipient_id")
         )
         .outerjoin(User, Communication.user_id == User.login_id)
         .outerjoin(College, Communication.college_id == College.login_id)
         .filter(Communication.company_id == user_id)
         .order_by(Communication.timestamp.desc())
-        .all()
     )
+    
+    messages = messages_query.all()
 
     colleges = College.query.all()
 
+    # Message sending logic
     if request.method == 'POST':
         # Get data from form
-        selected_user_id = request.form.get('user_id')
-        selected_college_id = request.form.get('college_id')
         message_content = request.form.get('message')
-        # print("\nId conflicts:",selected_user_id,selected_college_id,message_content,"\n")
-
-        # Fetch recipient and sender email
-        if selected_college_id == None:
-            recipient_email = db.session.query(User.email).filter_by(id=selected_user_id).scalar()
-            new_user_id = db.session.query(User.login_id).filter_by(id=selected_user_id).scalar()
-        elif selected_user_id == None:
-            recipient_email = db.session.query(College.email).filter_by(id=selected_college_id).scalar()
-            new_user_id = db.session.query(College.login_id).filter_by(id=selected_college_id).scalar()
+        recipient_type = request.form.get('recipient_type')
+        recipient_id = request.form.get('recipient_id')
+        
+        # Determine which ID to use based on recipient type
+        if recipient_type == 'candidate':
+            selected_user_id = recipient_id  # This is already the login_id
+            selected_college_id = None
+            
+            # Get email directly using login_id
+            recipient_email = db.session.query(User.email).filter_by(login_id=selected_user_id).scalar()
+            new_user_id = selected_user_id  # Use login_id directly
+            new_college_id = None
+        else:
+            selected_college_id = recipient_id
+            selected_user_id = None
+            
+            # Get college email using login_id
+            recipient_email = db.session.query(College.email).filter_by(login_id=selected_college_id).scalar()
+            new_college_id = selected_college_id
+            new_user_id = None
+        
+            
         sender_email = db.session.query(Company.email).filter_by(login_id=user_id).scalar()
 
-        
-        # Debug
-        '''
-        print("User:",new_user_id)
-        print(f"Company ID: {user_id}")
-        print(f"Selected User ID: {selected_user_id}")
-        print(f"New User ID: {new_user_id}")
-        print(f"Message Content: {message_content}")'''
-
         # Add message to the database
-        if selected_user_id and message_content:
-            new_message = Communication(company_id=user_id, user_id=new_user_id, college_id=None, message=message_content)
+        if message_content:
+            new_message = Communication(company_id=user_id, user_id=new_user_id, college_id=new_college_id, message=message_content)
             db.session.add(new_message)
             db.session.commit()
 
             # Send email notification
             try:
                 subject = "New Message from Company"
-                body = f"Dear Candidate,\n\nYou have received a new message from {sender_email}:\n\n{message_content}\n\nBest regards,\nYour Job Portal"
-                msg = Message(subject=subject, recipients=[recipient_email])
-                msg.body = body
-                mail.send(msg)
-            except Exception as e:
-                print(f"Failed to send email: {e}")
-
-            flash('Message sent successfully!', 'success')
-
-        elif selected_college_id and message_content:
-            new_message = Communication(company_id=user_id, user_id=None, college_id=new_user_id, message=message_content)
-            db.session.add(new_message)
-            db.session.commit()
-
-            # Send email notification
-            try:
-                subject = "New Message from Company"
-                body = f"Dear Candidate,\n\nYou have received a new message from {sender_email}:\n\n{message_content}\n\nBest regards,\nYour Job Portal"
+                body = f"Dear Recipient,\n\nYou have received a new message from {sender_email}:\n\n{message_content}\n\nBest regards,\nYour Job Portal"
                 msg = Message(subject=subject, recipients=[recipient_email])
                 msg.body = body
                 mail.send(msg)
@@ -559,55 +574,34 @@ def company_hiring_communication():
             flash('Message sent successfully!', 'success')
 
         return redirect(url_for('company.company_hiring_communication'))
-
-
-    jobs = Job.query.filter_by(created_by=user_id).all()
-
-    applications = db.session.query(
-    Job.title,
-    db.func.count(JobApplication.id).label('total_applications'),
-    db.func.sum(db.case(
-                (JobApplication.status == 'Hired', 1),
-                else_=0
-            )).label('shortlisted_applications')
-        ).join(JobApplication, Job.job_id == JobApplication.job_id).filter(Job.created_by == user_id).group_by(Job.title).all()
-
-    total_applications = []
-    shortlisted_applications = []
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='shortlisted').scalar() or 0
-
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
     
-    # Process data for the pie chart
-    total_successful = sum(app.shortlisted_applications for app in applications)
-    total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
+    message_history = {"candidates": {}}
+    for msg, recipient_name, recipient_type, recipient_id in messages:
+        if recipient_type == 'candidate':
+            if recipient_id not in message_history["candidates"]:
+                message_history["candidates"][recipient_id] = []
+            
+            # Format the message with necessary details
+            message_entry = {
+                "name": "Company" if msg.company_id == user_id else recipient_name,
+                "message": msg.message,
+                "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M")
+            }
+            message_history["candidates"][recipient_id].append(message_entry)
 
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
-        .scalar()
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
-        .scalar()
-    
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
 
     profile = Company.query.filter_by(login_id=user_id).first()
-    return render_template('/company/hiring_message.html', applied_users=applied_users, messages=messages, 
-    profile=profile, total_successful=total_successful, total_unsuccessful=total_unsuccessful,
-    pending_applications_count=pending_applications_count, live_feed_notifications=live_feed_notifications,
-    interviewed_applications_count=interviewed_applications_count, colleges=colleges)
+
+    return render_template('/company/hiring_message.html', 
+        applied_users=applied_users, 
+        messages=messages, 
+        profile=profile, 
+        colleges=colleges,
+        jobs=jobs,
+        selected_status=selected_status,
+        selected_jobs=selected_jobs,
+        message_history=message_history
+    )
 
 # Notifications
 @company_blueprint.route('/company_notification', methods=['GET', 'POST'])
