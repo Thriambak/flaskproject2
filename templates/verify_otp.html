@@ -82,6 +82,34 @@
     </style>
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<style>
+ 
+    .flash-message {
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: bold;
+        opacity: 1;
+        transition: opacity 1s ease-out; /* Smooth fade */
+    }
+
+    .flash-message.success { background-color: #2ecc71; color: white; }
+    .flash-message.danger { background-color: #e74c3c; color: white; }
+    .flash-message.warning { background-color: #f39c12; color: white; }
+    .flash-message.info { background-color: #3498db; color: white; }
+</style>
+
     <div class="container">
         <h2>Enter OTP</h2>
         <p id="timer">Time remaining: 10:00</p>
@@ -97,6 +125,18 @@
     </div>
 
     <script>
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(() => {
+            document.querySelectorAll('.flash-message').forEach(msg => {
+                msg.style.transition = 'opacity 1s ease-out'; // Smooth fade-out
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 1000); // Wait for transition to complete
+            });
+        }, 4000); // Wait 4 seconds before starting fade-out
+    });
+
+
         function startTimer(duration) {
             let timer = duration, minutes, seconds;
             const interval = setInterval(async function () {
@@ -104,7 +144,7 @@
                 seconds = timer % 60;
 
                 document.getElementById('timer').textContent = 
-                    `Time remaining: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    Time remaining: ${minutes}:${seconds < 10 ? '0' : ''}${seconds};
 
                 if (timer <= 0) {
                     clearInterval(interval);
