@@ -273,3 +273,12 @@ class Couponuser(db.Model):
     def __repr__(self):
         return f"<CouponUser User ID: {self.user_id}, Coupon ID: {self.coupon_id}>"
 
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
+    saved_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('favorites', lazy=True))
+    job = db.relationship('Job', backref=db.backref('favorited_by', lazy=True))

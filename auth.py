@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,jsonify
 from config import Config
 from models import Admin, College, db, User, Job, Login, Company
 import re
@@ -7,6 +7,7 @@ import string
 from extensions import mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta
 auth_blueprint = Blueprint('auth', __name__)
 
 import re
@@ -276,7 +277,7 @@ def logout():
     session.pop('username', None)
     session.pop('role', None)
     session.clear()  # Clears all session variables
-    flash("You have been logged out.", "info")
+    #flash("You have been logged out.", "info")
     # Create a response object for the redirect
     response = redirect(url_for('auth.login'))
     
@@ -292,15 +293,24 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
         user = User.query.filter_by(email=email).first()
+        if(user is None):
+            user = College.query.filter_by(email=email).first()
+            if(user is None):
+                user=Company.query.filter_by(email=email).first()
+                if(user is None):
+                    user=Admin.query.filter_by(email=email).first()
+
+       
 
         if user:
             otp = ''.join(random.choices(string.digits, k=6))  # Generate OTP
             session['otp'] = otp
             session['email'] = email  # Store email temporarily
+            session['otp_time'] = datetime.utcnow().isoformat()  # Store OTP generation time
 
             # Send OTP via email
             msg = Message("Password Reset OTP", recipients=[email])
-            msg.body = f"Your OTP for password reset is: {otp}"
+            msg.body = f"Your OTP for password reset is: {otp}. It will expire in 10 minutes."
             mail.send(msg)
 
             flash("OTP has been sent to your email.", "success")
@@ -311,9 +321,21 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 
-# OTP Verification Route
 @auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
+    if 'otp' not in session or 'otp_time' not in session:
+        flash("Session expired. Please request a new OTP.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    otp_time = datetime.fromisoformat(session['otp_time'])
+    remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
+
+    if remaining_time.total_seconds() <= 0:
+        session.pop('otp', None)
+        session.pop('otp_time', None)
+        flash("OTP expired. Please request a new one.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
     if request.method == 'POST':
         entered_otp = request.form['otp']
         if entered_otp == session.get('otp'):
@@ -321,8 +343,24 @@ def verify_otp():
         else:
             flash("Invalid OTP. Please try again.", "danger")
 
-    return render_template('verify_otp.html')
+    return render_template('verify_otp.html', remaining_time=int(remaining_time.total_seconds()))
 
+
+@auth_blueprint.route('/otp-timer')
+def otp_timer():
+    """API endpoint to check remaining OTP time."""
+    if 'otp_time' not in session:
+        return jsonify({'expired': True, 'remaining_time': 0})
+
+    otp_time = datetime.fromisoformat(session['otp_time'])
+    remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
+
+    if remaining_time.total_seconds() <= 0:
+        session.pop('otp', None)
+        session.pop('otp_time', None)
+        return jsonify({'expired': True, 'remaining_time': 0})
+
+    return jsonify({'expired': False, 'remaining_time': int(remaining_time.total_seconds())})
 
 # Password Reset Route
 @auth_blueprint.route('/reset-password', methods=['GET', 'POST'])
@@ -335,20 +373,47 @@ def reset_password():
         new_password = request.form['password']
         confirm_password = request.form['confirm_password']
 
+        # Validate password
         if new_password != confirm_password:
             flash("Passwords do not match. Please try again.", "danger")
             return redirect(url_for('auth.reset_password'))
 
+        if ' ' in new_password:
+            flash('Password cannot contain spaces.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        if not re.match(r'^[a-zA-Z0-9@#$%^&+=]+$', new_password):
+            flash('Password can only contain letters, numbers, and special characters @#$%^&+=', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        if len(new_password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        # Hash password
         hashed_password = generate_password_hash(new_password)
-        user = User.query.filter_by(email=session['email']).first()
+
+        # Find user by email
+        email = session.get('email')
+        user = User.query.filter_by(email=email).first() or \
+               College.query.filter_by(email=email).first() or \
+               Company.query.filter_by(email=email).first() or \
+               Admin.query.filter_by(email=email).first()
+
         if user:
-            user.password = hashed_password
-            db.session.commit()
+            # Get the corresponding Login entry
+            login_entry = Login.query.filter_by(id=user.login_id).first()
+            if login_entry:
+                login_entry.password_hash = hashed_password
+                db.session.commit()
 
-            session.pop('email', None)
-            session.pop('otp', None)
+                # Clear session data
+                session.pop('email', None)
+                session.pop('otp', None)
 
-            flash("Password reset successful! You can now log in.", "success")
-            return redirect(url_for('auth.login'))
+                flash("Password reset successful! You can now log in.", "success")
+                return redirect(url_for('auth.login'))
+
+        flash("Error resetting password. Please try again.", "danger")
 
     return render_template('reset_password.html')
