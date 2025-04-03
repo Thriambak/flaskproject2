@@ -7,42 +7,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
 </head>
 <body>
+    <!-- Display Flash Messages at the Top -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        {% for category, message in messages %}
-            <div class="flash-message {{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
+        <div class="flash-message-container">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
-{% endwith %}
+    {% endwith %}
 
-<style>
-  
-    .flash-message {
-        padding: 12px;
-        margin: 10px 0;
-        border-radius: 5px;
-        text-align: center;
-        font-weight: bold;
-        opacity: 1;
-        transition: opacity 1s ease-out; /* Smooth fade */
-    }
-
-    .flash-message.success { background-color: #2ecc71; color: white; }
-    .flash-message.danger { background-color: #e74c3c; color: white; }
-    .flash-message.warning { background-color: #f39c12; color: white; }
-    .flash-message.info { background-color: #3498db; color: white; }
-</style>
     <div class="container">
         <h1>Create an Account</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
         <form action="{{ url_for('auth.signup') }}" method="POST" class="signup-form">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -77,18 +56,15 @@
     </div>
 
     <script>
-       
-       document.addEventListener("DOMContentLoaded", function () {
-        setTimeout(() => {
-            document.querySelectorAll('.flash-message').forEach(msg => {
-                msg.style.transition = 'opacity 1s ease-out'; // Smooth fade-out
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 1000); // Wait for transition to complete
-            });
-        }, 4000); // Wait 4 seconds before starting fade-out
-    });
-
-
+        document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(() => {
+        document.querySelectorAll('.flash-message').forEach(msg => {
+            msg.style.transition = 'opacity 1s ease-out'; // Smooth fade-out
+            msg.style.opacity = '0';
+            setTimeout(() => msg.remove(), 1000); // Wait for transition to complete
+        });
+    }, 4000); // Wait 4 seconds before starting fade-out
+});
         function togglePassword() {
             var passwordField = document.getElementById("password");
             if (passwordField.type === "password") {
@@ -100,3 +76,5 @@
     </script>
 </body>
 </html>
+
+

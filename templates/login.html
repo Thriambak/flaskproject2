@@ -6,48 +6,50 @@
     <title>Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            position: relative;
-        }
+  body {
+    font-family: 'Arial', sans-serif;
+    background: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    position: relative;
+}
 
-        .flash-message-container {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            left: 0;
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-        }
+.flash-message-container {
+    position: absolute;
+    bottom: 20px; /* Position the flash messages at the bottom */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    width: 100%;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+}
 
-        .flash-message {
-            margin: 10px;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            animation: fadeInOut 4s ease-in-out forwards;
-            max-width: 600px;
-            width: 90%;
-        }
+.flash-message {
+    margin: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeInOut 4s ease-in-out forwards;
+    max-width: 600px;
+    width: 90%;
+}
 
-        .alert-success { background-color: #2ecc71; color: #fff; }
-        .alert-error { background-color: #e74c3c; color: #fff; }
-        .alert-warning { background-color: #f39c12; color: #fff; }
-        .alert-info { background-color: #3498db; color: #fff; }
+.alert-success { background-color: #2ecc71; color: #fff; }
+.alert-error { background-color: #e74c3c; color: #fff; }
+.alert-warning { background-color: #f39c12; color: #fff; }
+.alert-info { background-color: #3498db; color: #fff; }
 
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(-10px); }
-            15% { opacity: 1; transform: translateY(0); }
-            85% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-10px); }
-        }
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(10px); }
+}
+
 
         .login-container {
             background-color: white;
@@ -148,14 +150,15 @@
     
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        {% for category, message in messages %}
-            <div class="flash-message {{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
+        <div class="flash-message-container">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
     {% endwith %}
-
     <div class="login-container">
         <h2>Login</h2>
         <form action="{{ url_for('auth.login') }}" method="POST">
