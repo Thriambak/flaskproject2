@@ -7,10 +7,15 @@ import {
   TextField,
   SearchInput,
   TopToolbar,
+  FunctionField,
   ExportButton,
-  useListContext
+  useListContext,
+  BooleanField,
+  BooleanInput,
+  useUpdate,
+  useNotify
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme } from "@mui/material";
+import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel } from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -26,7 +31,12 @@ import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AddIcon from '@mui/icons-material/Add';
-
+import BlockIcon from '@mui/icons-material/Block';
+import BadgeIcon from '@mui/icons-material/Badge';
+import CategoryIcon from '@mui/icons-material/Category';
+import EventIcon from '@mui/icons-material/Event';
+import FactoryIcon from '@mui/icons-material/Factory';
+import LockIcon from '@mui/icons-material/Lock';
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 const customDataProvider = {
@@ -344,14 +354,15 @@ const FilterDropdown = () => {
             case 'companies':
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
-                    { label: "Email", value: "email:", icon: <EmailIcon /> }
+                    { label: "Email", value: "email:", icon: <EmailIcon /> },
+		    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
                     { label: "Title", value: "title:", icon: <WorkIcon /> },
-                    { label: "Job Type", value: "job_type:", icon: <WorkIcon /> },
-                    { label: "Location", value: "location:", icon: <LocationOnIcon /> },
-                    { label: "Status", value: "status:", icon: <WorkIcon /> }
+                    { label: "Company", value: "created_by:", icon: <FactoryIcon /> },
+                    { label: "Date Posted", value: "created_at:", icon: <EventIcon /> },
+                    { label: "Status", value: "status:", icon: <LockIcon /> }
                 ];
             default:
                 return [];
@@ -481,6 +492,67 @@ const StyledDatagrid = ({ children, ...props }) => (
     </Datagrid>
 );
 
+const BanToggle = ({ record, resource }) => {
+    const [update, { isLoading }] = useUpdate();
+    const notify = useNotify();
+    const theme = useTheme();
+    
+    const [isBanned, setIsBanned] = useState(record.is_banned || false);
+    
+    const handleToggle = (event) => {
+        const newValue = event.target.checked;
+        setIsBanned(newValue);
+        
+        update(
+            resource,
+            { id: record.id, data: { is_banned: newValue }, previousData: record },
+            {
+                onSuccess: () => {
+                    notify(
+                        newValue ? 'User has been banned' : 'User has been unbanned',
+                        { type: 'success' }
+                    );
+                },
+                onError: (error) => {
+                    setIsBanned(!newValue);
+                    notify(
+                        `Error: Couldn't update ban status - ${error.message}`,
+                        { type: 'error' }
+                    );
+                }
+            }
+        );
+    };
+    
+    return (
+        <FormControlLabel
+            control={
+                <Switch
+                    checked={isBanned}
+                    onChange={handleToggle}
+                    disabled={isLoading}
+                    color="error"
+                    size="small"
+                />
+            }
+            label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {isBanned && (
+                        <BlockIcon 
+                            fontSize="small" 
+                            sx={{ mr: 0.5, color: theme.palette.error.main }}
+                        />
+                    )}
+                    <Typography variant="body2">
+                        {isBanned ? "Banned" : "Ban"}
+                    </Typography>
+                </Box>
+            }
+            sx={{ m: 0 }}
+        />
+    );
+};
+
 const UserList = (props) => (
     <List 
         actions={<ListActions />}
@@ -494,11 +566,15 @@ const UserList = (props) => (
         ]} 
         {...props}
     >
-        <StyledDatagrid>
+        <Datagrid>
             <TextField source="id" />
             <TextField source="name" />
             <TextField source="email" />
-        </StyledDatagrid>
+            <FunctionField
+                label="Ban Status"
+                render={(record) => <BanToggle record={record} resource="users" />}
+            />
+        </Datagrid>
     </List>
 );
 
@@ -515,14 +591,26 @@ const CompanyList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>
+        <Datagrid>
             <TextField source="id" />
             <TextField source="company_name" />
             <TextField source="email" />
-        </StyledDatagrid>
+            <BooleanField 
+                source="is_banned" 
+                label="Ban Status"
+                TrueIcon={() => <BlockIcon color="error" />}
+                FalseIcon={() => null}
+                sx={{ 
+                    '& .RaBooleanField-true': { color: 'error.main' },
+                }}
+            />
+            <FunctionField
+                label="Ban Toggle"
+                render={(record) => <BanToggle record={record} resource="companies" />}
+            />
+        </Datagrid>
     </List>
 );
-
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -536,8 +624,7 @@ const JobList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>
-            <TextField source="id" />
+        <StyledDatagrid>  <TextField source="id" />
             <TextField source="title" />
             <TextField source="description" />
             <TextField source="job_type" />

@@ -42,7 +42,7 @@ class College(db.Model):
     website = db.Column(db.Text)
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
-
+    is_banned = db.Column(db.Boolean, default = False)
     login = db.relationship('Login', backref=db.backref('college', uselist=False))
 
     def __repr__(self):
@@ -62,7 +62,7 @@ class User(db.Model):
     profile_picture = db.Column(db.Text)
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
-
+    is_banned = db.Column(db.Boolean, default = False)
     login = db.relationship('Login', backref=db.backref('user', uselist=False))
     
     def __repr__(self):
@@ -81,7 +81,7 @@ class Company(db.Model):
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
     industry = db.Column(db.Text)
-
+    is_banned = db.Column(db.Boolean, default = False)
     login = db.relationship('Login', backref=db.backref('company', uselist=False))
 
     def __repr__(self):

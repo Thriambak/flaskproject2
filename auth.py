@@ -207,7 +207,19 @@ def login():
         if not login or not login.check_password(password):
             return render_template('login.html', error='Invalid username or password.')
 
-        # Store session details
+        # Now check the `is_banned` status for the user or company
+        if login.role in ['user', 'company']:
+            # Check if the user or company is banned
+            if login.role == 'user':
+                user = User.query.filter_by(login_id=login.id).first()
+                if user and user.is_banned:  # Assuming `is_banned` is a field in the `User` model
+                    return render_template('login.html', error="Cannot login. Contact support.")
+            elif login.role == 'company':
+                company = Company.query.filter_by(login_id=login.id).first()
+                if company and company.is_banned:  # Assuming `is_banned` is a field in the `Company` model
+                    return render_template('login.html', error="Cannot login. Contact support.")
+        
+        # Store session details if login is successful and not banned
         session['login_id'] = login.id
         session['username'] = login.username
         session['role'] = login.role
@@ -238,39 +250,6 @@ def login():
 
     return render_template('login.html')
 
-
-# ith login function, ithil when logged in it checks the login table , and if present, it takes the role and goes to corresponding page,
-
-
-'''@auth_blueprint.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        # Find the user by username
-        user = User.query.filter_by(username=username).first()
-        
-        if not user or not user.check_password(password):
-            flash('Invalid username or password.', 'danger')
-            return redirect(url_for('auth.login'))
-
-        # Login successful, store user information in session
-        session['user_id'] = user.id
-        session['username'] = user.username
-        session['role'] = user.role
-
-        flash(f'Welcome, {user.name}!', 'success')
-        
-        # Case-insensitive role check
-        if user.role == 'admin':
-            return redirect(url_for('admin_routes.admin_dashboard'))
-        elif user.role == 'company':
-            return redirect(url_for('company.company_dashboard'))
-        else:
-            return redirect(url_for('user.user_dashboard'))
-
-    return render_template('login.html')'''
 
 @auth_blueprint.route('/logout')
 def logout():
