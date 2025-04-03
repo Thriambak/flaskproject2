@@ -10,13 +10,43 @@ body {
     align-items: center;
     height: 100vh;
     color: #333;
+    position: relative; /* Ensure flash message container can be positioned correctly */
 }
+
+.flash-message-container {
+    position: absolute;
+    bottom: 20px; /* Position flash messages at the bottom */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    width: 100%;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+}
+
+.flash-message {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    opacity: 1;
+    transition: opacity 1s ease-out; /* Smooth fade */
+    max-width: 500px;  /* Limit the max-width of the flash message */
+    width: 90%;  /* Allow it to scale with the screen size */
+}
+
+.flash-message.success { background-color: #2ecc71; color: white; }
+.flash-message.danger { background-color: #e74c3c; color: white; }
+.flash-message.warning { background-color: #f39c12; color: white; }
+.flash-message.info { background-color: #3498db; color: white; }
 
 .container {
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 40px;
+    height: auto;
     width: 100%;
     max-width: 500px;
 }
@@ -52,6 +82,13 @@ input {
     border: 1px solid #ccc;
     margin-top: 8px;
     transition: border-color 0.3s;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    color: #888;
 }
 
 /* Fix for Show Password alignment */
@@ -106,7 +143,7 @@ input:focus, .select-styled:focus {
 }
 
 .login-link a {
-    color: #4A90E2;
+    color: #0a9396;
     text-decoration: none;
 }
 

@@ -321,21 +321,28 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 
+from datetime import datetime, timedelta
+from flask import session, flash, redirect, url_for, render_template, request, jsonify
+
 @auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
-def verify_otp():
+def verify_otp(): 
+    # Check if OTP and OTP time exist in the session
     if 'otp' not in session or 'otp_time' not in session:
         flash("Session expired. Please request a new OTP.", "danger")
         return redirect(url_for('auth.forgot_password'))
 
+    # Get OTP time and calculate remaining time
     otp_time = datetime.fromisoformat(session['otp_time'])
     remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
 
+    # If OTP expired
     if remaining_time.total_seconds() <= 0:
         session.pop('otp', None)
         session.pop('otp_time', None)
         flash("OTP expired. Please request a new one.", "danger")
         return redirect(url_for('auth.forgot_password'))
 
+    # Handle POST request when OTP is entered
     if request.method == 'POST':
         entered_otp = request.form['otp']
         if entered_otp == session.get('otp'):
@@ -343,23 +350,27 @@ def verify_otp():
         else:
             flash("Invalid OTP. Please try again.", "danger")
 
+    # Render the verify_otp page and pass remaining time to template
     return render_template('verify_otp.html', remaining_time=int(remaining_time.total_seconds()))
-
 
 @auth_blueprint.route('/otp-timer')
 def otp_timer():
     """API endpoint to check remaining OTP time."""
+    # If OTP time does not exist in the session
     if 'otp_time' not in session:
         return jsonify({'expired': True, 'remaining_time': 0})
 
+    # Get OTP time and calculate remaining time
     otp_time = datetime.fromisoformat(session['otp_time'])
     remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
 
+    # If OTP expired
     if remaining_time.total_seconds() <= 0:
         session.pop('otp', None)
         session.pop('otp_time', None)
         return jsonify({'expired': True, 'remaining_time': 0})
 
+    # Return remaining time if OTP is still valid
     return jsonify({'expired': False, 'remaining_time': int(remaining_time.total_seconds())})
 
 # Password Reset Route

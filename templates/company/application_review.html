@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/company/application_review.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Hide all application rows initially */
+        #applications-table tbody tr.application-row {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -18,13 +24,17 @@
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" class="profile-btn" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> <span class="btn-text">Profile</span></button>
-            </a>
-            <button class="settings-btn"><i class="fas fa-cog"></i> <span class="btn-text">Settings</span></button>
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> <span class="btn-text">Logout</span></button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
@@ -51,7 +61,7 @@
                         <label><input type="checkbox" class="status-filter" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
                         <label><input type="checkbox" class="status-filter" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
 
-                        <h4>Job Post</h4>
+                        <!--<h4>Job Post</h4>
                         {% if jobs %}
                             {% for application in jobs %}
                                 <p style="overflow-wrap: break-word; max-width: 100%;">
@@ -59,7 +69,7 @@
                                     {{ application.title }}
                                 </p>
                             {% endfor %}
-                        {% endif %}
+                        {% endif %}-->
                     </div>
                 </div>
 
@@ -70,7 +80,6 @@
                 </div>
             </div>
             
-            <br>
             <!-- Candidate List -->
             <div class="candidate-list">
                 <h3>Candidate List</h3>
@@ -79,7 +88,7 @@
                         <thead>
                             <tr>
                                 <th>Candidate Name</th>
-                                <th>Job Title</th>
+                                <th>Job Post</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -139,13 +148,32 @@
         </div>
     </main>
 
-    <!-- Global variable to hold user certifications data -->
     <script>
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        //Global variable to hold user certifications data
         var userCertifications = {{ user_certifications|tojson }};
 
         // Pagination variables
         let currentPage = 1;
-        const rowsPerPage = 10;
+        const rowsPerPage = 5;
         let filteredRows = [];
 
         // Menu toggle function

@@ -3,129 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Page</title>
+    <title>Hiring Communication</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/company/hiring_message.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Hide all candidate rows initially */
+        #candidates-table tbody tr.application-row {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
             <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> Profile</button>
-            </a>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
-        <div class="navigation">
-            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
-            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/company/company_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_notification'"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
-
-        
-        <form class="activity" action="{{ url_for('company.company_hiring_communication') }}" method="POST">  
-            <h2>Candidate Communication</h2>
-            <!-- Search Bar and Dropdown -->
-            <div class="search-bar">
-                <h4 style="padding-left: 1%;">To:</h4>
-                <input type="text" placeholder="Enter candidate or college name..." id="search-input" style="font-family: monospace;">
-                <div class="select-btn" onclick="toggleUserDropdown()">Candidates</div>
-                <div class="dropdown-menu" id="user-dropdown-menu">
-                    {% for user in applied_users %}
-                        <label>
-                            <input type="radio" name="user_id" value="{{ user.id }}" onclick="updateSearchText('{{ user.id }}', '{{ user.name }}', 'candidate')">
-                            {{ user.name }}
-                        </label>
-                    {% endfor %}
-                </div>
-                <div class="select-btn" onclick="toggleCollegeDropdown()">Colleges</div>
-                <div class="dropdown-menu" id="college-dropdown-menu">
-                    {% for college in colleges %}
-                        <label>
-                            <input type="radio" name="college_id" value="{{ college.id }}" onclick="updateSearchText('{{ college.id }}', '{{ college.college_name }}', 'college')">
-                            {{ college.college_name }}
-                        </label>
-                    {% endfor %}
-                </div>
+    
+        <div class="activity">
+            <div class="top-header">
+                <h2>Hiring Communication</h2>
             </div>
-
-            <!-- Send Message -->
-            <div>
-                <textarea id="message-box" name="message" class="message-box" placeholder="Type your message here..." required></textarea>
-                <div class="controls">
-                    <select id="template-dropdown" onchange="populateTemplate()">
-                        <option value="">Select Template</option>
-                        <option value="Thank you for applying. We will review your profile.">Thank You</option>
-                        <option value="We would like to schedule an interview. Please let us know your availability.">Interview Scheduling</option>
-                        <option value="Congratulations! We are pleased to offer you the position.">Offer Letter</option>
-                        <option value="Sorry for the inconvenience. Your application has been rejected.">Reject Letter</option>
-                    </select>
-                    <button type="submit">Send Message</button>
-                </div>
-            </div>
-
-            <!-- Message History -->
-            <br><br>
-            <h4 style="padding-left: 1%;">Messgae History</h4><br>
-            <div class="message-history">
-                {% for communication, recipient_name in messages %}
-                    <div class="message-entry">
-                        <strong>{{ recipient_name }} - {{ communication.timestamp.strftime('%d %b %Y') }}</strong>
-                        <p>{{ communication.message }}</p>
+            
+            <div class="filter-bar">
+                <!-- Filter Button -->
+                <div class="filter-container">
+                    <button class="filter-button" type="button"><i class="fas fa-filter"></i> Filter</button>
+                    <div class="filter-dropdown" id="filter-dropdown">
+                        <h4>Status</h4>
+                        <label><input type="checkbox" class="status-filter" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
+                        <label><input type="checkbox" class="status-filter" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
+                        <label><input type="checkbox" class="status-filter" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
+                        <label><input type="checkbox" class="status-filter" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
+    
+                        <!--<h4>Job Post</h4>
+                        {% if jobs %}
+                            {% for application in jobs %}
+                                <p style="overflow-wrap: break-word; max-width: 100%;">
+                                    <input type="checkbox" class="job-filter" value="{{ application.title}}" {% if application.title in selected_jobs %}checked{% endif %}> 
+                                    {{ application.title }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}-->
                     </div>
-                {% endfor %}
+                </div>
+    
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search..." style="font-family: monospace;font-size: 14.5px;">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
             </div>
-        </form> 
+            
+            <!-- Candidate Table -->
+            <div id="candidates-table-container" class="table-view">
+                <h3>Candidate List</h3>
+                <div class="table-container">
+                    <table id="candidates-table">
+                        <thead>
+                            <tr>
+                                <th>Candidate Name</th>
+                                <th>Job Post</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if applied_users %}
+                                {% for user in applied_users %}
+                                <tr class="application-row" data-type="candidate" data-name="{{ user.name }}" data-job="{{ user.job_title }}" data-status="{{ user.status }}" data-id="{{ user.id }}" data-login-id="{{ user.login_id }}">
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.job_title }}</td>
+                                    <td>{{ user.status }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3">No candidates found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div id="candidates-no-results-message" style="display: none; text-align: center; padding: 20px; font-family: monospace; font-size: 16px; color: #666;">
+                        <p>No matching candidates found.</p>
+                    </div>
+                </div>
+                
+                <!-- Pagination for Candidates -->
+                <div class="pagination" id="candidates-pagination">
+                    <button id="candidates-prev-page" disabled>&laquo; Previous</button>
+                    <span id="candidates-page-info">Page 1 of 1</span>
+                    <button id="candidates-next-page" disabled>Next &raquo;</button>
+                </div>
+            </div>
+    
+            <!-- Communication Modal -->
+            <div id="communication-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3>Communication Center</h3>
+                    <div id="modal-recipient-details">
+                        <p>Select a recipient to start communication.</p>
+                    </div>
+                    
+                    <div class="message-history-container">
+                        <h4>Message History</h4>
+                        <div id="message-history" class="message-history">
+                            <!-- Message history will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <form id="modal-message-form" action="{{ url_for('company.company_hiring_communication') }}" method="POST">
+                        <input type="hidden" id="recipient-id" name="recipient_id">
+                        <input type="hidden" id="recipient-type" name="recipient_type">
+                        
+                        <h4>New Message</h4>
+                        <div class="message-input-container">
+                            <textarea id="message-box" name="message" class="message-box" placeholder="Type your message here..." required></textarea>
+                            <div class="controls">
+                                <select id="template-dropdown" onchange="populateTemplate()">
+                                    <option value="">Select Template</option>
+                                    <option value="Thank you for applying. We will review your profile.">Thank You</option>
+                                    <option value="We would like to schedule an interview. Please let us know your availability.">Interview Scheduling</option>
+                                    <option value="Congratulations! We are pleased to offer you the position.">Offer Letter</option>
+                                    <option value="Thank you for your interest. We regret to inform you that we have decided to move forward with other candidates at this time.">Reject Letter</option>
+                                </select>
+                                <button type="submit" class="send-btn">Send Message</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </main>
+
     <script>
-        function updateSearchText(id, name, type) {
-            document.getElementById("search-input").value = name;
-
-            // Deselect the other dropdown's selected radio buttons based on the type (candidate or college)
-            if (type === 'candidate') {
-                // Deselect the college dropdown
-                const collegeRadios = document.querySelectorAll("#college-dropdown-menu input[type='radio']");
-                collegeRadios.forEach(radio => radio.checked = false);
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
             }
-            else if (type === 'college') {
-                // Deselect the candidate dropdown
-                const candidateRadios = document.querySelectorAll("#user-dropdown-menu input[type='radio']");
-                candidateRadios.forEach(radio => radio.checked = false);
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Variables for candidate pagination
+        let candidatesCurrentPage = 1;
+        const rowsPerPage = 5;
+        let candidatesFilteredRows = [];
+
+        // Message History data storage
+        const messageHistory = {
+            candidates: {}
+        };
+
+        // Populate message history data from backend is handled in the template (removed)
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Modal functionality
+        const modal = document.getElementById("communication-modal");
+        const span = document.getElementsByClassName("close")[0];
+
+        // Close modal when clicking X
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
             }
         }
 
-        function toggleUserDropdown() {
-            const dropdownMenu = document.getElementById("user-dropdown-menu");
-            dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+        // Filter dropdown toggle
+        const filterButton = document.querySelector('.filter-button');
+        const filterDropdown = document.getElementById('filter-dropdown');
+
+        filterButton.addEventListener('click', function() {
+            filterDropdown.style.display = filterDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.filter-container') && filterDropdown.style.display === 'block') {
+                filterDropdown.style.display = 'none';
+            }
+        });
+
+        // Apply filters
+        document.querySelectorAll('.status-filter, .job-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const statusFilters = Array.from(document.querySelectorAll('.status-filter:checked')).map(el => el.value);
+                const jobFilters = Array.from(document.querySelectorAll('.job-filter:checked')).map(el => el.value);
+                
+                filterCandidateTable(statusFilters, jobFilters);
+                // We're not closing the dropdown so users can continue applying filters
+            });
+        });
+
+        // Live search functionality
+        document.getElementById('search-input').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            filterCandidateTableBySearch(searchText);
+        });
+
+        // Filter candidates table by search text
+        function filterCandidateTableBySearch(searchText) {
+            const rows = document.querySelectorAll('#candidates-table tbody tr');
+            candidatesFilteredRows = [];
+            
+            rows.forEach(row => {
+                if (row.querySelector('td:first-child')) { // Check if this is a real data row
+                    const name = row.querySelector('td:first-child').textContent.toLowerCase();
+                    const job = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const status = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    
+                    if (name.includes(searchText) || job.includes(searchText) || status.includes(searchText)) {
+                        row.dataset.visible = "true";
+                        candidatesFilteredRows.push(row);
+                    } else {
+                        row.dataset.visible = "false";
+                    }
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('candidates-no-results-message').style.display = candidatesFilteredRows.length === 0 ? 'block' : 'none';
+            
+            updateCandidatePagination();
+            showCandidatePage(1);
         }
 
-        function toggleCollegeDropdown() {
-            const dropdownMenu = document.getElementById("college-dropdown-menu");
-            dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+        // Filter candidate table with checkboxes
+        function filterCandidateTable(statusFilters, jobFilters) {
+            const rows = document.querySelectorAll('#candidates-table tbody tr');
+            candidatesFilteredRows = [];
+            
+            rows.forEach(row => {
+                // Only process rows that have the data attributes
+                if (row.hasAttribute('data-status') && row.hasAttribute('data-job')) {
+                    const status = row.getAttribute('data-status');
+                    const job = row.getAttribute('data-job');
+                    
+                    const statusMatch = statusFilters.length === 0 || statusFilters.includes(status);
+                    const jobMatch = jobFilters.length === 0 || jobFilters.includes(job);
+                    
+                    if (statusMatch && jobMatch) {
+                        row.dataset.visible = "true";
+                        candidatesFilteredRows.push(row);
+                    } else {
+                        row.dataset.visible = "false";
+                    }
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('candidates-no-results-message').style.display = candidatesFilteredRows.length === 0 ? 'block' : 'none';
+            
+            updateCandidatePagination();
+            showCandidatePage(1);
         }
 
+        // Update candidate pagination controls
+        function updateCandidatePagination() {
+            const totalPages = Math.ceil(candidatesFilteredRows.length / rowsPerPage);
+            document.getElementById('candidates-page-info').textContent = `Page ${candidatesCurrentPage} of ${totalPages || 1}`;
+            
+            document.getElementById('candidates-prev-page').disabled = candidatesCurrentPage === 1;
+            document.getElementById('candidates-next-page').disabled = candidatesCurrentPage === totalPages || totalPages === 0;
+        }
+
+        // Show specific page for candidates table
+        function showCandidatePage(pageNum) {
+            candidatesCurrentPage = pageNum;
+            const start = (pageNum - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            // Hide all rows first
+            const allRows = document.querySelectorAll('#candidates-table tbody tr');
+            allRows.forEach(row => row.style.display = 'none');
+            
+            // Show only the rows for the current page
+            for (let i = start; i < end && i < candidatesFilteredRows.length; i++) {
+                candidatesFilteredRows[i].style.display = 'table-row';
+            }
+            
+            updateCandidatePagination();
+        }
+
+        // Pagination controls for candidates
+        document.getElementById('candidates-prev-page').addEventListener('click', function() {
+            if (candidatesCurrentPage > 1) {
+                showCandidatePage(candidatesCurrentPage - 1);
+            }
+        });
+
+        document.getElementById('candidates-next-page').addEventListener('click', function() {
+            const totalPages = Math.ceil(candidatesFilteredRows.length / rowsPerPage);
+            if (candidatesCurrentPage < totalPages) {
+                showCandidatePage(candidatesCurrentPage + 1);
+            }
+        });
+
+        // Handle row click to open modal - Fixed version
+        function setupRowClickHandlers() {
+            document.querySelectorAll('.application-row').forEach(row => {
+                row.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    const id = this.getAttribute('data-id');
+                    const loginId = this.getAttribute('data-login-id');
+                    const job = this.getAttribute('data-job');
+                    const status = this.getAttribute('data-status');
+                    
+                    console.log("Row clicked:", name, id, loginId, job, status);
+                    
+                    const details = `
+                        <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
+                        <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong>${job}</p>
+                        <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Status: </strong>${status}</p>
+                    `;
+                    
+                    // Set hidden fields for form submission
+                    document.getElementById('recipient-id').value = loginId;
+                    document.getElementById('recipient-type').value = 'candidate';
+                    
+                    // Update modal details
+                    document.getElementById('modal-recipient-details').innerHTML = details;
+                    
+                    // Load message history
+                    loadMessageHistory(loginId, 'candidate');
+                    
+                    // Show modal
+                    modal.style.display = "block";
+                });
+            });
+        }
+
+        // Load message history for a specific recipient
+        function loadMessageHistory(id, type) {
+            const historyContainer = document.getElementById('message-history');
+            historyContainer.innerHTML = '';
+            
+            console.log(`Loading messages for ${type} with ID ${id}`);
+            
+            // Get messages for this specific recipient
+            const messages = messageHistory.candidates[id] || [];
+            console.log(`Found ${messages.length} messages for this recipient`);
+            
+            if (messages.length > 0) {
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message-entry';
+                    messageDiv.innerHTML = `
+                        <div class="message-content">${msg.message}</div>
+                        <div class="message-timestamp">${msg.timestamp}</div>
+                    `;
+                    historyContainer.appendChild(messageDiv);
+                });
+            } else {
+                historyContainer.innerHTML = '<p class="no-messages">No message history available.</p>';
+            }
+        }
+
+        // Populate template in message box
         function populateTemplate() {
             const templateDropdown = document.getElementById('template-dropdown');
             const messageBox = document.getElementById('message-box');
             messageBox.value = templateDropdown.value;
         }
 
-        function sendMessage() {
-            const messageBox = document.getElementById('message-box');
-            alert('Message sent: ' + messageBox.value);
-            messageBox.value = '';
+        // Initialize pagination and other functionality
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded");
+            
+            // Initialize row click handlers
+            setupRowClickHandlers();
+            
+            // Initialize candidate table
+            const candidateRows = Array.from(document.querySelectorAll('#candidates-table tbody tr')).filter(row => 
+                row.classList.contains('application-row')
+            );
+            
+            candidatesFilteredRows = candidateRows;
+            console.log(`Initialized with ${candidatesFilteredRows.length} candidate rows`);
+            
+            updateCandidatePagination();
+            showCandidatePage(1);
+        });
+
+        const messageHistoryData = {{ message_history|tojson }};
+        if (messageHistoryData) {
+            messageHistory.candidates = messageHistoryData.candidates || {};
         }
+        console.log("Message history loaded:", messageHistory);
     </script>
 </body>
 </html>

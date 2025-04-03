@@ -19,13 +19,17 @@
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" class="profile-btn" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> <span class="btn-text">Profile</span></button>
-            </a>
-            <button class="settings-btn"><i class="fas fa-cog"></i> <span class="btn-text">Settings</span></button>
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> <span class="btn-text">Logout</span></button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
@@ -184,6 +188,25 @@
                 sideNav.classList.remove('active');
                 menuToggle.classList.remove('active');
             }
+        });
+
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
         });
     </script>
 </body>
