@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <!-- AOS -->
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    /* Global Reset & Base */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f1f3f6;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(90deg, #005f73, #0a9396);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    header .logo {
+      display: flex;
+      align-items: center;
+      font-size: 28px;
+      font-weight: bold;
+      gap: 10px;
+    }
+    header .logo i { font-size: 32px; color: white; }
+    header .profile-settings {
+      display: flex;
+      gap: 15px;
+  }
+  
+  header .profile-settings button {
+      background-color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #005f73;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s, color 0.3s;
+  }
+  
+  .profile-dropdown {
+      position: relative;
+      display: inline-block;
+  }
+  
+  .profile-icon-btn {
+      background-color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+  }
+  
+  .profile-icon-btn i {
+      font-size: 30px;
+      color: #005f73;
+  }
+  
+  .profile-icon-btn:hover {
+      background-color: #e6e6e6;
+  }
+  
+  .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+  }
+  
+  .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s;
+  }
+  
+  .dropdown-content a i {
+      color: #0a9396;
+  }
+  
+  .dropdown-content a:hover {
+      background-color: #f1f1f1;
+  }
+  
+  .profile-dropdown:hover .dropdown-content {
+      display: block;
+  }
+    main {
+      display: flex;
+      flex: 1;
+    }
+    .navigation {
+        width: 20%;
+        background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        border-right: 1px solid #ccc;
+        box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navigation button {
+        padding: 12px 20px;
+        border: none;
+        background: linear-gradient(90deg, #f0f4ff, #ffffff);
+        cursor: pointer;
+        font-size: 16px;
+        border-radius: 8px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: background 0.3s, transform 0.2s;
+    }
+    
+    .navigation button i {
+        font-size: 18px;
+        color: #005f73;
+    }
+    
+    .navigation button:hover {
+        background: linear-gradient(90deg, #dce4ff, #f9faff);
+        transform: scale(1.05);
+    }
+    .activity {
+      width: 80%;
+      padding: 20px;
+      background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+    .activity h2 {
+      font-size: 22px;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 600;
+      color: #0a3d62;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    /* Chart Container Styles */
+    .chart-container {
+      margin: 20px auto;
+      width: 90%;
+      max-width: 600px;
+    }
+    /* Table Styles for Recent Activities & Live Feed */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .data-table th, .data-table td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    .data-table th {
+      background: #f0f4f9;
+    }
+    @media screen and (max-width: 768px) {
+      .navigation { display: none; }
+      .activity { width: 100%; }
+      header .logo { font-size: 24px; }
+      header .profile-settings button { padding: 8px 15px; font-size: 12px; }
+      .activity h2 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body data-aos-duration="1000">
+  <!-- Header -->
+  <header >
+    <div class="logo">
+      <i class="fas fa-globe"></i> Employee Recruitment
+    </div>
+    <div>Welcome, {{ session['username'] }}!</div>
+    <div class="profile-settings">
+      <div class="profile-dropdown">
+          <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+          <div class="dropdown-content">
+              <a href="{{ url_for('user.profile') }}">
+                  <i class="fas fa-user"></i> Profile
+              </a>
+              <a href="{{ url_for('auth.logout') }}">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+          </div>
+      </div>
+  </div>
+  </header>
+  
+  <!-- Layout -->
+  <main>
+    <!-- Navigation Sidebar -->
+    <div class="navigation">
+      <button onclick="window.location.href='/user/user_dashboard'">
+        <i class="fas fa-home"></i> Home
+      </button>
+      <button onclick="window.location.href='/user/application_history'">
+        <i class="fas fa-history"></i> Application History
+      </button>
+      <a href="{{ url_for('user.notifications') }}">
+        <button><i class="fas fa-bell"></i> Notifications</button>
+      </a>
+      <a href="{{ url_for('user.resume_certifications') }}">
+        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
+      </a>
+      <button onclick="window.location.href='/analytics'">
+        <i class="fas fa-chart-line"></i> Analytics
+      </button>
+    </div>
+    
+    <!-- Activity Panel (Analytics) -->
+   <!-- Activity Panel (Analytics) -->
+<div class="activity" >
+    <h2 class="mb-6">Analytics Dashboard</h2>
+    
+    <!-- Futuristic Success Rate Pie Chart -->
+    <div class="chart-container">
+      <canvas id="successRateChart"></canvas>
+    </div>
+    
+    <!-- Application Trends Chart -->
+    <div class="chart-container">
+      <canvas id="trendsChart"></canvas>
+    </div>
+    
+    <!-- Recent Activities -->
+    <h3 class="mt-6">Recent Activities</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Title</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for activity in recent_activities %}
+        <tr>
+          <td>{{ activity.job_title }}</td>
+          <td>{{ activity.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2">No recent activities found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <!-- Live Feed -->
+    <h3 class="mt-6">Live Feed (Recent Job Postings)</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Title</th>
+          <th>Posted At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in live_feed %}
+        <tr>
+          <td>{{ job.job_title }}</td>
+          <td>{{ job.posted_at.strftime('%Y-%m-%d %H:%M:%S') if job.posted_at else 'N/A' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2">No job postings available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+  </div>
+  
+  <script>
+    // Prepare data from Flask (passed via Jinja)
+    const userSuccessRate = {
+      hired: {{ user_success_rate.hired }},
+      rejected: {{ user_success_rate.rejected }},
+      pending: {{ user_success_rate.pending }}
+    };
+  
+    const applicationTrends = {
+      labels: {{ application_trends.labels|tojson }},
+      counts: {{ application_trends.counts|tojson }}
+    };
+  
+    // Futuristic Success Rate Chart (Pie Chart)
+    const ctxSuccess = document.getElementById('successRateChart').getContext('2d');
+    const successRateChart = new Chart(ctxSuccess, {
+      type: 'pie',
+      data: {
+        labels: ['Hired', 'Rejected', 'Pending'],
+        datasets: [{
+          data: [userSuccessRate.hired, userSuccessRate.rejected, userSuccessRate.pending],
+          backgroundColor: ['#00e5ff', '#ff1744', '#ffd600'],
+          borderColor: '#ffffff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'User Success Rate',
+            font: { size: 18 }
+          },
+          legend: {
+            labels: {
+              font: { size: 14 }
+            }
+          }
+        }
+      }
+    });
+  
+    // Application Trends Chart (Line Chart)
+    const ctxTrends = document.getElementById('trendsChart').getContext('2d');
+    const trendsChart = new Chart(ctxTrends, {
+      type: 'line',
+      data: {
+        labels: applicationTrends.labels,
+        datasets: [{
+          label: 'Applications per Day',
+          data: applicationTrends.counts,
+          backgroundColor: 'rgba(26, 188, 156, 0.2)',
+          borderColor: 'rgba(26, 188, 156, 1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: 'rgba(26, 188, 156, 1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Application Trends Over Time',
+            font: { size: 18 }
+          },
+          legend: {
+            labels: {
+              font: { size: 14 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Date', font: { size: 16 } }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Applications', font: { size: 16 } },
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      const dropdownBtn = document.querySelector('.profile-icon-btn');
+      
+      if (!dropdown.contains(event.target)) {
+          const dropdownContent = document.querySelector('.dropdown-content');
+          if (dropdownContent.style.display === 'block') {
+              dropdownContent.style.display = 'none';
+          }
+      }
+  });
+  
+  // Toggle dropdown on click (alternative to hover)
+  document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+      event.stopPropagation();
+      const dropdownContent = document.querySelector('.dropdown-content');
+      dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+  });
+  </script>
+  

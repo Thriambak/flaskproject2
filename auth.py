@@ -1,10 +1,17 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,jsonify
 from config import Config
 from models import Admin, College, db, User, Job, Login, Company
 import re
-
+import random
+import string
+from extensions import mail
+from flask_mail import Message
+from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta
 auth_blueprint = Blueprint('auth', __name__)
 
+import re
+import os
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -84,48 +91,109 @@ def signup():
 '''@auth_blueprint.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username']#ithil ellam varum, company name, admin name, college name and username. ithaan default name 
-        password = request.form['password']
-        role = request.form.get('role', 'user')  # Default is 'user'
-        email = request.form['email']
-        # phone = request.form.get('phone')
-        # age = request.form.get('age')
-        # address = request.form.get('address')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        role = request.form.get('role', 'user').strip().lower()  # Default is 'user'
+        email = request.form.get('email', '').strip()
 
-        # Check if username or email already exists in the Login table
-        if Login.query.filter_by(username=username).first(): # or Login.query.join(User).filter(User.email == email).first()
+        # Validate mandatory fields
+        if not username or not password or not email:
+            flash('Please fill in all required fields.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        # Validate email format
+        if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+            flash('Please enter a valid email address, e.g., example@domain.com.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        # Validate username:
+        # Allow only alphanumeric characters and @ (if using email as username) and ensure it doesn't start/end with . or _
+        if not re.match(r'^(?![._])(?!.*[._]$)[A-Za-z0-9@]+$', username):
+            flash('Username must be a single word without spaces and cannot start or end with a period or underscore.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        # Check if username or email already exists across Login and role-specific tables
+        if Login.query.filter_by(username=username).first() or (
+            User.query.filter_by(email=email).first() or
+            Company.query.filter_by(email=email).first() or
+            Admin.query.filter_by(email=email).first() or
+            College.query.filter_by(email=email).first()
+        ):
             flash('Username or email already exists.', 'danger')
             return redirect(url_for('auth.signup'))
 
-        # Create entry in the Login table
-        new_login = Login(username=username, role=role)
-        new_login.set_password(password)
-        db.session.add(new_login)
-        db.session.flush()  # To get the login ID before committing
+        try:
+            # Create a new login entry
+            new_login = Login(username=username, role=role)
+            new_login.set_password(password)
+            db.session.add(new_login)
+            db.session.flush()  # Flush to get new_login.id
 
-        # Insert role-specific data
-        if role == 'user':
-            new_user = User(login_id=new_login.id, name=username, email=email)  #, phone=phone, age=age
-            db.session.add(new_user)
-        elif role == 'company':
-            new_company = Company(login_id=new_login.id, company_name=username, email=email)  #, address=address
-            db.session.add(new_company)
-        elif role == 'admin':
-            new_admin = Admin(login_id=new_login.id, name=username, email=email)
-            db.session.add(new_admin)
-        elif role == 'college':
-            new_college = College(login_id=new_login.id, college_name=username, email=email)
-            db.session.add(new_college)    
-        else:
-            flash('Invalid role specified.', 'danger')
+            # Create role-specific data entry
+            if role == 'user':
+                new_role_instance = User(login_id=new_login.id, name=username, email=email)
+            elif role == 'company':
+                new_role_instance = Company(login_id=new_login.id, company_name=username, email=email)
+            elif role == 'admin':
+                new_role_instance = Admin(login_id=new_login.id, name=username, email=email)
+            elif role == 'college':
+                new_role_instance = College(login_id=new_login.id, college_name=username, email=email)
+            else:
+                flash('Invalid user account type specified.', 'danger')
+                return redirect(url_for('auth.signup'))
+
+            db.session.add(new_role_instance)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            # Consider logging the exception here for debugging purposes
+            flash('An error occurred during signup. Please try again later.', 'danger')
             return redirect(url_for('auth.signup'))
 
-        db.session.commit()
         flash('Signup successful! Please log in.', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('signup.html')
 '''
+
+'''@auth_blueprint.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form.get('role', 'user')  # Default to 'user' if role is not provided
+        name = request.form['name']
+        email = request.form['email']
+        age = request.form['age']
+        phone = request.form['phone']
+
+        # Check if username or email already exists
+        if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
+            flash('Username or email already exists.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        # Ensure role is either 'user' or 'admin'
+        if role not in ['user', 'admin', 'company']:
+            flash('Invalid role specified.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        # Create a new user
+        new_user = User(
+            username=username,
+            role=role,  # Set the specified role
+            name=name,
+            email=email,
+            age=age,
+            phone=phone
+        )
+        new_user.set_password(password)  # Hash the password
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Signup successful! Please log in.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('signup.html')'''
 
 
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
@@ -209,7 +277,7 @@ def logout():
     session.pop('username', None)
     session.pop('role', None)
     session.clear()  # Clears all session variables
-    flash("You have been logged out.", "info")
+    #flash("You have been logged out.", "info")
     # Create a response object for the redirect
     response = redirect(url_for('auth.login'))
     
@@ -219,3 +287,133 @@ def logout():
     response.headers["Expires"] = "0"
     
     return response
+
+@auth_blueprint.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+        if(user is None):
+            user = College.query.filter_by(email=email).first()
+            if(user is None):
+                user=Company.query.filter_by(email=email).first()
+                if(user is None):
+                    user=Admin.query.filter_by(email=email).first()
+
+       
+
+        if user:
+            otp = ''.join(random.choices(string.digits, k=6))  # Generate OTP
+            session['otp'] = otp
+            session['email'] = email  # Store email temporarily
+            session['otp_time'] = datetime.utcnow().isoformat()  # Store OTP generation time
+
+            # Send OTP via email
+            msg = Message("Password Reset OTP", recipients=[email])
+            msg.body = f"Your OTP for password reset is: {otp}. It will expire in 10 minutes."
+            mail.send(msg)
+
+            flash("OTP has been sent to your email.", "success")
+            return redirect(url_for('auth.verify_otp'))
+        else:
+            flash("Email not found. Please check and try again.", "danger")
+
+    return render_template('forgot_password.html')
+
+
+@auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if 'otp' not in session or 'otp_time' not in session:
+        flash("Session expired. Please request a new OTP.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    otp_time = datetime.fromisoformat(session['otp_time'])
+    remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
+
+    if remaining_time.total_seconds() <= 0:
+        session.pop('otp', None)
+        session.pop('otp_time', None)
+        flash("OTP expired. Please request a new one.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        entered_otp = request.form['otp']
+        if entered_otp == session.get('otp'):
+            return redirect(url_for('auth.reset_password'))
+        else:
+            flash("Invalid OTP. Please try again.", "danger")
+
+    return render_template('verify_otp.html', remaining_time=int(remaining_time.total_seconds()))
+
+
+@auth_blueprint.route('/otp-timer')
+def otp_timer():
+    """API endpoint to check remaining OTP time."""
+    if 'otp_time' not in session:
+        return jsonify({'expired': True, 'remaining_time': 0})
+
+    otp_time = datetime.fromisoformat(session['otp_time'])
+    remaining_time = (otp_time + timedelta(minutes=10)) - datetime.utcnow()
+
+    if remaining_time.total_seconds() <= 0:
+        session.pop('otp', None)
+        session.pop('otp_time', None)
+        return jsonify({'expired': True, 'remaining_time': 0})
+
+    return jsonify({'expired': False, 'remaining_time': int(remaining_time.total_seconds())})
+
+# Password Reset Route
+@auth_blueprint.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if 'email' not in session:
+        flash("Session expired. Please request a new OTP.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        # Validate password
+        if new_password != confirm_password:
+            flash("Passwords do not match. Please try again.", "danger")
+            return redirect(url_for('auth.reset_password'))
+
+        if ' ' in new_password:
+            flash('Password cannot contain spaces.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        if not re.match(r'^[a-zA-Z0-9@#$%^&+=]+$', new_password):
+            flash('Password can only contain letters, numbers, and special characters @#$%^&+=', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        if len(new_password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        # Hash password
+        hashed_password = generate_password_hash(new_password)
+
+        # Find user by email
+        email = session.get('email')
+        user = User.query.filter_by(email=email).first() or \
+               College.query.filter_by(email=email).first() or \
+               Company.query.filter_by(email=email).first() or \
+               Admin.query.filter_by(email=email).first()
+
+        if user:
+            # Get the corresponding Login entry
+            login_entry = Login.query.filter_by(id=user.login_id).first()
+            if login_entry:
+                login_entry.password_hash = hashed_password
+                db.session.commit()
+
+                # Clear session data
+                session.pop('email', None)
+                session.pop('otp', None)
+
+                flash("Password reset successful! You can now log in.", "success")
+                return redirect(url_for('auth.login'))
+
+        flash("Error resetting password. Please try again.", "danger")
+
+    return render_template('reset_password.html')

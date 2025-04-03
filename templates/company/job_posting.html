@@ -10,39 +10,53 @@
 </head>
 <body>
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
-            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" alt="Not Found" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> Profile</button>
-            </a>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
-        <div class="navigation"> <!--sticky = 14.1% or 86px-->
-            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
-            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/company/company_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_notification'"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
         <div class="activity">
             <div class="top-header">
-                <h2>Recently Posted Jobs</h2>
+                <h2>Recently Posted Jobs or Internships</h2>
                 <a href="{{ url_for('company.company_post_new_job') }}" style="text-decoration: none;">
-                    <button class="post-job-btn"><i class="fas fa-plus"></i> Post New Job</button>
+                    <button class="post-job-btn"><i class="fas fa-plus"></i>New Job</button>
                 </a>
             </div>
-            <div class="job-list">
+            
+            <!-- Add search bar -->
+            <div class="search-container">
+                <input type="text" id="searchBar" class="search-bar" placeholder="Search for jobs...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            
+            <div class="job-list" id="jobList">
                 {% if jobs %}
                     {% for job in jobs %}
-                    <div class="job-card">
+                    <div class="job-card" onclick="window.location.href='{{ url_for('company.company_post_new_job', job_id=job.job_id) }}'">
                         <div class="job-header">
                             <h3 style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</h3>
                             {% if job.status == "open" %}
@@ -56,18 +70,35 @@
                             {% if job.skills %}
                                 <li><i class="fas fa-tools" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Expected Skills: {{ job.skills }}</p></li>
                             {% endif %}
-                            <li><i class="fas fa-trophy" style="padding-left: 0.1%;"></i> <p style="padding-left: 0.2%;">Years of Experience: {{ job.years_of_exp }}</p></li>
+                            
+                            {% if job.years_of_exp is not none %}
+                                <li><i class="fas fa-trophy" style="padding-left: 0.1%;"></i> <p style="padding-left: 0.2%;">Years of Experience: {{ job.years_of_exp }}</p></li>
+                            {% endif %}
+                            
                             {% if job.certifications %}
                                 <li><i class="fas fa-certificate" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.2%;">Required Certifications: {{ job.certifications }}</p></li>
                             {% endif %}
-                            <li><i class="fas fa-map-marker-alt" style="padding-left: 0.5%;"></i> <p style="padding-left: 0.6%;">Location: {{ job.location }}</p></li>
-                            <li><i class="fas fa-dollar-sign" style="padding-left: 0.6%;"></i> <p style="padding-left: 0.7%;">Salary: ${{ job.salary }}</p></li>
-                            <li><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <p style="padding-left: 0.3%;">Job Type: {{ job.job_type }}</p></li>
-                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.45%;">Joining Date: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
+                            
+                            {% if job.location %}
+                                <li><i class="fas fa-map-marker-alt" style="padding-left: 0.5%;"></i> <p style="padding-left: 0.4%;">Location: {{ job.location }}</p></li>
+                            {% endif %}
+                            
+                            {% if job.salary %}
+                                <li><i class="fas fa-dollar-sign" style="padding-left: 0.6%;"></i> <p style="padding-left: 0.5%;">Salary: ${{ job.salary }}</p></li>
+                            {% endif %}
+                            
+                            {% if job.job_type %}
+                                <li><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <p style="padding-left: 0.3%;">Job Type: {{ job.job_type }}</p></li>
+                            {% endif %}
+                            
+                            {% if job.deadline %}
+                                <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.45%;">Apply Before: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
+                            {% endif %}
                             
                             {% if job.form_url %}
-                                <li><i class="fas fa-link"></i><p>Questionnaire URL: <a href="{{ job.form_url }}" style="text-decoration: none;" target="_blank">{{ job.form_url }}</a></p></li>
+                                <li><i class="fas fa-link"></i><p>Questionnaire URL: <a href="{{ job.form_url }}" style="text-decoration: none;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p></li>
                             {% endif %}
+                            
                             <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.45%;">Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</p></li>
                         </ul>
                         <div class="application-status">
@@ -83,144 +114,76 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p>No job listings available at the moment.</p>
+                    <p id="noResults">No job listings available at the moment.</p>
                 {% endif %}
-                <!--
-                <div class="job-card">
-                    <div class="job-header">
-                        <h3>Software Engineer</h3>
-                        <span class="status filled">Closed</span>
-                    </div>
-                    <p>Responsible for backend development, API integration, and database management.</p>
-                    <ul class="job-details">
-                        <li><i class="fas fa-map-marker-alt"></i> Location: Remote</li>
-                        <li><i class="fas fa-dollar-sign"></i> Salary: $90,000 - $120,000</li>
-                        <li><i class="fas fa-tools"></i> Required Skillsets: Python, JavaScript, SQL</li>
-                        <li><i class="fas fa-calendar"></i> Posted: Dec 15, 2024</li>
-                    </ul>
-                    <div class="application-status">
-                        <h4>Application Status</h4>
-                        <div class="progress-bar">
-                            <div style="width: 33%;">33% (Shortlisted)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="job-card">
-                    <div class="job-header">
-                        <h3>Data Scientist</h3>
-                        <span class="status vacant">Open</span>
-                    </div>
-                    <p>Analyze large datasets to extract insights and inform business decisions 
-                        using statistical methods and programming.</p>
-                    <ul class="job-details">
-                        <li><i class="fas fa-map-marker-alt"></i> Location: London</li>
-                        <li><i class="fas fa-dollar-sign"></i> Salary: $110,000 - $150,000</li>
-                        <li><i class="fas fa-tools"></i> Required Skillsets: Python, R, Machine Learning</li>
-                        <li><i class="fas fa-calendar"></i> Posted: Nov 30, 2024</li>
-                    </ul>
-                    <div class="application-status">
-                        <h4>Application Status</h4>
-                        <div class="progress-bar">
-                            <div style="width: 50%;">50% (Filled)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="job-card">
-                    <div class="job-header">
-                        <h3>Product Manager</h3>
-                        <span class="status filled">Closed</span>
-                    </div>
-                    <p>Lead product development, aligning customer needs with business goals.</p>
-                    <ul class="job-details">
-                        <li><i class="fas fa-map-marker-alt"></i> Location: Remote</li>
-                        <li><i class="fas fa-dollar-sign"></i> Salary: $150,000 - $200,000</li>
-                        <li><i class="fas fa-tools"></i> Required Skillsets: Agile, Product Roadmaps, Team Leadership</li>
-                        <li><i class="fas fa-calendar"></i> Posted: Oct 25, 2024</li>
-                    </ul>
-                    <div class="application-status">
-                        <h4>Application Status</h4>
-                        <div class="progress-bar">
-                            <div style="width: 20%;">20% (Shortlisted)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="job-card">
-                    <div class="job-header">
-                        <h3>UI/UX Designer</h3>
-                        <span class="status vacant">Open</span>
-                    </div>
-                    <p>Focus on designing user-friendly interfaces and improving user experience.</p>
-                    <ul class="job-details">
-                        <li><i class="fas fa-map-marker-alt"></i> Location: New York, NY</li>
-                        <li><i class="fas fa-dollar-sign"></i> Salary: $75,000 - $100,000</li>
-                        <li><i class="fas fa-tools"></i> Required Skillsets: Adobe XD, Figma, User Research</li>
-                        <li><i class="fas fa-calendar"></i> Posted: Sep 17, 2024</li>
-                    </ul>
-                    <div class="application-status">
-                        <h4>Application Status</h4>
-                        <div class="progress-bar">
-                            <div style="width: 80%;">80% (Filled)</div>
-                        </div>
-                    </div>
-                </div>       -->
-            </div>
-        </div>
-
-        <div class="side-panel">
-            <div class="boxes"  style="position: sticky; top: 14.1%;">
-                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
-                    <h3>Success Rate</h3>
-                    <canvas id="chart"></canvas>
-                </div>
-                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
-                    <h3>Live Feed</h3>
-                    {% if live_feed_notifications %}
-                    <ul style="padding-left: 10px;">
-                        {% for notification in live_feed_notifications %}
-                            <li> <p>{{ notification.message }}</p> </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                        <p>No new notifications in the past day.</p>
-                    {% endif %}
-                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
-                </div>
-                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
-                    <h3>Upcoming Events</h3>
-                    <ul style="padding-left: 10px;">
-                        {% if pending_applications_count > 0 %}
-                            <li><p>Host Interview: </p>
-                                <p>Applications pending - {{pending_applications_count}}</p></li> 
-                        {% endif %}
-                        {% if interviewed_applications_count > 0 %}
-                            <li><p>Send hire/reject messages: </p>
-                                <p>Applicants waiting - {{interviewed_applications_count}}</p></li>
-                        {% endif %}
-                    </ul>
-                </div>
             </div>
         </div>
     </main>
     <script>
-        const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Successful Applications', 'Unsuccessful Applications'],
-                datasets: [{
-                    label: 'Success Rate',
-                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
-                    backgroundColor: ['#f4a261', '#0a9396'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
                 }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Dynamic search functionality
+        document.getElementById('searchBar').addEventListener('input', function() {
+            const searchQuery = this.value.toLowerCase();
+            const jobCards = document.querySelectorAll('.job-card');
+            let resultsFound = false;
+            
+            jobCards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                if (cardText.includes(searchQuery)) {
+                    card.style.display = 'block';
+                    resultsFound = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show or hide the "no results" message
+            const noResultsMsg = document.getElementById('noResults');
+            if (noResultsMsg) {
+                noResultsMsg.style.display = resultsFound ? 'none' : 'block';
+            } else if (!resultsFound) {
+                const jobList = document.getElementById('jobList');
+                const newMsg = document.createElement('p');
+                newMsg.id = 'noResults';
+                newMsg.textContent = 'No matching jobs found.';
+                jobList.appendChild(newMsg);
             }
         });
     </script>

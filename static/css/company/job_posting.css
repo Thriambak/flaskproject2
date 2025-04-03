@@ -8,9 +8,23 @@ body {
     font-family: 'Arial', sans-serif;
     display: flex;
     flex-direction: column;
-    height: auto; /*resolved the header stickiness - it was 100vh before - auto or increase height*/
+    height: auto;
+    min-height: 100vh;
     color: #333;
     background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
+}
+
+/* Menu toggle button */
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: white;
+    margin-right: 15px;
+}
+
+.menu-toggle.active {
+    color: #e6e6e6;
 }
 
 header {
@@ -48,7 +62,7 @@ header .profile-settings button {
     background-color: white;
     border: none;
     border-radius: 20px;
-    padding: 10px 20px;
+    padding: 18px 18px;
     cursor: pointer;
     font-size: 14px;
     color: #005f73;
@@ -58,13 +72,65 @@ header .profile-settings button {
     transition: background-color 0.3s, color 0.3s;
 }
 
-header .profile-settings button i {
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-icon-btn {
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.profile-icon-btn i {
+    font-size: 29px;
+    color: #005f73;
+}
+
+.profile-icon-btn:hover {
+    background-color: #bebebe;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 10;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dropdown-content a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s;
+}
+
+.dropdown-content a i {
     color: #0a9396;
 }
 
-header .profile-settings button:hover {
-    background-color: #e6e6e6;
-    color: #0a9396;
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.profile-dropdown:hover .dropdown-content {
+    display: block;
 }
 
 main {
@@ -73,7 +139,7 @@ main {
 }
 
 .navigation {
-    width: 20%;
+    width: 280px;
     background: linear-gradient(to bottom, #ffffff, #f0f4f9);
     padding: 20px;
     display: flex;
@@ -81,6 +147,7 @@ main {
     gap: 15px;
     border-right: 1px solid #ccc;
     box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
 }
 
 .navigation button {
@@ -105,15 +172,6 @@ main {
 .navigation button:hover {
     background: linear-gradient(90deg, #dce4ff, #f9faff);
     transform: scale(1.05);
-}
-
-.activity {
-    width: 60%;
-    padding: 20px;
-    background: linear-gradient(to bottom, #ffffff, #f7f7f7);
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .activity .top-buttons {
@@ -146,7 +204,7 @@ main {
 }
 
 .activity {
-    width: 60%;
+    flex: 1;
     padding: 20px;
     background: linear-gradient(to bottom, #ffffff, #f7f7f7);
     border-left: 1px solid #ccc;
@@ -290,42 +348,39 @@ main {
     color: white;
 }
 
-
-.side-panel {
-    width: 20%;
-    background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
+/* Add styles for clickable job cards */
+.job-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
-
-.side-panel .graph, .side-panel .live-feed, .side-panel .calendar {
-    background: linear-gradient(135deg, #ffffff, #f7f7f7);
-    border: 1px solid #ddd;
-    padding: 20px;
-    margin-bottom: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: #333;
+.job-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
-
-.side-panel .graph {
+/* Search bar styles */
+.search-container {
+    margin-bottom: 20px;
     display: flex;
-    flex-direction: column;
     align-items: center;
 }
-
-.side-panel p {
-    font-family: 'Segoe UI', sans-serif;
+.search-bar {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    font-family: monospace;
 }
-
-canvas {
-    width: 100%;
-    max-width: 100%; /*this controls the width of the bar graph(canvas) relative to the info-box*/
-    height: auto;
-    display: block;
+.search-bar:focus {
+    outline: none;
+    border-color: #4682B4;
+    box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+}
+.search-icon {
+    position: relative;
+    right: 30px;
+    color: #888;
 }
 
 .progress-bar {
@@ -344,4 +399,123 @@ canvas {
     text-align: center;
     line-height: 20px;
     color: white;
+}
+
+/* Responsive design */
+@media (min-width: 1025px) {
+    .navigation {
+        position: sticky;
+        top: 65px; /* Matches the height of your header */
+        height: calc(100vh - 65px);
+        overflow-y: auto;
+    }
+    
+    main {
+        overflow: hidden;
+    }
+    
+    .activity {
+        overflow-y: auto;
+        max-height: calc(100vh - 65px);
+    }
+}
+
+@media (max-width: 1024px) {
+    .navigation {
+        position: fixed;
+        left: -260px;
+        top: 65px;
+        height: calc(100vh - 65px);
+        z-index: 90;
+        transition: left 0.3s ease;
+    }
+    
+    .navigation.active {
+        left: 0;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+
+    .navigation:not(.active) {
+        display: none;
+    }
+    
+    .activity {
+        padding-left: 20px;
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    main {
+        width: 100%;
+    }
+    
+    .profile-settings .btn-text {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    header .logo h4 {
+        font-size: 18px;
+    }
+    
+    .top-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .post-job-btn {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 10px;
+    }
+    
+    header .logo img {
+        height: 25px;
+    }
+    
+    header .logo h4 {
+        font-size: 16px;
+    }
+    
+    header .profile-settings {
+        gap: 5px;
+    }
+
+    header .profile-settings button {
+        padding: 15px 15px;
+    }
+    
+    .profile-icon-btn i {
+        font-size: 25px;
+    }
+    
+    .top-header h2 {
+        font-size: 20px;
+    }
+
+    .navigation {
+        top: 54px;
+    }
+    
+    .job-card {
+        padding: 15px;
+    }
+    
+    .job-header h3 {
+        font-size: 18px;
+    }
+    
+    .search-bar {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
 }

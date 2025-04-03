@@ -14,17 +14,20 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 
-  <!-- Chart.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <!-- Chart.js Library removed -->
   <!-- Google Fonts -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Source+Sans+Pro:wght@400;600;700&display=swap" />
 
   <style>
     /* Global Styles */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Roboto', sans-serif; background: #f1f3f6; color: #333; }
-
+    body { 
+      font-family: 'Roboto', sans-serif; 
+      background: #f1f3f6; 
+      color: #333; 
+    }
+    
+    /* Header (identical to user dashboard) */
     header {
       background: linear-gradient(90deg, #005f73, #0a9396);
       color: white;
@@ -32,11 +35,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
-    header .logo { display: flex; align-items: center; font-size: 28px; font-weight: bold; gap: 10px; }
-    header .logo i { font-size: 32px; color: white; }
-    header .profile-settings { display: flex; gap: 15px; }
+    header .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 28px;
+      font-weight: bold;
+    }
+  header .logo i { font-size: 32px; color: white; }
+    header .profile-settings {
+      display: flex;
+      gap: 15px;
+  }
+  
     header .profile-settings button {
       background-color: white;
       border: none;
@@ -48,26 +61,90 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: background-color 0.3s, color 0.3s, transform 0.2s;
-    }
-    header .profile-settings button:hover {
+      transition: background-color 0.3s, color 0.3s;
+  }
+  
+    .profile-dropdown {
+      position: relative;
+      display: inline-block;
+  }
+  
+    .profile-icon-btn {
+      background-color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+  }
+  
+    .profile-icon-btn i {
+      font-size: 30px;
+      color: #005f73;
+  }
+  
+    .profile-icon-btn:hover {
       background-color: #e6e6e6;
+  }
+  
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+  }
+  
+    .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s;
+  }
+  
+    .dropdown-content a i {
       color: #0a9396;
-      transform: scale(1.05);
+  }
+  
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+  }
+  
+   .profile-dropdown:hover .dropdown-content {
+      display: block;
+  }
+    
+    /* Layout: Navigation and Activity */
+    main {
+      display: flex;
+      flex-wrap: nowrap;
+      min-height: calc(100vh - 70px); /* Adjusted for header height */
     }
-
-    main { display: flex; flex: 1; }
+    
+    /* Navigation Sidebar (exactly as user dashboard) */
     .navigation {
-      width: 20%;
+      flex: 0 0 220px;
       background: linear-gradient(to bottom, #ffffff, #f0f4f9);
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 15px;
       border-right: 1px solid #ccc;
-      box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: inset -2px 0 10px rgba(0,0,0,0.1);
     }
-    .navigation button {
+    .navigation button,
+    .navigation a button {
       padding: 12px 20px;
       border: none;
       background: linear-gradient(90deg, #f0f4ff, #ffffff);
@@ -79,62 +156,39 @@
       align-items: center;
       gap: 15px;
       transition: background 0.3s, transform 0.2s;
+      text-decoration: none;
     }
-    .navigation button i { font-size: 18px; color: #005f73; }
-    .navigation button:hover {
+    .navigation button i,
+    .navigation a button i { 
+      font-size: 18px; 
+      color: #005f73; 
+    }
+    .navigation button:hover,
+    .navigation a button:hover {
       background: linear-gradient(90deg, #dce4ff, #f9faff);
       transform: scale(1.05);
     }
-
+    
+    /* Activity Section */
     .activity {
-      width: 60%;
+      flex: 1; /* Fills remaining space */
       padding: 20px;
       background: linear-gradient(to bottom, #ffffff, #f7f7f7);
       border-left: 1px solid #ccc;
-      border-right: 1px solid #ccc;
-      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+      /* No side-panel; activity now takes full remaining width */
     }
-
-    .side-panel {
-      width: 20%;
-      background: linear-gradient(to bottom, #ffffff, #f3f5f9);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 25px;
-      box-shadow: inset 2px 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .side-panel .graph-container,
-    .side-panel .live-feed,
-    .side-panel .calendar {
-      background: linear-gradient(135deg, #ffffff, #f7f7f7);
-      border: 1px solid #ddd;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      color: #333;
-      transition: transform 0.3s ease-in-out;
-    }
-    .side-panel .graph-container:hover,
-    .side-panel .live-feed:hover,
-    .side-panel .calendar:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    canvas { width: 100%; max-width: 100%; height: auto; display: block; }
-
+    
     /* Resume & Certifications Styles */
     .resume-container {
       padding: 25px;
       border-radius: 12px;
       background: #ffffff;
-      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 12px 20px rgba(0,0,0,0.1);
       transition: all 0.3s ease-in-out;
     }
     .resume-container:hover {
       transform: translateY(-10px);
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
       background: #f9f9f9;
     }
     .form-control {
@@ -148,20 +202,34 @@
     .form-control:focus {
       border-color: #0a9396;
       outline: none;
-      box-shadow: 0 0 5px rgba(10, 147, 150, 0.5);
+      box-shadow: 0 0 5px rgba(10,147,150,0.5);
     }
-    .btn { padding: 12px 20px; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; transition: all 0.3s ease-in-out; }
+    .btn { 
+      padding: 12px 20px; 
+      border: none; 
+      border-radius: 25px; 
+      cursor: pointer; 
+      font-size: 16px; 
+      transition: all 0.3s ease-in-out; 
+    }
     .btn-primary {
       background: linear-gradient(90deg, #1abc9c, #16a085);
       color: white;
       width: 100%;
     }
-    .btn-primary:hover { background: linear-gradient(90deg, #16a085, #0a9396); transform: scale(1.05); }
+    .btn-primary:hover { 
+      background: linear-gradient(90deg, #16a085, #0a9396); 
+      transform: scale(1.05);
+    }
     .btn-secondary {
       background: linear-gradient(90deg, #0a9396, #005f73);
       color: white;
     }
-    .btn-secondary:hover { background: linear-gradient(90deg, #005f73, #003f8f); transform: translateY(-3px); }
+    .btn-secondary:hover { 
+      background: linear-gradient(90deg, #005f73, #003f8f); 
+      transform: translateY(-3px);
+    }
+    
     .flash-message {
       margin-bottom: 15px;
       padding: 15px 20px;
@@ -169,11 +237,12 @@
       font-size: 16px;
       font-weight: 500;
       color: #fff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       animation: fadeIn 0.5s ease;
     }
     .flash-message.success { background-color: #4caf50; border-left: 5px solid #388e3c; }
     .flash-message.error { background-color: #f44336; border-left: 5px solid #d32f2f; }
+    
     .file-item {
       background-color: #f9fafb;
       border: 1px solid #e5e7eb;
@@ -197,42 +266,54 @@
 
     @media screen and (max-width: 768px) {
       main { flex-direction: column; }
-      .navigation, .activity, .side-panel { width: 100%; border: none; }
+      .navigation, .activity { width: 100%; border: none; }
       .resume-container { padding: 15px; }
     }
   </style>
 </head>
 <body>
+  <!-- Header -->  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
   <header>
     <div class="logo">
-      <i class="fas fa-globe"></i>
-      Employee Recruitment
+      <i class="fas fa-globe"></i> Employee Recruitment
+      
     </div>
-    <div>
+    <div >
       Welcome, {{ session['username'] }}!
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="flash-message {{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
     </div>
-    <div class="profile-settings">
-      <button onclick="window.location.href='/user/profile'">
-        <i class="fas fa-user"></i> Profile
-      </button>
-      <button><i class="fas fa-cog"></i> Settings</button>
-      <a href="{{ url_for('auth.logout') }}">
-        <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </a>
-    </div>
+     
+      <div class="profile-settings">
+        <div class="profile-dropdown">
+            <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('user.profile') }}">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+  
   </header>
 
+  <!-- Layout -->
   <main>
+    <!-- Navigation Sidebar (same as user_dashboard) -->
     <div class="navigation">
       <a href="{{ url_for('user.user_dashboard') }}">
-        <button><i class="fas fa-bell"></i> Home</button>
+        <button><i class="fas fa-home"></i> Home</button>
       </a>
       <button onclick="window.location.href='/user/application_history'">
         <i class="fas fa-history"></i> Application History
@@ -241,10 +322,14 @@
         <button><i class="fas fa-bell"></i> Notifications</button>
       </a>
       <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
+        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
+        <button onclick="window.location.href='/user/analytics'">
+          <i class="fas fa-chart-line"></i> Analytics
+        </button>
+      
     </div>
 
+    <!-- Activity Section -->
     <div class="activity">
       <div class="resume-container" data-aos="fade-up">
         <h2 class="text-center text-2xl font-bold text-gray-800 mb-6">Upload Your Resume & Certifications</h2>
@@ -291,54 +376,31 @@
         </div>
 
         <!-- Display Added Skills -->
-        <div class="file-list">
-          {% if certifications %}
-            <h3 class="text-xl font-semibold text-gray-800">Skills & Certifications:</h3>
-            <ul>
-              {% for cert in certifications %}
-                <li class="file-item">
-                  <strong>{{ cert.certification_name }}</strong>
-                  {% if cert.verification_status %}
-                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full ml-2">Verified</span>
-                  {% else %}
-                    <span class="bg-yellow-500 text-gray-800 text-xs px-2 py-1 rounded-full ml-2">Not Verified</span>
-                  {% endif %}
-                </li>
-              {% endfor %}
-            </ul>
+        <!-- Display Added Skills -->
+<div class="file-list">
+  {% if certifications %}
+    <h3 class="text-xl font-semibold text-gray-800">Skills & Certifications:</h3>
+    <ul>
+      {% for cert in certifications %}
+        <li class="file-item flex justify-between items-center">
+          <strong>{{ cert.certification_name }}</strong>
+          {% if cert.verification_status %}
+            <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Verified</span>
           {% else %}
-            <p class="text-gray-600">No certifications added yet.</p>
+            <span class="bg-yellow-500 text-gray-800 text-xs px-2 py-1 rounded-full">Not Verified</span>
           {% endif %}
-        </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-600">No certifications added yet.</p>
+  {% endif %}
+</div>
+
       </div>
     </div>
 
-    <!-- Side Panel (same as user_dashboard) -->
-    <div class="side-panel">
-      <div class="graph-container">
-        <h3>Application Status</h3>
-        <canvas id="successRateChart"></canvas>
-      </div>
-      <div class="graph-container">
-        <h3>Applications Overview</h3>
-        <canvas id="applicationsChart"></canvas>
-      </div>
-    <!-- Recent Activities -->
-<h2>Recent Activities</h2>
-<ul>
-{% for activity in recent_activities %}
-    <li>{{ activity.job_title }} - Status: {{ activity.status }}</li>
-{% endfor %}
-</ul>
-
-<!-- Live Feed -->
-<h2>Live Feed</h2>
-<ul>
-{% for item in live_feed %}
-    <li>{{ item.job_title }} - Posted: {{ item.posted_at }}</li>
-{% endfor %}
-</ul>
-    </div>
+    <!-- Side Panel Removed -->
   </main>
 
   <!-- Scripts -->
@@ -351,58 +413,24 @@
     addCertificationBtn.addEventListener('click', () => {
       certificationFormContainer.classList.toggle('hidden');
     });
-
-    // Use dynamic data passed from Flask
-    const userSuccessRateData = {{ user_success_rate|tojson }};
-    const applicationsOverviewData = {{ applications_overview|tojson }};
-
-    // Application Status Pie Chart
-    const successCtx = document.getElementById('successRateChart').getContext('2d');
-    const successRateChart = new Chart(successCtx, {
-      type: 'pie',
-      data: {
-        labels: ['Accepted', 'Rejected', 'Pending'],
-        datasets: [{
-          data: [
-            userSuccessRateData.hired,
-            userSuccessRateData.rejected,
-            userSuccessRateData.pending
-          ],
-          backgroundColor: ['#27ae60', '#c0392b', '#f1c40f']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      const dropdownBtn = document.querySelector('.profile-icon-btn');
+      
+      if (!dropdown.contains(event.target)) {
+          const dropdownContent = document.querySelector('.dropdown-content');
+          if (dropdownContent.style.display === 'block') {
+              dropdownContent.style.display = 'none';
+          }
       }
-    });
-
-    // Applications Overview Bar Chart
-    const appCtx = document.getElementById('applicationsChart').getContext('2d');
-    const applicationsChart = new Chart(appCtx, {
-      type: 'bar',
-      data: {
-        labels: applicationsOverviewData.labels,
-        datasets: [{
-          label: 'Applications',
-          data: applicationsOverviewData.applications,
-          backgroundColor: '#264653',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: { enabled: true }
-        },
-        scales: {
-          x: { beginAtZero: true },
-          y: { beginAtZero: true }
-        }
-      }
-    });
+  });
+  
+  // Toggle dropdown on click (alternative to hover)
+  document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+      event.stopPropagation();
+      const dropdownContent = document.querySelector('.dropdown-content');
+      dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+  });
   </script>
 </body>
 </html>

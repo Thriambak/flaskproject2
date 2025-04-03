@@ -3,186 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post New Job</title>
+    <title>{% if job_id %}Edit Job{% else %}Post New Job{% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/company/post_new_job.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div id="popup-message" class="popup"></div> <!-- Popup Message -->
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
-            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" alt="Not Found" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> Profile</button>
-            </a>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
-        <div class="navigation">
-            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
-            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/company/company_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_notification'"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
         <div class="activity">
             <div class="top-header">
-                
-                <h2>Post a New Job</h2>
+                <h2>{% if job_id %}Edit{% else %}Post a New{% endif %} Job or Internship</h2>
+                <a href="{{ url_for('company.company_jobposting') }}" class="cancel-link">
+                    <button class="cancel-btn"><i class="fas fa-times"></i> Cancel</button>
+                </a>
             </div>
-            <form class="job-posting-form" action="/company/company_post_new_job" method="POST">
+            <form class="job-posting-form" action="/company/company_post_new_job" method="POST" onsubmit="return validateForm()">
                 {% if job_id %}
                     <input type="hidden" id="jobId" name="jobId" value="{{ job_id }}">
                 {% endif %}
                 <div class="form-group">
-                    <label for="job-title">Job Title:</label>
-                    <input type="text" id="job-title" name="job-title" placeholder="Enter job title" style="font-family: monospace;font-size: 14.5px;" required>
+                    <label for="job-title"><p style="color: red; display: inline;">* </p>Job Title:</label>
+                    <input type="text" id="job-title" name="job-title" placeholder="Enter job title" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.title if form_data else '' }}" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="description">Job Description:</label>
-                    <textarea id="description" name="description" placeholder="Enter job description" rows="3" style="font-family: monospace;font-size: 14.5px;" required></textarea>
+                    <label for="description"><p style="color: red; display: inline;">* </p>Job Description:</label>
+                    <textarea id="description" name="description" placeholder="Enter job description" rows="3" style="font-family: monospace;font-size: 14.5px;" required>{{ form_data.description if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="job-type">Job Type:</label>
-                    <select id="job-type" name="job-type" style="font-family: monospace;font-size: 14.5px; height: 30px; border: 1px grey solid; border-radius: 8px;">
-                        <option value="Full-time">Full-time</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Contract">Contract</option>
+                    <select id="job-type" name="job-type">
+                        <option value="Full-time" {% if form_data and form_data.job_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                        <option value="Part-time" {% if form_data and form_data.job_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                        <option value="Contract" {% if form_data and form_data.job_type == 'Contract' %}selected{% endif %}>Contract</option>
                     </select>
-                    <!-- <input type="text" id="job-type" name="job-type" placeholder="Enter job type" style="font-family: monospace;font-size: 14.5px;" required> -->
                 </div>
         
                 <div class="form-group">
                     <label for="skill-sets">Expected Skill Sets:</label>
-                    <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;"></textarea>
+                    <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;">{{ form_data.skills if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="exp">Years of Experience:</label>
-                    <input type="number" id="exp" name="exp" placeholder="Enter expected experience" style="font-family: monospace;font-size: 14.5px;" required>
+                    <label for="exp"><p style="color: red; display: inline;">* </p>Years of Experience:</label>
+                    <input type="number" id="exp" name="exp" placeholder="Enter expected experience" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.exp if form_data else '' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label for="certifications">Required Certifications:</label>
-                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;"></textarea>
+                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;">{{ form_data.certifications if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="salary">Salary:</label>
-                    <input type="number" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" required>
+                    <input type="number" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.salary if form_data else '' }}">
                 </div>
         
                 <div class="form-group">
                     <label for="locations">Preferred Locations:</label>
-                    <input type="text" id="locations" name="locations" placeholder="Enter preferred locations" style="font-family: monospace;font-size: 14.5px;" required>
+                    <input type="text" id="locations" name="locations" placeholder="Enter preferred locations" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.locations if form_data else '' }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="vacancy">Vacancy:</label>
-                    <input type="number" min="0" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" required>
+                    <label for="vacancy"><p style="color: red; display: inline;">* </p>Vacancy:</label>
+                    <input type="number" min="0" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.vacancy if form_data else '' }}" required>
                 </div>
         
                 <div class="form-group">
-                    <label for="deadline">Joining Date: {{ current_date }}</label>
-                    <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace; font-size: 14.5px;" min="{{ current_date }}" required>
+                    <label for="deadline"><p style="color: red; display: inline;">* </p>Apply Before:</label>
+                    <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace; font-size: 14.5px;" min="{{ current_date }}" value="{{ form_data.deadline if form_data else '' }}" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="form-url">Questionnaire Form URL (optional):</label>
-                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;">
+                    <label for="form-url">Questionnaire Form URL:</label>
+                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.form_url if form_data else '' }}">
                 </div>
                 
-                <!-- Hidden field to store questionnaire URL
-                <input type="hidden" id="questionnaire-url" name="questionnaire-url"> -->
-
                 <!-- Add Questionnaire Button -->
-                <div style="display: flex; gap: 10px;">
-                <button type="button" class="questionnaire-btn" onclick="window.location.href='https:/forms.google.com'">
-                    <i class="fas fa-question-circle"></i> Add Questionnaire
-                </button>
-                <button onsubmit="postMessage()" type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
+                <div class="action-buttons">
+                {% if job_id %}
+                    <button type="button" class="questionnaire-btn" onclick="window.location.href='https:/forms.google.com'">
+                        <i class="fas fa-question-circle"></i> Update Questionnaire
+                    </button>
+                    <button type="submit" class="submit-btn" style="background-color: #28a745;"><i class="fas fa-save"></i> Update Job</button>
+                {% else %}
+                    <button type="button" class="questionnaire-btn" onclick="window.location.href='https:/forms.google.com'">
+                        <i class="fas fa-question-circle"></i> Add Questionnaire
+                    </button>
+                    <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
+                {% endif %}
                 </div>
             </form>
         </div>
-                
-        
-
-        <div class="side-panel">
-            <div class="boxes"  style="position: sticky; top: 14.1%;">
-                <div class="graph"> <!-- style="position: sticky; top: 14.1%;" -->
-                    <h3>Success Rate</h3>
-                    <canvas id="chart"></canvas>
-                </div>
-                <div class="live-feed"> <!-- style="position: sticky; top: 59.6%;" -->
-                    <h3>Live Feed</h3>
-                    {% if live_feed_notifications %}
-                    <ul style="padding-left: 10px;">
-                        {% for notification in live_feed_notifications %}
-                            <li> <p>{{ notification.message }}</p> </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                        <p>No new notifications in the past day.</p>
-                    {% endif %}
-                    <!--<p style="font-family: 'Segoe UI', sans-serif;">System maintenance scheduled at 5 PM.</p>-->
-                </div>
-                <div class="calendar"> <!-- style="position: sticky; top: 80.2%;" -->
-                    <h3>Upcoming Events</h3>
-                    <ul style="padding-left: 10px;">
-                        {% if pending_applications_count > 0 %}
-                            <li><p>Host Interview: </p>
-                                <p>Applications pending - {{pending_applications_count}}</p></li> 
-                        {% endif %}
-                        {% if interviewed_applications_count > 0 %}
-                            <li><p>Send hire/reject messages: </p>
-                                <p>Applicants waiting - {{interviewed_applications_count}}</p></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
     </main>
     <script>
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Popup message function
+        function showPopup(message, type) {
+            if (!message) return; // Don't show popup if message is empty
+            var popup = document.getElementById("popup-message");
+            popup.innerHTML = message;
+            popup.className = "popup " + type;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 3000);
+        }
+
+        function validateForm() {
+            // Get form values
+            const jobTitle = document.getElementById("job-title").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const exp = document.getElementById("exp").value.trim();
+            const vacancy = document.getElementById("vacancy").value.trim();
+            const deadline = document.getElementById("deadline").value;
+            const formUrl = document.getElementById("form-url").value.trim();
+            
+            // Validate job title
+            if (jobTitle.length < 3 || jobTitle.length > 255) {
+                showPopup("Job Title must be between 3-255 characters!", "error");
+                return false;
+            }
+            
+            // Validate description
+            if (description.length < 10 || description.length > 2000) {
+                showPopup("Job Description must be between 10-2000 characters!", "error");
+                return false;
+            }
+            
+            // Validate experience
+            if (exp < 0 || exp > 50) {
+                showPopup("Years of Experience must be between 0-50!", "error");
+                return false;
+            }
+            
+            // Validate vacancy
+            if (vacancy < 1 || vacancy > 1000) {
+                showPopup("Vacancy must be between 1-1000!", "error");
+                return false;
+            }
+            
+            // Validate deadline
+            const currentDate = new Date("{{ current_date }}");
+            const deadlineDate = new Date(deadline);
+            if (deadlineDate < currentDate) {
+                showPopup("Deadline cannot be in the past!", "error");
+                return false;
+            }
+            
+            // Validate form URL if provided
+            if (formUrl && !isValidURL(formUrl)) {
+                showPopup("Please enter a valid URL for the questionnaire form!", "error");
+                return false;
+            }
+            
+            return true;
+        }
+        
+        function isValidURL(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
         function openGoogleForms() {
             const googleFormsURL = "https://forms.google.com";
             window.open(googleFormsURL, "_blank");
         }
-
-        function postMessage() {
-            alert('Jop posted successfully');
-            window.location.href="{{ url_for('company.company_jobposting') }}";
-        }
-
-        const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Successful Applications', 'Unsuccessful Applications'],
-                datasets: [{
-                    label: 'Success Rate',
-                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
-                    backgroundColor: ['#f4a261', '#0a9396'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
+        
+        // Display popup messages from server
+        {% if message and message_type %}
+            showPopup("{{ message }}", "{{ message_type }}");
+        {% endif %}
     </script>
 </body>
 </html>

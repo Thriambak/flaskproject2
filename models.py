@@ -42,6 +42,7 @@ class College(db.Model):
     website = db.Column(db.Text)
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
+
     login = db.relationship('Login', backref=db.backref('college', uselist=False))
 
     def __repr__(self):
@@ -61,6 +62,7 @@ class User(db.Model):
     profile_picture = db.Column(db.Text)
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
+
     login = db.relationship('Login', backref=db.backref('user', uselist=False))
     
     def __repr__(self):
@@ -78,6 +80,8 @@ class Company(db.Model):
     website = db.Column(db.Text)
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
+    industry = db.Column(db.Text)
+
     login = db.relationship('Login', backref=db.backref('company', uselist=False))
 
     def __repr__(self):
@@ -109,8 +113,8 @@ class Job(db.Model):
     skills = db.Column(db.Text)
     years_of_exp = db.Column(db.Integer, nullable=False)
     certifications = db.Column(db.Text)
-    location = db.Column(db.String(100), nullable=False)
-    salary = db.Column(db.String(50), nullable=False)
+    location = db.Column(db.String(100))
+    salary = db.Column(db.String(50))
     total_vacancy = db.Column(db.Integer, nullable=False)
     filled_vacancy = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), nullable=False)
@@ -143,6 +147,8 @@ class Job(db.Model):
 
 
 # Job Application Table
+from datetime import datetime
+
 class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
@@ -151,17 +157,20 @@ class JobApplication(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # 'pending', 'accepted', 'rejected'
     resume_path = db.Column(db.Text, nullable=True)  # Store path to the resume file
-   
+    date_applied = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Timestamp when application is submitted
+    status_updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Timestamp when status is changed
+
     # Relationships
     user = db.relationship('User', backref='applications')
     job = db.relationship('Job', backref='applications')
 
-    def __init__(self, user_id, job_id, status, resume_path):
+    def __init__(self, user_id, job_id, status='Pending', resume_path=None):
         self.user_id = user_id
         self.job_id = job_id
         self.status = status
         self.resume_path = resume_path
-      
+        self.date_applied = datetime.utcnow()
+        self.status_updated_at = datetime.utcnow()
 
 # Communication Table
 class Communication(db.Model):
@@ -263,3 +272,13 @@ class Couponuser(db.Model):
     
     def __repr__(self):
         return f"<CouponUser User ID: {self.user_id}, Coupon ID: {self.coupon_id}>"
+
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
+    saved_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('favorites', lazy=True))
+    job = db.relationship('Job', backref=db.backref('favorited_by', lazy=True))

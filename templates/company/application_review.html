@@ -7,30 +7,43 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/company/application_review.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Hide all application rows initially */
+        #applications-table tbody tr.application-row {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
-            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" alt="Not Found" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
-            <a href="{{ url_for('company.company_profile') }}" style="text-decoration: none;">
-                <button><i class="fas fa-user"></i> Profile</button>
-            </a>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <a href="{{ url_for('auth.logout') }}" style="text-decoration: none;">
-                <button><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </a>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('company.company_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
     <main>
-        <div class="navigation"> <!--sticky = 14.1% or 86px-->
-            <button onclick="window.location.href='/company/company_dashboard'" style="position: sticky;top: 14.1%;"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button onclick="window.location.href='/company/company_jobposting'" style="position: sticky;top: 23.5%;"><i class="fas fa-briefcase"></i> Job Posting</button>
-            <button onclick="window.location.href='/company/company_notification'" style="position: sticky;top: 32.9%;"><i class="fas fa-bell"></i> Notifications</button>
-            <button onclick="window.location.href='/company/company_application_review'" style="position: sticky;top: 42.3%;"><i class="fas fa-check-circle"></i> Application Review</button>
-            <button onclick="window.location.href='/company/company_hiring_communication'" style="position: sticky;top: 51.7%;"><i class="fas fa-comments"></i> Hiring Communication</button>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/company/company_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/company/company_jobposting'"><i class="fas fa-briefcase"></i> Job Posting</button>
+            <button onclick="window.location.href='/company/company_notification'"><i class="fas fa-bell"></i> Notifications</button>
+            <button onclick="window.location.href='/company/company_application_review'"><i class="fas fa-check-circle"></i> Application Review</button>
+            <button onclick="window.location.href='/company/company_hiring_communication'"><i class="fas fa-comments"></i> Hiring Communication</button>
         </div>
 
         <div class="activity">
@@ -38,207 +51,363 @@
                 <h2>Review Job Applications</h2>
             </div>
             <div class="filter-bar">
-                <form method="GET" action="{{ url_for('company.company_application_review') }}">
-                    <div class="search-container">
-                        <input type="text" id="search-bar" name="search_name" value="{{ search_name }}" placeholder="Search candidates by name..." style="font-family: monospace;font-size: 14.5px;" />
-                        <button class="search-btn" type="submit">
-                            <pre>Search </pre><i class="fas fa-search search-icon"></i>
-                        </button>
-                    </div>
+                <!-- Filter Button -->
+                <div class="filter-container">
+                    <button class="filter-button" type="button"><i class="fas fa-filter"></i> Filter</button>
+                    <div class="filter-dropdown" id="filter-dropdown">
+                        <h4>Status</h4>
+                        <label><input type="checkbox" class="status-filter" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
+                        <label><input type="checkbox" class="status-filter" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
+                        <label><input type="checkbox" class="status-filter" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
+                        <label><input type="checkbox" class="status-filter" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
 
-                    <!-- Filter Section -->
-                    <div class="filter-container">
-                        <button class="filter-button"><pre>Filter <i class="fas fa-filter"></i></pre></button>
-                        <div class="filter-dropdown">
-                            <h4>Status</h4>
-                            <label><input type="checkbox" name="status" value="Pending" {% if 'Pending' in selected_status %}checked{% endif %}> Pending</label>
-                            <label><input type="checkbox" name="status" value="Interviewed" {% if 'Interviewed' in selected_status %}checked{% endif %}> Interviewed</label>
-                            <label><input type="checkbox" name="status" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
-                            <label><input type="checkbox" name="status" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
-
-                            <h4>Job Post</h4>
-                            {% if jobs %}
-                                {% for application in jobs %}
-                                    <p style="overflow-wrap: break-word; max-width: 100%;">
-                                        <input type="checkbox" name="job_post" value="{{ application.title}}" {% if application.title in selected_jobs %}checked{% endif %}> 
-                                        {{ application.title }}
-                                    </p>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
+                        <h4>Job Post</h4>
+                        {% if jobs %}
+                            {% for application in jobs %}
+                                <p style="overflow-wrap: break-word; max-width: 100%;">
+                                    <input type="checkbox" class="job-filter" value="{{ application.title}}" {% if application.title in selected_jobs %}checked{% endif %}> 
+                                    {{ application.title }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
                     </div>
-                </form>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search candidates..." style="font-family: monospace;font-size: 14.5px;">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
             </div>
-            <br>
+            
             <!-- Candidate List -->
             <div class="candidate-list">
                 <h3>Candidate List</h3>
-                <br>
-                <ul id="candidate-list">
-                    {% if applications %}
-                        {% for application in applications %}
-                        <li>
-                            <button class="candidate-item" onclick="selectCandidate('{{ application.candidate_name }}', '{{ application.job_post }}', '{{ application.resume_path }}', '{{ application.status }}', '{{ application.application_id }}', '{{ application.user_id }}')">
-                                <div class="candidate-name" style="overflow-wrap: break-word; max-width: 20%;">{{ application.candidate_name }}</div>
-                                <div class="candidate-profile" style="overflow-wrap: break-word; max-width: 60%;">{{ application.job_post }}</div>
-                                <div class="candidate-status" style="overflow-wrap: break-word; max-width: 20%;">{{ application.status }}</div>
-                            </button>
-                        </li>
-                        {% endfor %}
-                    {% endif %}
-                </ul>
+                <div class="table-container">
+                    <table id="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Candidate Name</th>
+                                <th>Job Post</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if applications %}
+                                {% for application in applications %}
+                                <tr class="application-row" data-name="{{ application.candidate_name }}" data-job="{{ application.job_post }}" data-status="{{ application.status }}" data-resume="{{ application.resume_path }}" data-id="{{ application.application_id }}" data-userid="{{ application.user_id }}">
+                                    <td>{{ application.candidate_name }}</td>
+                                    <td>{{ application.job_post }}</td>
+                                    <td>{{ application.status }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3">No applications found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div id="no-results-message" style="display: none; text-align: center; padding: 20px; font-family: monospace; font-size: 16px; color: #666;">
+                        <p>No matching applications found.</p>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prev-page" disabled>&laquo; Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" disabled>Next &raquo;</button>
+                </div>
             </div>
 
-            <!-- Candidate Details -->
-            <div class="candidate-details">
-                <h3>Candidate Details</h3>
-                <br>
-                <div id="selected-candidate">
-                    <p style="font-family: monospace;font-size: 14.5px;">Select a candidate to view their details.</p>
-                </div>
-                <div id="error-message" style="color: red; font-family: monospace; font-size: 14px; display: none; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-                    Please select a candidate before updating the status.
-                </div>
-                <form id="update-status-form" action="/company/company_application_review" method="POST">
-                    <h4>Update Application Status</h4>
-                    <br>
-                    <input type="hidden" id="application-id" name="application_id" value="">
-                    <select id="status-update" name="status">
-                        <option value="Pending">Pending</option>
-                        <option value="Interviewed">Interviewed</option>
-                        <option value="Hired">Hired</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                    <button class="update-btn" type="submit"><pre>Update Status</pre></button>
-                </form>
-            </div>
-        </div>              
-
-        <div class="side-panel">
-            <div class="boxes"  style="position: sticky; top: 14.1%;">
-                <div class="graph">
-                    <h3>Success Rate</h3>
-                    <canvas id="chart"></canvas>
-                </div>
-                <div class="live-feed">
-                    <h3>Live Feed</h3>
-                    {% if live_feed_notifications %}
-                    <ul style="padding-left: 10px;">
-                        {% for notification in live_feed_notifications %}
-                            <li><p>{{ notification.message }}</p></li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                        <p>No new notifications in the past day.</p>
-                    {% endif %}
-                </div>
-                <div class="calendar">
-                    <h3>Upcoming Events</h3>
-                    <ul style="padding-left: 10px;">
-                        {% if pending_applications_count > 0 %}
-                            <li>
-                                <p>Host Interview:</p>
-                                <p>Applications pending - {{pending_applications_count}}</p>
-                            </li> 
-                        {% endif %}
-                        {% if interviewed_applications_count > 0 %}
-                            <li>
-                                <p>Send hire/reject messages:</p>
-                                <p>Applicants waiting - {{interviewed_applications_count}}</p>
-                            </li>
-                        {% endif %}
-                    </ul>
+            <!-- Candidate Details Modal -->
+            <div id="candidate-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3>Candidate Details</h3>
+                    <div id="modal-candidate-details">
+                        <p>Select a candidate to view details.</p>
+                    </div>
+                    <div id="modal-error-message" style="color: red; font-family: monospace; font-size: 14px; display: none; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                        Please select a candidate before updating the status.
+                    </div>
+                    <form id="modal-update-status-form" action="/company/company_application_review" method="POST">
+                        <h4>Update Application Status</h4>
+                        <input type="hidden" id="modal-application-id" name="application_id" value="">
+                        <select id="modal-status-update" name="status">
+                            <option value="Pending">Pending</option>
+                            <option value="Interviewed">Interviewed</option>
+                            <option value="Hired">Hired</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <button class="update-btn" type="submit">Update Status</button>
+                    </form>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Global variable to hold user certifications data -->
     <script>
-        var userCertifications = {{ user_certifications|tojson }};
-    </script>
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
 
-    <script>
-        function toggleDropdown() {
-            var dropdown = document.getElementById("filter-dropdown");
-            if (dropdown.style.display === "none" || dropdown.style.display === "") {
-                dropdown.style.display = "block";
-            } else {
-                dropdown.style.display = "none";
+        //Global variable to hold user certifications data
+        var userCertifications = {{ user_certifications|tojson }};
+
+        // Pagination variables
+        let currentPage = 1;
+        const rowsPerPage = 5;
+        let filteredRows = [];
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Modal functionality
+        const modal = document.getElementById("candidate-modal");
+        const span = document.getElementsByClassName("close")[0];
+        
+        // Close modal when clicking X
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
             }
         }
 
-        function selectCandidate(name, jobPost, resumePath, status, applicationId, userId) {
-        // Build the certifications HTML
-        var certHtml = "";
-        if (userCertifications[userId] && userCertifications[userId].length > 0) {
-            certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Certifications:</strong></p><ul>";
-            userCertifications[userId].forEach(function(cert) {
-                certHtml += "<li style='font-family: monospace;font-size: 14.5px;margin-left: 20px;'>" + cert.certification_name;
-                if (cert.verified) {
-                    certHtml += " <i class='fas fa-check' style='color: green;'></i>";
-                }
-                certHtml += "</li>";
+        // Filter dropdown toggle
+        const filterButton = document.querySelector('.filter-button');
+        const filterDropdown = document.getElementById('filter-dropdown');
+        
+        filterButton.addEventListener('click', function() {
+            filterDropdown.style.display = filterDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.filter-container') && filterDropdown.style.display === 'block') {
+                filterDropdown.style.display = 'none';
+            }
+        });
+
+        // Apply filters
+        document.querySelectorAll('.status-filter, .job-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const statusFilters = Array.from(document.querySelectorAll('.status-filter:checked')).map(el => el.value);
+                const jobFilters = Array.from(document.querySelectorAll('.job-filter:checked')).map(el => el.value);
+                
+                filterTable(statusFilters, jobFilters);
+                // Don't close the dropdown so users can continue applying filters
             });
-            certHtml += "</ul>";
-        } else {
-            certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No certifications available.</p>";
-        }
+        });
 
-        // Handle resume path (check if it exists)
-        let resumeHtml;
-        if (resumePath) {
-            const resumeFileName = resumePath.split('static/')[1];
-            const resumeUrl = `/static/${resumeFileName}`;
-            resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumeUrl}" target="_blank">View Resume</a></p>`;
-        } else {
-            resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong>No resume uploaded.</p>`;
-        }
+        // Live search functionality
+        document.getElementById('search-input').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            filterTableBySearch(searchText);
+        });
 
-        // Build candidate details
-        const candidateDetails = `
-            <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
-            <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong>${jobPost}</p>
-            <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Status: </strong>${status}</p>
-            ${resumeHtml}
-            ${certHtml}
-        `;
-        document.getElementById('selected-candidate').innerHTML = candidateDetails;
-        document.getElementById('application-id').value = applicationId;
-        document.getElementById('status-update').value = status;
-    }
-
-    document.getElementById('update-status-form').addEventListener('submit', function(event) {
-        // Check if a candidate has been selected
-        var applicationId = document.getElementById('application-id').value;
-        
-        // If no candidate is selected, show error message and prevent form submission
-        if (!applicationId) {
-            event.preventDefault();  // Prevent the form from submitting
-            var errorMessage = document.getElementById('error-message');
-            errorMessage.style.display = 'block';  // Show the error message
-        }
-    });
-        
-        const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Successful Applications', 'Unsuccessful Applications'],
-                datasets: [{
-                    label: 'Success Rate',
-                    data: [{{ total_successful }}, {{ total_unsuccessful }}],
-                    backgroundColor: ['#f4a261', '#0a9396'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+        // Filter table by search text
+        function filterTableBySearch(searchText) {
+            const rows = document.querySelectorAll('#applications-table tbody tr');
+            filteredRows = [];
+            
+            rows.forEach(row => {
+                const name = row.querySelector('td:first-child').textContent.toLowerCase();
+                const job = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const status = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (name.includes(searchText) || job.includes(searchText) || status.includes(searchText)) {
+                    row.dataset.visible = "true";
+                    filteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
                 }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results-message').style.display = filteredRows.length === 0 ? 'block' : 'none';
+            
+            updatePagination();
+            showPage(1);
+        }
+
+        // Update the filterTable function
+        function filterTable(statusFilters, jobFilters) {
+            const rows = document.querySelectorAll('#applications-table tbody tr');
+            filteredRows = [];
+            
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const job = row.getAttribute('data-job');
+                
+                const statusMatch = statusFilters.length === 0 || statusFilters.includes(status);
+                const jobMatch = jobFilters.length === 0 || jobFilters.includes(job);
+                
+                if (statusMatch && jobMatch) {
+                    row.dataset.visible = "true";
+                    filteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results-message').style.display = filteredRows.length === 0 ? 'block' : 'none';
+            
+            updatePagination();
+            showPage(1);
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Show specific page
+        function showPage(pageNum) {
+            currentPage = pageNum;
+            const start = (pageNum - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            const rows = document.querySelectorAll('#applications-table tbody tr');
+            rows.forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            for (let i = start; i < end && i < filteredRows.length; i++) {
+                filteredRows[i].style.display = 'table-row';
+            }
+            
+            updatePagination();
+        }
+
+        // Pagination controls
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (currentPage > 1) {
+                showPage(currentPage - 1);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                showPage(currentPage + 1);
+            }
+        });
+
+        // Handle row click to open modal
+        document.querySelectorAll('.application-row').forEach(row => {
+            row.addEventListener('click', function() {
+                const name = this.getAttribute('data-name');
+                const job = this.getAttribute('data-job');
+                const status = this.getAttribute('data-status');
+                const resume = this.getAttribute('data-resume');
+                const appId = this.getAttribute('data-id');
+                const userId = this.getAttribute('data-userid');
+                
+                showCandidateDetails(name, job, resume, status, appId, userId);
+                modal.style.display = "block";
+            });
+        });
+
+        // Initialize pagination
+        window.addEventListener('load', function() {
+            const rows = document.querySelectorAll('#applications-table tbody tr');
+            filteredRows = Array.from(rows);
+            updatePagination();
+            showPage(1);
+        });
+
+        // Function to show candidate details in modal
+        function showCandidateDetails(name, jobPost, resumePath, status, applicationId, userId) {
+            // Build the certifications HTML
+            let certHtml = "";
+            if (userCertifications[userId] && userCertifications[userId].length > 0) {
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Certifications:</strong></p><ul>";
+                userCertifications[userId].forEach(function(cert) {
+                    certHtml += "<li style='font-family: monospace;font-size: 14.5px;margin-left: 20px;'>" + cert.certification_name;
+                    if (cert.verified) {
+                        certHtml += " <i class='fas fa-check' style='color: green;'></i>";
+                    }
+                    certHtml += "</li>";
+                });
+                certHtml += "</ul>";
+            } else {
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No certifications available.</p>";
+            }
+
+            // Handle resume path
+            let resumeHtml;
+            if (resumePath && resumePath !== "null") {
+                const resumeFileName = resumePath.split('static/')[1];
+                const resumeUrl = `/static/${resumeFileName}`;
+                resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumeUrl}" target="_blank">View Resume</a></p>`;
+            } else {
+                resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong>No resume uploaded.</p>`;
+            }
+
+            // Build candidate details
+            const candidateDetails = `
+                <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
+                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Job Post: </strong>${jobPost}</p>
+                <p style="font-family: monospace;font-size: 14.5px; overflow-wrap: break-word; max-width: 100%;"><strong>Status: </strong>${status}</p>
+                ${resumeHtml}
+                ${certHtml}
+            `;
+            
+            document.getElementById('modal-candidate-details').innerHTML = candidateDetails;
+            document.getElementById('modal-application-id').value = applicationId;
+            document.getElementById('modal-status-update').value = status;
+        }
+
+        // Form validation
+        document.getElementById('modal-update-status-form').addEventListener('submit', function(event) {
+            const applicationId = document.getElementById('modal-application-id').value;
+            
+            if (!applicationId) {
+                event.preventDefault();
+                document.getElementById('modal-error-message').style.display = 'block';
             }
         });
     </script>
