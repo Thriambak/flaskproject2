@@ -383,6 +383,15 @@ main {
     color: #888;
 }
 
+.noResults {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    font-family: monospace;
+    font-size: 16px;
+    color: #666;
+}
+
 .progress-bar {
     background-color: #ddd;
     border-radius: 25px;

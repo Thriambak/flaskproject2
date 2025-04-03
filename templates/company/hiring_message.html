@@ -62,7 +62,7 @@
                         <label><input type="checkbox" class="status-filter" value="Hired" {% if 'Hired' in selected_status %}checked{% endif %}> Hired</label>
                         <label><input type="checkbox" class="status-filter" value="Rejected" {% if 'Rejected' in selected_status %}checked{% endif %}> Rejected</label>
     
-                        <h4>Job Post</h4>
+                        <!--<h4>Job Post</h4>
                         {% if jobs %}
                             {% for application in jobs %}
                                 <p style="overflow-wrap: break-word; max-width: 100%;">
@@ -70,7 +70,7 @@
                                     {{ application.title }}
                                 </p>
                             {% endfor %}
-                        {% endif %}
+                        {% endif %}-->
                     </div>
                 </div>
     
@@ -89,7 +89,7 @@
                         <thead>
                             <tr>
                                 <th>Candidate Name</th>
-                                <th>Job Title</th>
+                                <th>Job Post</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
