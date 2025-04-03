@@ -50,9 +50,9 @@
     header .profile-settings {
       display: flex;
       gap: 15px;
-  }
+    }
   
-  header .profile-settings button {
+    header .profile-settings button {
       background-color: white;
       border: none;
       border-radius: 20px;
@@ -64,14 +64,14 @@
       align-items: center;
       gap: 10px;
       transition: background-color 0.3s, color 0.3s;
-  }
+    }
   
-  .profile-dropdown {
+    .profile-dropdown {
       position: relative;
       display: inline-block;
-  }
+    }
   
-  .profile-icon-btn {
+    .profile-icon-btn {
       background-color: white;
       border: none;
       border-radius: 50%;
@@ -82,18 +82,18 @@
       align-items: center;
       justify-content: center;
       transition: background-color 0.3s;
-  }
+    }
   
-  .profile-icon-btn i {
+    .profile-icon-btn i {
       font-size: 30px;
       color: #005f73;
-  }
+    }
   
-  .profile-icon-btn:hover {
+    .profile-icon-btn:hover {
       background-color: #e6e6e6;
-  }
+    }
   
-  .dropdown-content {
+    .dropdown-content {
       display: none;
       position: absolute;
       right: 0;
@@ -103,9 +103,9 @@
       z-index: 10;
       border-radius: 8px;
       overflow: hidden;
-  }
+    }
   
-  .dropdown-content a {
+    .dropdown-content a {
       color: #333;
       padding: 12px 16px;
       text-decoration: none;
@@ -113,19 +113,20 @@
       align-items: center;
       gap: 10px;
       transition: background-color 0.3s;
-  }
+    }
   
-  .dropdown-content a i {
+    .dropdown-content a i {
       color: #0a9396;
-  }
+    }
   
-  .dropdown-content a:hover {
+    .dropdown-content a:hover {
       background-color: #f1f1f1;
-  }
+    }
   
-  .profile-dropdown:hover .dropdown-content {
+    .profile-dropdown:hover .dropdown-content {
       display: block;
-  }
+    }
+    
     /* Layout: Navigation and Activity */
     main {
       display: flex;
@@ -142,9 +143,9 @@
       gap: 15px;
       border-right: 1px solid #ccc;
       box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .navigation button {
+    }
+    
+    .navigation button {
       padding: 12px 20px;
       border: none;
       background: linear-gradient(90deg, #f0f4ff, #ffffff);
@@ -156,17 +157,18 @@
       align-items: center;
       gap: 15px;
       transition: background 0.3s, transform 0.2s;
-  }
-  
-  .navigation button i {
+    }
+    
+    .navigation button i {
       font-size: 18px;
       color: #005f73;
-  }
-  
-  .navigation button:hover {
+    }
+    
+    .navigation button:hover {
       background: linear-gradient(90deg, #dce4ff, #f9faff);
       transform: scale(1.05);
-  }
+    }
+    
     /* Activity Section */
     .activity {
       flex: 1;  /* Fills remaining space */
@@ -184,34 +186,39 @@
       text-align: center;
       margin-bottom: 20px;
     }
+    .activity .search-filter-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
     .activity .search-bar {
-      width: 100%;
+      flex: 1;
       padding: 10px 15px;
       font-size: 15px;
       border: 1px solid #ddd;
       border-radius: 12px;
-      margin-bottom: 20px;
+      margin-right: 15px;
     }
-    .activity .filters { display: flex; gap: 10px; }
-    .activity .filters button.unread {
-      padding: 12px 20px;
+    .activity .filters {
+      display: flex;
+      gap: 10px;
+    }
+    .activity .filters button {
+      padding: 10px 20px;
       font-size: 16px;
       border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .activity .filters button.unread {
       background-color: #1abc9c;
       color: white;
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
     }
     .activity .filters button.read {
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
       background-color: #555;
       color: white;
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
     }
     
     .activity .notification-item {
@@ -329,17 +336,17 @@
     <div>Welcome, {{ session['username'] }}!</div>
     <div class="profile-settings">
       <div class="profile-dropdown">
-          <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
-          <div class="dropdown-content">
-              <a href="{{ url_for('user.profile') }}">
-                  <i class="fas fa-user"></i> Profile
-              </a>
-              <a href="{{ url_for('auth.logout') }}">
-                  <i class="fas fa-sign-out-alt"></i> Logout
-              </a>
-          </div>
+        <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('user.profile') }}">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
       </div>
-  </div>
+    </div>
   </header>
   
   <!-- Layout -->
@@ -360,11 +367,12 @@
       <h2>Notifications</h2>
       
       <!-- Search and Filters -->
-      <div class="flex justify-between items-center mb-4">
-        <input type="text" id="search" onkeyup="searchNotifications()" placeholder="Search notifications..." class="search-bar" />
+      <div class="search-filter-container">
+        <input type="text" id="search" onkeyup="filterAndSearchNotifications()" placeholder="Search notifications..." class="search-bar" />
         <div class="filters">
-          <button class="unread" onclick="filterNotifications('unread')">Unread</button>
-          <button class="read" onclick="filterNotifications('read')">Read</button>
+          <button id="filterUnread" class="unread" onclick="setFilter('unread')">Unread</button>
+          <button id="filterRead" class="read" onclick="setFilter('read')">Read</button>
+          <button id="filterAll" class="bg-gray-300 text-gray-800" onclick="setFilter('all')">All</button>
         </div>
       </div>
       
@@ -404,23 +412,42 @@
   
   <!-- Scripts for Search & Filters and Optional Activity Reload -->
   <script>
-    function searchNotifications() {
-      const searchInput = document.getElementById("search").value.toLowerCase();
-      const notifications = document.querySelectorAll("#notifications-list .notification-item");
-      notifications.forEach(notification => {
-        const message = notification.querySelector(".notification-message").innerText.toLowerCase();
-        notification.style.display = message.includes(searchInput) ? "block" : "none";
-      });
+    // Global variable to store current filter state: 'all', 'read', or 'unread'
+    let currentFilter = 'all';
+
+    // Update filter state and refresh display
+    function setFilter(filterType) {
+      currentFilter = filterType;
+      // Update button styles to reflect the active filter
+      document.getElementById('filterUnread').classList.toggle('bg-gray-300', filterType !== 'unread');
+      document.getElementById('filterUnread').classList.toggle('bg-green-500', filterType === 'unread');
+      document.getElementById('filterRead').classList.toggle('bg-gray-300', filterType !== 'read');
+      document.getElementById('filterRead').classList.toggle('bg-gray-800', filterType === 'read');
+      document.getElementById('filterAll').classList.toggle('bg-gray-300', filterType !== 'all');
+      document.getElementById('filterAll').classList.toggle('bg-blue-500', filterType === 'all');
+      
+      filterAndSearchNotifications();
     }
     
-    function filterNotifications(type) {
+    // Combined function to apply search text and filter type
+    function filterAndSearchNotifications() {
+      const searchInput = document.getElementById("search").value.toLowerCase();
       const notifications = document.querySelectorAll("#notifications-list .notification-item");
+      
       notifications.forEach(notification => {
-        if (type === 'unread') {
-          notification.style.display = notification.classList.contains("unread") ? "block" : "none";
-        } else if (type === 'read') {
-          notification.style.display = notification.classList.contains("read") ? "block" : "none";
+        const message = notification.querySelector(".notification-message").innerText.toLowerCase();
+        const matchesSearch = message.includes(searchInput);
+        
+        // Determine if notification meets the filter criteria
+        let matchesFilter = true;
+        if (currentFilter === 'read') {
+          matchesFilter = notification.classList.contains("read");
+        } else if (currentFilter === 'unread') {
+          matchesFilter = notification.classList.contains("unread");
         }
+        
+        // Display notification if it matches both criteria
+        notification.style.display = (matchesSearch && matchesFilter) ? "block" : "none";
       });
     }
     
@@ -437,26 +464,24 @@
         })
         .catch(err => console.error(err));
     }
+    
     // Uncomment below to auto-reload activity section every 60 seconds (optional)
     // setInterval(reloadActivity, 60000);
-    window.addEventListener('click', function(event) {
-      const dropdown = document.querySelector('.profile-dropdown');
-      const dropdownBtn = document.querySelector('.profile-icon-btn');
-      
-      if (!dropdown.contains(event.target)) {
-          const dropdownContent = document.querySelector('.dropdown-content');
-          if (dropdownContent.style.display === 'block') {
-              dropdownContent.style.display = 'none';
-          }
-      }
-  });
-  
-  // Toggle dropdown on click (alternative to hover)
-  document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+    
+    // Toggle dropdown on click (alternative to hover)
+    document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
       event.stopPropagation();
       const dropdownContent = document.querySelector('.dropdown-content');
       dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-  });
+    });
+    
+    // Close dropdown if clicking outside
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (!dropdown.contains(event.target)) {
+        document.querySelector('.dropdown-content').style.display = 'none';
+      }
+    });
   </script>
 </body>
 </html>
