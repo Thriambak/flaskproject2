@@ -255,45 +255,91 @@ def analytics():
         recent_activities=recent_activities,
         live_feed=live_feed
     )
+from flask import session, render_template, flash, redirect, url_for
+from models import Communication, User, db  # make sure db is imported from your app
 
 @user_blueprint.route('/notifications', methods=['GET'])
 def notifications():
-    user_id = session.get('user_id')
-    if not user_id:
+    # Retrieve the primary key from the session (User.id)
+    user_pk = session.get('user_id')
+    if not user_pk:
         flash("Please log in to view notifications.", "danger")
         return redirect(url_for('auth.login'))
 
-    notifications = Communication.query.filter_by(user_id=user_id)\
-        .order_by(Communication.timestamp.desc()).all()
-    unread_count = Communication.query.filter_by(user_id=user_id, read_status=False).count()
+    # Retrieve the user record to get the user's login_id (which is stored in the Communication table)
+    user = User.query.get(user_pk)
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('auth.login'))
 
-    # Retrieve dynamic chart data, recent activities, and live feed
-    user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
+    # Use the user's login_id for querying communications and filter out hidden ones if needed.
+    notifications = Communication.query.filter_by(user_id=user.login_id, hidden=False)\
+        .order_by(Communication.timestamp.desc()).all()
+    unread_count = Communication.query.filter_by(user_id=user.login_id, read_status=False, hidden=False).count()
 
     return render_template(
         'notification.html',
         notifications=notifications,
-        unread_count=unread_count,
-        user_success_rate=user_success_rate,
-        applications_overview=applications_overview,
-        recent_activities=recent_activities,
-        live_feed=live_feed
+        unread_count=unread_count
     )
-from flask import session, render_template
-from models import Communication
+@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
+def mark_notification_read(notification_id):
+    # Your code for marking a single notification as read...
 
-@user_blueprint.route('/mark_all_read', methods=['POST'])
-def mark_all_read():
-    user_id = session.get('user_id')
 
-    if not user_id:
-        flash("Unauthorized access.", "danger")
+    user_pk = session.get('user_id')
+    if not user_pk:
+        flash("Please log in.", "danger")
+        return redirect(url_for('auth.login'))
+    
+    # Retrieve user record to get the correct login_id
+    user = User.query.get(user_pk)
+    if not user:
+        flash("User not found.", "danger")
         return redirect(url_for('auth.login'))
 
-    Communication.query.filter_by(user_id=user_id, read_status=False).update({"read_status": True})
-    db.session.commit()
+    # Retrieve the specific notification and verify ownership using user.login_id
+    notification = Communication.query.filter_by(
+        id=notification_id, 
+        user_id=user.login_id, 
+        hidden=False
+    ).first()
+    
+    if notification:
+        notification.read_status = True
+        db.session.commit()
+        
+    else:
+        flash("Notification not found.", "danger")
+    
+    return redirect(url_for('user.notifications'))
 
-    flash("All notifications marked as read.", "success")
+@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
+def delete_notification(notification_id):
+    user_pk = session.get('user_id')
+    if not user_pk:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.get(user_pk)
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('auth.login'))
+
+    # Retrieve the specific notification belonging to this user that is not already hidden
+    notification = Communication.query.filter_by(
+        id=notification_id, 
+        user_id=user.login_id, 
+        hidden=False
+    ).first()
+    
+    if notification:
+        notification.hidden = True  # Soft-delete by marking as hidden
+        db.session.commit()
+        flash("Notification removed.", "success")
+    else:
+        flash("Notification not found.", "danger")
+    
     return redirect(url_for('user.notifications'))
 
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
@@ -435,35 +481,11 @@ def job_search():
     else:
         return render_template('jobsearch.html')
 
-@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
-def mark_notification_read(notification_id):
-    notification = Communication.query.get(notification_id)
-
-    if not notification or notification.user_id != session.get('user_id'):
-        flash("Notification not found or access denied.", "danger")
-        return redirect(url_for('user.notifications'))
-
-    notification.read = True
-    db.session.commit()
-
-    flash("Notification marked as read.", "success")
-    return redirect(url_for('user.notifications'))
 
 
 
-@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
-def delete_notification(notification_id):
-    notification = Communication.query.get(notification_id)
 
-    if not notification or notification.user_id != session.get('user_id'):
-        flash("Notification not found or access denied.", "danger")
-        return redirect(url_for('user.notifications'))
 
-    db.session.delete(notification)
-    db.session.commit()
-
-    flash("Notification deleted.", "success")
-    return redirect(url_for('user.notifications'))
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -642,10 +664,3 @@ def remove_favorite(job_id):
     
     flash("Job removed from favorites", "success")
     return redirect(url_for('user.favorites'))
-@user_blueprint.route('/view_job/<int:job_id>')
-def view_job(job_id):
-    job = Job.query.get(job_id)
-    if not job:
-        flash("Job not found", "error")
-        return redirect(url_for('user.user_dashboard'))
-    return render_template('view_job.html', job=job)

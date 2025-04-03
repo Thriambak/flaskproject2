@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
   
   <style>
-    /* Global styles (matching dashboard/resume pages) */
+    /* Global styles */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
@@ -99,7 +99,7 @@
       right: 0;
       background-color: white;
       min-width: 160px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       z-index: 10;
       border-radius: 8px;
       overflow: hidden;
@@ -171,7 +171,7 @@
     
     /* Activity Section */
     .activity {
-      flex: 1;  /* Fills remaining space */
+      flex: 1;
       padding: 20px;
       background: linear-gradient(to bottom, #ffffff, #f7f7f7);
       border-left: 1px solid #ccc;
@@ -293,7 +293,7 @@
       color: #333;
     }
     
-    /* Animations for job postings (if any) */
+    /* Animations */
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
@@ -303,8 +303,45 @@
     }
     .activity .job-posting:nth-child(even) { animation-delay: 0.2s; }
     .activity .job-posting:nth-child(odd) { animation-delay: 0.4s; }
-    
-    /* Enhanced mobile responsiveness */
+    .flash-container {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      max-width: 500px;
+      z-index: 1050;
+      pointer-events: none;
+    }
+    .flash-message {
+      pointer-events: auto;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      animation: fadeInOut 3s ease-in-out forwards;
+    }
+    .alert-success.flash-message {
+      background-color: #2ecc71;
+      color: #fff;
+      border: 1px solid #27ae60;
+    }
+    .alert-error.flash-message {
+      background-color: #e74c3c;
+      color: #fff;
+      border: 1px solid #c0392b;
+    }
+    .alert-warning.flash-message {
+      background-color: #f39c12;
+      color: #fff;
+      border: 1px solid #d35400;
+    }
+    .alert-info.flash-message {
+      background-color: #3498db;
+      color: #fff;
+      border: 1px solid #2980b9;
+    }
+    /* Responsive */
     @media screen and (max-width: 768px) {
       .navigation { display: none; }
       .activity { width: 100%; }
@@ -316,7 +353,7 @@
   </style>
 </head>
 <body class="bg-gray-100">
-  <!-- Header -->
+  <!-- Flash Messages -->
   <div class="flash-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -329,6 +366,8 @@
       {% endif %}
     {% endwith %}
   </div>
+
+  <!-- Header -->
   <header>
     <div class="logo">
       <i class="fas fa-globe"></i> Employee Recruitment
@@ -349,9 +388,9 @@
     </div>
   </header>
   
-  <!-- Layout -->
+  <!-- Main Layout -->
   <main>
-    <!-- Navigation Sidebar (static, same as user dashboard) -->
+    <!-- Navigation Sidebar -->
     <div class="navigation">
       <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
       <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
@@ -362,7 +401,7 @@
       </button>
     </div>
     
-    <!-- Activity Section (only this part can be reloaded) -->
+    <!-- Activity Section -->
     <div class="activity" id="activityContent">
       <h2>Notifications</h2>
       
@@ -380,7 +419,7 @@
       <div id="notifications-list">
         {% if notifications %}
           {% for notification in notifications %}
-          <div class="notification-item {% if not notification.read %}unread{% else %}read{% endif %} animate__animated animate__fadeInUp">
+          <div class="notification-item {% if not notification.read_status %}unread{% else %}read{% endif %} animate__animated animate__fadeInUp">
             <div class="flex items-start">
               <i class="notification-icon fas fa-info-circle"></i>
               <div class="ml-4 flex-1">
@@ -388,14 +427,18 @@
                 <p class="notification-timestamp">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
               </div>
               <div class="action-buttons flex gap-2">
-                {% if not notification.read %}
-                <form action="{{ url_for('user.mark_notification_read', notification_id=notification.id) }}" method="POST">
+                {% if not notification.read_status %}
+                <form action="{{ url_for('user.mark_single_notification_read', notification_id=notification.id) }}" method="POST">
                   <button type="submit" class="mark-read"><i class="fas fa-check"></i></button>
                 </form>
-                {% endif %}
-                <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
-                  <button type="submit" class="delete"><i class="fas fa-trash-alt"></i></button>
-                </form>
+                
+                
+              {% endif %}
+              
+              <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
+                <button type="submit" class="delete"><i class="fas fa-trash-alt"></i></button>
+              </form>
+              
               </div>
             </div>
           </div>
@@ -410,15 +453,14 @@
     </div>
   </main>
   
-  <!-- Scripts for Search & Filters and Optional Activity Reload -->
+  <!-- JavaScript for Search, Filter, and Dropdown -->
   <script>
-    // Global variable to store current filter state: 'all', 'read', or 'unread'
+    // Global filter state: 'all', 'read', or 'unread'
     let currentFilter = 'all';
 
-    // Update filter state and refresh display
+    // Set the filter and update button styles
     function setFilter(filterType) {
       currentFilter = filterType;
-      // Update button styles to reflect the active filter
       document.getElementById('filterUnread').classList.toggle('bg-gray-300', filterType !== 'unread');
       document.getElementById('filterUnread').classList.toggle('bg-green-500', filterType === 'unread');
       document.getElementById('filterRead').classList.toggle('bg-gray-300', filterType !== 'read');
@@ -429,7 +471,7 @@
       filterAndSearchNotifications();
     }
     
-    // Combined function to apply search text and filter type
+    // Combine search and filter criteria
     function filterAndSearchNotifications() {
       const searchInput = document.getElementById("search").value.toLowerCase();
       const notifications = document.querySelectorAll("#notifications-list .notification-item");
@@ -438,7 +480,6 @@
         const message = notification.querySelector(".notification-message").innerText.toLowerCase();
         const matchesSearch = message.includes(searchInput);
         
-        // Determine if notification meets the filter criteria
         let matchesFilter = true;
         if (currentFilter === 'read') {
           matchesFilter = notification.classList.contains("read");
@@ -446,29 +487,11 @@
           matchesFilter = notification.classList.contains("unread");
         }
         
-        // Display notification if it matches both criteria
         notification.style.display = (matchesSearch && matchesFilter) ? "block" : "none";
       });
     }
     
-    // Optional: Function to reload only the activity section via AJAX
-    function reloadActivity() {
-      const activityContainer = document.getElementById("activityContent");
-      fetch(window.location.href + " #activityContent")
-        .then(response => response.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, "text/html");
-          const newContent = doc.getElementById("activityContent").innerHTML;
-          activityContainer.innerHTML = newContent;
-        })
-        .catch(err => console.error(err));
-    }
-    
-    // Uncomment below to auto-reload activity section every 60 seconds (optional)
-    // setInterval(reloadActivity, 60000);
-    
-    // Toggle dropdown on click (alternative to hover)
+    // Toggle dropdown for profile menu
     document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
       event.stopPropagation();
       const dropdownContent = document.querySelector('.dropdown-content');
@@ -482,6 +505,17 @@
         document.querySelector('.dropdown-content').style.display = 'none';
       }
     });
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        // Remove the "show" class to trigger any CSS fade-out if available
+        message.classList.remove('show');
+        // Optionally remove the element from the DOM after fade-out (500ms delay)
+        setTimeout(() => {
+          message.remove();
+        }, 500);
+      });
+    }, 1200);
   </script>
 </body>
 </html>
