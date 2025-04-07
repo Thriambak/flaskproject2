@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const messages = document.querySelectorAll('.flash-message');
         messages.forEach(message => message.style.display = 'none');
-    }, 5000); // Adjust timing if needed
+    }, 2000); // Adjust timing if needed
 
     window.addEventListener('click', function(event) {
         const dropdown = document.querySelector('.profile-dropdown');
