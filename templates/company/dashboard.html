@@ -56,34 +56,31 @@
                             <p class="metric-value">{{ total_successful }}</p>
                         </div>
                     </div>
-                    <!--<div class="metric-box">
-                        <i class="fas fa-briefcase"></i>
+                    <div class="metric-box">
+                        <i class="fas fa-chart-line"></i>
                         <div class="metric-content">
-                            <h3>Pending Applications</h3>
-                            <p class="metric-value">{{ pending_applications_count }}</p>
+                            <h3>Overall Hiring Rate</h3>
+                            <p class="metric-value">{{ overall_hiring_rate }}%</p>
                         </div>
                     </div>
-                    <div class="metric-box">
-                        <i class="fas fa-clipboard-list"></i>
-                        <div class="metric-content">
-                            <h3>Interviews Conducted</h3>
-                            <p class="metric-value">{{ interviewed_applications_count }}</p>
-                        </div>
-                    </div>-->
                 </div>
                 <div class="info-box">
-                    <h3>Job Applications Overview</h3>
+                    <h3>Monthly Application Rate</h3>
+                    <div class="chart-controls">
+                        <label for="yearSelector">Select Year:</label>
+                        <select id="yearSelector" class="year-selector">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="chart-container">
-                        <canvas id="applicationBarGraph"></canvas>
+                        <canvas id="applicationRateChart"></canvas>
                     </div>
                     <div class="chart-legend">
                         <div class="legend-item">
                             <span class="legend-color" style="background-color: #4bc0c0;"></span>
-                            <span>Total Applicants</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background-color: #36a2eb;"></span>
-                            <span>Shortlisted</span>
+                            <span>Application Rate (%)</span>
                         </div>
                     </div>
                 </div>
@@ -129,38 +126,24 @@
             }
         });
 
-        // Chart.js setup for stacked bar chart
+        // Chart.js setup for application rate chart
         document.addEventListener('DOMContentLoaded', function() {
-            const labels = {{ labels | tojson }};
-            const ctx = document.getElementById('applicationBarGraph').getContext('2d');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const ctx = document.getElementById('applicationRateChart').getContext('2d');
             
-            // Get the total applications and shortlisted data
-            const totalApplications = {{ total_applications | tojson }};
-            const shortlistedApplications = {{ shortlisted_applications | tojson }};
+            // Get the application rate data
+            const applicationRates = {{ monthly_application_rates | tojson }};
             
-            // Create dataset for regular applicants (total minus shortlisted)
-            const regularApplicants = totalApplications.map((total, index) => {
-                return total - shortlistedApplications[index];
-            });
-            
-            const applicationBarGraph = new Chart(ctx, {
+            const applicationRateChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: months,
                     datasets: [
                         {
-                            label: 'Total Applicants',
-                            data: regularApplicants,
-                            backgroundColor: '#3cb371', // Medium Sea Green
-                            borderColor: '#2e8b57', // Sea Green
-                            borderWidth: 1,
-                            barPercentage: 0.7,
-                        },
-                        {
-                            label: 'Shortlisted',
-                            data: shortlistedApplications,
-                            backgroundColor: '#6495ed', // Cornflower Blue
-                            borderColor: '#4169e1', // Royal Blue
+                            label: 'Application Rate (%)',
+                            data: applicationRates,
+                            backgroundColor: '#4bc0c0',
+                            borderColor: '#3da8a8',
                             borderWidth: 1,
                             barPercentage: 0.7,
                         }
@@ -169,58 +152,44 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'x',
                     plugins: {
-                        legend: {
-                            display: false
-                        },
                         tooltip: {
                             callbacks: {
-                                title: function(tooltipItems) {
-                                    return tooltipItems[0].label;
-                                },
                                 label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += context.raw;
-                                    return label;
-                                },
-                                footer: function(tooltipItems) {
-                                    const dataIndex = tooltipItems[0].dataIndex;
-                                    return 'Total: ' + totalApplications[dataIndex];
+                                    return context.raw.toFixed(1) + '%';
                                 }
                             }
                         }
                     },
                     scales: {
-                        x: {
-                            stacked: true,
-                            grid: {
-                                display: false
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Hiring Rate (%)'
                             },
                             ticks: {
-                                autoSkip: false,
-                                maxRotation: 90,
-                                minRotation: 45
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             }
                         },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true,
-                            grace: '5%',
-                            grid: {
-                                color: '#e0e0e0'
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
                             }
                         }
                     }
                 }
             });
             
-            // Update the legend colors to match the chart
-            document.querySelector('.legend-color:first-child').style.backgroundColor = '#3cb371';
-            document.querySelector('.legend-color:last-child').style.backgroundColor = '#6495ed';
+            // Year selector change event
+            document.getElementById('yearSelector').addEventListener('change', function() {
+                const selectedYear = this.value;
+                window.location.href = '{{ url_for("company.company_dashboard") }}?year=' + selectedYear;
+            });
             
             // Function to resize the chart properly for better readability on different screens
             function resizeChart() {
@@ -234,7 +203,7 @@
                 }
                 
                 chartContainer.style.height = Math.max(minHeight, availableWidth * 0.5) + 'px';
-                applicationBarGraph.resize();
+                applicationRateChart.resize();
             }
             
             // Initial resize

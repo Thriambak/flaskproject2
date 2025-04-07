@@ -47,7 +47,7 @@ app.register_blueprint(college_blueprint, url_prefix='/college')
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Initialize Flask-Login
+# Initialize Flask-Home
 @app.route('/')
 def index():
     return render_template('home.html')

@@ -35,51 +35,96 @@ def company_dashboard():
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
     
+    # Get the selected year from query parameters or use current year as default
+    selected_year = request.args.get('year', datetime.now().year)
+    try:
+        selected_year = int(selected_year)
+    except ValueError:
+        selected_year = datetime.now().year
+    
     # Query to fetch all jobs posted by the user
     jobs = Job.query.filter_by(created_by=user_id).all()
     profile = Company.query.filter_by(login_id=user_id).first()
     
-    # Get pending and interviewed applications counts
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
+    # Get all applications for jobs created by this company
+    applications = db.session.query(JobApplication)\
         .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
-        .scalar()
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
-        .scalar()
-
-    # Process data for the bar graph
-    labels = [job.title for job in jobs]
-    total_applications = []
-    shortlisted_applications = []
-
-    for job in jobs:
-        total_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id).scalar() or 0
-        shortlisted_count = db.session.query(db.func.count(JobApplication.id)).filter_by(job_id=job.job_id, status='Hired').scalar() or 0
-
-        total_applications.append(total_count)
-        shortlisted_applications.append(shortlisted_count)
+        .filter(Job.created_by == user_id).all()
     
-    # Calculate total successful and unsuccessful applications
-    total_successful = sum(shortlisted_applications)
-    total_unsuccessful = sum(total_applications) - total_successful
-
+    # Get years with applications for the year selector
+    application_years = db.session.query(
+        db.func.extract('year', JobApplication.date_applied).label('year')
+    ).join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id)\
+        .group_by('year')\
+        .order_by('year')\
+        .all()
+    
+    available_years = [int(year.year) for year in application_years]
+    
+    # If no applications found, include current year
+    if not available_years:
+        available_years = [datetime.now().year]
+    
+    # If selected year is not in available years, use the most recent available year
+    if selected_year not in available_years:
+        selected_year = available_years[-1]
+    
+    # Calculate monthly application rates for the selected year
+    monthly_application_rates = [0] * 12  # Initialize with 0 for all 12 months
+    
+    # Process monthly data
+    for month in range(1, 13):
+        # Total applications in this month of the selected year
+        total_applications = db.session.query(db.func.count(JobApplication.id))\
+            .join(Job, JobApplication.job_id == Job.job_id)\
+            .filter(
+                Job.created_by == user_id,
+                db.func.extract('year', JobApplication.date_applied) == selected_year,
+                db.func.extract('month', JobApplication.date_applied) == month
+            ).scalar() or 0
+        
+        # Hired applications in this month of the selected year
+        hired_applications = db.session.query(db.func.count(JobApplication.id))\
+            .join(Job, JobApplication.job_id == Job.job_id)\
+            .filter(
+                Job.created_by == user_id,
+                db.func.extract('year', JobApplication.date_applied) == selected_year,
+                db.func.extract('month', JobApplication.date_applied) == month,
+                JobApplication.status == 'Hired'
+            ).scalar() or 0
+        
+        # Calculate the application rate (percentage) for this month
+        if total_applications > 0:
+            monthly_application_rates[month-1] = (hired_applications / total_applications) * 100
+    
+    # Calculate overall metrics
+    total_applications_count = len(applications)
+    total_successful = db.session.query(db.func.count(JobApplication.id))\
+        .join(Job, JobApplication.job_id == Job.job_id)\
+        .filter(Job.created_by == user_id, JobApplication.status == 'Hired')\
+        .scalar() or 0
+    
+    total_unsuccessful = total_applications_count - total_successful
+    
+    # Calculate overall hiring rate
+    overall_hiring_rate = 0
+    if total_applications_count > 0:
+        overall_hiring_rate = round((total_successful / total_applications_count) * 100, 1)
+    
     # Ensure the user is not an admin
     if session.get('role') != 'company':
         return redirect(url_for('admin.admin_dashboard'))
     
     return render_template('/company/dashboard.html', 
         jobs=jobs, 
-        profile=profile, 
-        labels=labels,
-        total_applications=total_applications, 
-        shortlisted_applications=shortlisted_applications,
+        profile=profile,
+        monthly_application_rates=monthly_application_rates,
         total_successful=total_successful, 
         total_unsuccessful=total_unsuccessful,
-        pending_applications_count=pending_applications_count,
-        interviewed_applications_count=interviewed_applications_count)
+        overall_hiring_rate=overall_hiring_rate,
+        available_years=available_years,
+        selected_year=selected_year)
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')

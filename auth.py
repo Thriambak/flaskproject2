@@ -274,6 +274,7 @@ def login():
 
 @auth_blueprint.route('/logout')
 def logout():
+    session.pop('login_id',None)
     session.pop('username', None)
     session.pop('role', None)
     session.clear()  # Clears all session variables
