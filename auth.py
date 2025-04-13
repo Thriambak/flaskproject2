@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,jsonify
+from flask import Blueprint, render_template, request, redirect
+from flask import url_for, session, flash, make_response, jsonify
 from config import Config
-from models import Admin, College, db, User, Job, Login, Company
+from models import Admin, College, db, User, Job, Login, Company, Login
 import re
 import random
 import string
@@ -8,6 +9,7 @@ from extensions import mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+
 auth_blueprint = Blueprint('auth', __name__)
 
 import re
@@ -207,6 +209,20 @@ def login():
         if not login or not login.check_password(password):
             return render_template('login.html', error='Invalid username or password.')
 
+
+        # Now check the `is_banned` status for the user or company
+        if login.role in ['user', 'company']:
+            # Check if the user or company is banned
+            if login.role == 'user':
+                user = User.query.filter_by(login_id=login.id).first()
+                if user and user.is_banned:  # Assuming `is_banned` is a field in the `User` model
+                    return render_template('login.html', error="Cannot login. Contact support.")
+            elif login.role == 'company':
+                company = Company.query.filter_by(login_id=login.id).first()
+                if company and company.is_banned:  # Assuming `is_banned` is a field in the `Company` model
+                    return render_template('login.html', error="Cannot login. Contact support.")
+
+
         # Store session details
         session['login_id'] = login.id
         session['username'] = login.username
@@ -320,10 +336,6 @@ def forgot_password():
             flash("Email not found. Please check and try again.", "danger")
 
     return render_template('forgot_password.html')
-
-
-from datetime import datetime, timedelta
-from flask import session, flash, redirect, url_for, render_template, request, jsonify
 
 @auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp(): 
