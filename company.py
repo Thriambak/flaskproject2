@@ -29,12 +29,12 @@ def login_required(f):
 @login_required
 def company_dashboard():
     user_id = session.get('login_id')
-    
+
     # Ensure the user_id is in session
-    if not user_id:
+    if not user_id or session.get('role') != 'company':
         flash("User is not logged in.", "error")
         return redirect(url_for('auth.login'))
-    
+
     # Get the selected year from query parameters or use current year as default
     selected_year = request.args.get('year', datetime.now().year)
     try:
@@ -111,10 +111,6 @@ def company_dashboard():
     overall_hiring_rate = 0
     if total_applications_count > 0:
         overall_hiring_rate = round((total_successful / total_applications_count) * 100, 1)
-    
-    # Ensure the user is not an admin
-    if session.get('role') != 'company':
-        return redirect(url_for('admin.admin_dashboard'))
     
     return render_template('/company/dashboard.html', 
         jobs=jobs, 
@@ -815,14 +811,6 @@ def company_profile():
     total_successful = sum(app.shortlisted_applications for app in applications)
     total_unsuccessful = sum(app.total_applications - app.shortlisted_applications for app in applications)
 
-    # Fetch notifications within the past day for the live feed
-    one_day_ago = datetime.utcnow() - timedelta(days=1)
-    live_feed_notifications = Notification.query.filter(
-        Notification.company_id == user_id,
-        Notification.hidden == False,
-        Notification.timestamp >= one_day_ago
-    ).order_by(Notification.timestamp.desc()).all()
-
     industries = [
         "Agriculture, Forestry, and Fishing",
         "Mining and Quarrying",
@@ -850,5 +838,4 @@ def company_profile():
     return render_template('/company/profile.html', companies=companies, profile=companies, login_id=user_id,
         pending_applications_count=pending_applications_count, total_successful=total_successful, 
         total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
-        live_feed_notifications=live_feed_notifications, industries=industries, message=message, 
-        message_type=message_type)
+        industries=industries, message=message, message_type=message_type)

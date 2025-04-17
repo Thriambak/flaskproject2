@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/college/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="logo">
+            <img src="{{ college_profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ college_profile.college_name }}</h4>
+        </div>
+        <div class="profile-settings">
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('college.college_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/college/college_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/college/college_studenttracking'"><i class="fas fa-user-graduate"></i> Student Activity Tracking</button>
+            <button onclick="window.location.href='/college/generate_coupon'"><i class="fas fa-gift"></i> Coupon Code Management</button>
+            <button onclick="window.location.href='/college/college_collab'"><i class="fas fa-chart-line"></i> Collaboration Reports</button>
+            <button onclick="window.location.href='/college/college_endorsement'"><i class="fas fa-check-circle"></i> Endorsement</button>
+        </div>
+        <div class="activity">
+            <div class="info-section">
+                <div class="metrics-container">
+                    <div class="metric-box">
+                        <i class="fas fa-users"></i>
+                        <div class="metric-content">
+                            <h3>Students Registered</h3>
+                            <p class="metric-value">{{ registered_students_count }}</p>
+                        </div>
+                    </div>
+                    <div class="metric-box">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="metric-content">
+                            <h3>Applications Submitted</h3>
+                            <p class="metric-value">{{ total_applications }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <h3>Student Registrations Over Time</h3>
+                    <div class="chart-controls">
+                        <label for="yearSelector">Select Year:</label>
+                        <select id="yearSelector" class="year-selector">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="studentChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #0a9396;"></span>
+                            <span>Student Registrations</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <h3>Hired Students by Year</h3>
+                    <div class="chart-container">
+                        <canvas id="hiredStudentsChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #005f73;"></span>
+                            <span>Hired Students</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Chart.js setup for student registrations chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Monthly student registrations data
+            const monthlyRegistrations = {{ monthly_registrations | tojson }};
+            
+            // Student registrations chart
+            const studentCtx = document.getElementById('studentChart').getContext('2d');
+            const studentChart = new Chart(studentCtx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Students Registered',
+                        data: monthlyRegistrations,
+                        backgroundColor: '#0a9396',
+                        borderColor: '#0a9396',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Students: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Yearly hired students data
+            const yearData = {{ years_list | tojson }};
+            const hiredStudents = {{ yearly_hired_students | tojson }};
+            
+            // Convert to format needed by Chart.js
+            const hiredCounts = hiredStudents.map(item => item.count);
+            
+            // Hired students chart
+            const hiredCtx = document.getElementById('hiredStudentsChart').getContext('2d');
+            const hiredChart = new Chart(hiredCtx, {
+                type: 'bar',
+                data: {
+                    labels: yearData,
+                    datasets: [{
+                        label: 'Hired Students',
+                        data: hiredCounts,
+                        backgroundColor: '#005f73',
+                        borderColor: '#0a9396',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Hired: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Year selector change event
+            document.getElementById('yearSelector').addEventListener('change', function() {
+                const selectedYear = this.value;
+                window.location.href = '{{ url_for("college.college_dashboard") }}?year=' + selectedYear;
+            });
+            
+            // Function to resize the chart properly for better readability on different screens
+            function resizeCharts() {
+                const chartContainers = document.querySelectorAll('.chart-container');
+                chartContainers.forEach(container => {
+                    const availableWidth = container.clientWidth;
+                    
+                    // Set minimum height for the chart to ensure bars don't get too small
+                    let minHeight = 300;
+                    if (availableWidth < 600) {
+                        minHeight = 400; // Taller on smaller screens so bars don't shrink too much
+                    }
+                    
+                    container.style.height = Math.max(minHeight, availableWidth * 0.5) + 'px';
+                });
+                
+                studentChart.resize();
+                hiredChart.resize();
+            }
+            
+            // Initial resize
+            resizeCharts();
+            
+            // Resize on window resize
+            window.addEventListener('resize', resizeCharts);
+        });
+    </script>
+</body>
+</html>

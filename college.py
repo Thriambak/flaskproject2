@@ -1,17 +1,16 @@
 from datetime import datetime, date
 import random
+import re
 import string
-from flask import Blueprint, render_template, request, session, redirect
-from flask import url_for, flash
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-#from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
-from models import Certification, Company, Coupon, Couponuser, Job, JobApplication, User, db  # Ensure 'db' is the instance of SQLAlchemy
+from models import Certification, Company, Coupon, Couponuser, Job
+from models import College, Login, JobApplication, User, db  # Ensure 'db' is the instance of SQLAlchemy
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-from models import College, Login
 
 
 college_blueprint = Blueprint('college', __name__)
@@ -30,29 +29,200 @@ def login_required(f):
 @college_blueprint.route('/college_dashboard')
 @login_required
 def college_dashboard():
-    college_id = session.get('college_id')
+    college_id = session.get('login_id')
     
-    # Ensure the college_id is in session
-    if not college_id:
+    # Ensure the user is logged in as a college
+    if not college_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
     
-    print("\n\n", session['college_id'], session['username'], session['role'], "\n\n")
+    # Get college profile
+    college_profile = College.query.filter_by(login_id=college_id).first()
+    
+    # Get the selected year from query parameters or use current year as default
+    selected_year = request.args.get('year', datetime.now().year)
+    try:
+        selected_year = int(selected_year)
+    except ValueError:
+        selected_year = datetime.now().year
+    
+    # Get years with user registrations (coupon usage) for the year selector
+    registration_years = db.session.query(
+        db.func.extract('year', Couponuser.created_at).label('year')
+    ).join(Coupon, Couponuser.coupon_id == Coupon.id)\
+      .filter(
+          Coupon.college_id == college_profile.id,
+          Couponuser.created_at.isnot(None)
+      )\
+      .group_by(db.func.extract('year', Couponuser.created_at))\
+      .order_by(db.func.extract('year', Couponuser.created_at))\
+      .all()
+    
+    available_years = [int(year.year) for year in registration_years if year.year is not None]
+    
+    # If no registrations found, include current year
+    if not available_years:
+        available_years = [datetime.now().year]
+    
+    # If selected year is not in available years, use the most recent available year
+    if selected_year not in available_years:
+        selected_year = available_years[-1]
+    
+    # Calculate monthly student registrations for the selected year
+    monthly_registrations = [0] * 12  # Initialize with 0 for all 12 months
+    
+    # Process monthly data for student registrations
+    for month in range(1, 13):
+        monthly_registrations[month-1] = db.session.query(Couponuser)\
+            .join(Coupon, Couponuser.coupon_id == Coupon.id)\
+            .filter(
+                Coupon.college_id == college_profile.id,
+                db.func.extract('year', Couponuser.created_at) == selected_year,
+                db.func.extract('month', Couponuser.created_at) == month
+            ).count()
+    
+    # Count total registered students
+    registered_students_count = db.session.query(Couponuser)\
+        .join(Coupon, Couponuser.coupon_id == Coupon.id)\
+        .filter(Coupon.college_id == college_profile.id)\
+        .count()
+    
+    # Get users from this college
+    college_users = db.session.query(User.id).join(
+        Couponuser, User.id == Couponuser.user_id
+    ).join(
+        Coupon, Couponuser.coupon_id == Coupon.id
+    ).filter(
+        Coupon.college_id == college_profile.id
+    ).distinct().subquery()
+    
+    # Get min and max years from job hire dates (status_updated_at when status is "Hired")
+    min_max_years = db.session.query(
+        db.func.min(db.func.extract('year', JobApplication.status_updated_at)),
+        db.func.max(db.func.extract('year', JobApplication.status_updated_at))
+    ).filter(
+        JobApplication.user_id.in_(db.session.query(college_users.c.id)),
+        JobApplication.status == 'Hired',
+        JobApplication.status_updated_at.isnot(None)
+    ).first()
+    
+    min_year = int(min_max_years[0]) if min_max_years[0] else datetime.now().year
+    max_year = int(min_max_years[1]) if min_max_years[1] else datetime.now().year
+    
+    # Create data for each year
+    years_list = list(range(min_year, max_year + 1))
+    yearly_hired_students = []
+    
+    for year in years_list:
+        # Count unique users from this college who were hired in this year
+        # Using status_updated_at to determine when the status changed to "Hired"
+        hired_count = db.session.query(db.func.count(db.func.distinct(JobApplication.user_id)))\
+            .filter(
+                JobApplication.user_id.in_(db.session.query(college_users.c.id)),
+                JobApplication.status == 'Hired',
+                db.func.extract('year', JobApplication.status_updated_at) == year
+            ).scalar() or 0
+        
+        yearly_hired_students.append({
+            'year': year,
+            'count': hired_count
+        })
+    
+    # Count total applications submitted by students from this college
+    total_applications = db.session.query(JobApplication)\
+        .filter(JobApplication.user_id.in_(db.session.query(college_users.c.id)))\
+        .count()
+    
+    return render_template('/college/dashboard.html', 
+        registered_students_count=registered_students_count,
+        monthly_registrations=monthly_registrations,
+        yearly_hired_students=yearly_hired_students,
+        total_applications=total_applications,
+        years_list=years_list,
+        available_years=available_years,
+        selected_year=selected_year,
+        college_profile=college_profile)
 
-    # Query to count the number of students registered for coupons for the current college
-    registered_students_count = db.session.query(Couponuser).join(Coupon).filter(Coupon.college_id == college_id).count()
+@college_blueprint.route('/college_profile', methods=['GET', 'POST'])
+@login_required
+def college_profile():
+    user_id = session.get('login_id')
 
-    # Ensure the user is a college
-    if session.get('role') != 'college':
-        return redirect(url_for('admin.admin_dashboard'))
+    if 'login_id' not in session or session.get('role') != 'college':
+        return redirect(url_for('auth.login'))  # Ensure only colleges can access
 
-    return render_template('college_dashboard.html', registered_students_count=registered_students_count)
+    colleges = College.query.filter_by(login_id=user_id).first()
+
+    message = None
+    message_type = None
+
+    if request.method == 'POST' and colleges:
+        # Get form data
+        college_id = request.form.get('logId')  # Hidden input for college ID
+        college_name = request.form['college-name'].strip()
+        email = request.form['contact-email'].strip()
+        description = request.form['college-description'].strip()
+        address = request.form['college-address'].strip()
+        website = request.form['college-website'].strip()
+        logo = request.form['college-logo'].strip()
+
+        # Check if any change is made
+        if (
+            college_name == colleges.college_name and
+            email == colleges.email and
+            description == colleges.description and
+            address == colleges.address and
+            website == colleges.website and
+            logo == colleges.logo
+        ):
+            return redirect(url_for('college.college_profile'))  # No changes, just reload page silently
+
+        # Validate Data
+        if not (3 <= len(college_name) <= 255):
+            message = "College Name must be between 3-255 characters!"
+            message_type = "error"
+        elif not re.match(r"^\S+@\S+\.\S+$", email):
+            message = "Invalid email format!"
+            message_type = "error"
+        elif len(description) > 1000:
+            message = "Description must be under 1000 characters!"
+            message_type = "error"
+        elif len(address) > 500:
+            message = "Address must be under 500 characters!"
+            message_type = "error"
+        else:
+            # Update the college profile
+            colleges.college_name = college_name
+            colleges.description = description
+            colleges.email = email
+            colleges.address = address
+            colleges.website = website
+            colleges.logo = logo
+            db.session.commit()
+            message = "Profile updated successfully!"
+            message_type = "success"
+
+    # Get student count associated with this college
+    # This would need to be adjusted based on how students are associated with colleges in your system
+    student_count = db.session.query(db.func.count(User.id))\
+        .filter(User.college_name == colleges.college_name if colleges else '')\
+        .scalar()
+    
+    # Get coupon count for this college if needed
+    coupon_count = db.session.query(db.func.count(Coupon.id))\
+        .filter(Coupon.college_id == colleges.id if colleges else 0)\
+        .scalar()
+
+    return render_template('/college/profile.html', colleges=colleges, profile=colleges, login_id=user_id,
+        student_count=student_count, coupon_count=coupon_count,
+        message=message, message_type=message_type)
+
 @college_blueprint.route('/college_studenttracking')
 @login_required
 def college_studenttracking():
     college_id = session.get('college_id')
     
-    if not college_id:
+    if not college_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
 
@@ -69,17 +239,19 @@ def college_studenttracking():
      .filter(Coupon.college_id == college_id)\
      .all()
 
-    return render_template('college_studenttracking.html', student_activity=student_activity)
+    return render_template('/college/studenttracking.html', student_activity=student_activity)
+
 @college_blueprint.route('/college_referall')
 @login_required
 def college_referall():
-    return render_template('college_referall.html')
+    return render_template('/college/referall.html')
+
 @college_blueprint.route('/college_collab')
 @login_required
 def college_collab():
     college_id = session.get('college_id')
     
-    if not college_id:
+    if not college_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
 
@@ -96,7 +268,7 @@ def college_collab():
      .join(Coupon, Coupon.id == Couponuser.coupon_id)\
      .filter(
          Coupon.college_id == college_id,
-         JobApplication.status == 'accepted'  # Assuming 'accepted' means hired
+         JobApplication.status == 'Hired'  # Assuming 'accepted' means hired
      ).distinct().all()
 
     # Count placed students from this college
@@ -106,7 +278,7 @@ def college_collab():
         .join(Coupon, Coupon.id == Couponuser.coupon_id)\
         .filter(
             Coupon.college_id == college_id,
-            JobApplication.status == 'accepted'
+            JobApplication.status == 'Hired'
         ).count()
 
     # Calculate placement percentage
@@ -114,7 +286,7 @@ def college_collab():
     if total_students > 0:
         placed_percentage = round((placed_students / total_students) * 100, 2)
 
-    return render_template('college_collab.html',
+    return render_template('/college/collab.html',
                          partnered_companies=partnered_companies,
                          total_students=total_students,
                          placed_percentage=placed_percentage)
@@ -155,13 +327,15 @@ def generate_coupon():
         return redirect(url_for('college.generate_coupon'))
     
     # Render the template with the coupons data for both GET and POST requests
-    return render_template('college_coupon.html', coupons=coupons)
+    return render_template('/college/coupon.html', coupons=coupons)
+
 @college_blueprint.route('/user_details/<int:user_id>')
 @login_required
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     certifications = Certification.query.filter_by(user_id=user_id).all()
-    return render_template('user_details.html', user=user, certifications=certifications)
+    return render_template('/college/user_details.html', user=user, certifications=certifications)
+
 @college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
 @login_required
 def verify_certification(cert_id):
@@ -170,6 +344,7 @@ def verify_certification(cert_id):
     db.session.commit()
     flash('Certification verified successfully!', 'success')
     return redirect(url_for('college.user_details', user_id=certification.user_id))
+
 @college_blueprint.route('/college_endorsement')
 @login_required
 def college_endorsement():
@@ -185,4 +360,4 @@ def college_endorsement():
      .filter(Coupon.college_id == session.get('college_id'))\
      .all()
 
-    return render_template('endorse.html', coupon_users=coupon_users)
+    return render_template('/college/endorse.html', coupon_users=coupon_users)

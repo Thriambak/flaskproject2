@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/college/profile.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="popup-message" class="popup"></div> <!-- Popup Message -->
+    <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="logo">
+            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ profile.college_name }}</h4>
+        </div>
+        <div class="profile-settings">
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('college.college_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/college/college_dashboard'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button onclick="window.location.href='/college/college_studenttracking'"><i class="fas fa-user-graduate"></i> Student Activity Tracking</button>
+            <button onclick="window.location.href='/college/generate_coupon'"><i class="fas fa-gift"></i> Coupon Code Management</button>
+            <button onclick="window.location.href='/college/college_collab'"><i class="fas fa-chart-line"></i> Collaboration Reports</button>
+            <button onclick="window.location.href='/college/college_endorsement'"><i class="fas fa-check-circle"></i> Endorsement</button>
+        </div>
+
+        <div class="activity">
+            <h2>College Profile</h2>
+            <form class="profile-form" method="POST" action="{{ url_for('college.college_profile') }}" onsubmit="return validateForm()">
+                {% if colleges %}
+                    <input type="hidden" id="logId" name="logId" value="{{ colleges.id }}">
+
+                    <div>
+                        <label for="college-name"><p style="color: red; display: inline;">* </p>College Name:</label>
+                        <input type="text" id="college-name" name="college-name" value="{{ colleges.college_name or '' }}" placeholder="Enter college name" required>
+                    </div>
+                    
+                    <div>
+                        <label for="contact-email"><p style="color: red; display: inline;">* </p>Contact Email:</label>
+                        <input type="email" id="contact-email" name="contact-email" value="{{ colleges.email or '' }}" placeholder="Enter email address" required>
+                    </div>
+                    
+                    <div>
+                        <label for="college-description">College Description:</label>
+                        <textarea id="college-description" name="college-description" maxlength="1000" placeholder="Maximum 1000 characters">{{ colleges.description or '' }}</textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="college-address">Address:</label>
+                        <textarea id="college-address" name="college-address" maxlength="500" placeholder="Maximum 500 characters">{{ colleges.address or '' }}</textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="college-logo">College Logo URL:</label>
+                        <input type="url" id="college-logo" name="college-logo" value="{{ colleges.logo or '' }}" placeholder="Enter logo URL">
+                    </div>
+                    
+                    <div>
+                        <label for="college-website">College Website:</label>
+                        <input type="url" id="college-website" name="college-website" value="{{ colleges.website or '' }}" placeholder="Enter college website">
+                    </div>                    
+
+                    <div class="form-submit">
+                        <button type="submit">Save Profile</button>
+                    </div>
+
+                {% else %}
+                    <p>No college profile found.</p>
+                {% endif %}
+            </form>
+        </div>
+    </main>
+    <script>
+        let initialFormData = {};
+
+        window.onload = function() {
+            // Store initial form values
+            initialFormData = {
+                "college-name": document.getElementById("college-name").value.trim(),
+                "contact-email": document.getElementById("contact-email").value.trim(),
+                "college-description": document.getElementById("college-description").value.trim(),
+                "college-address": document.getElementById("college-address").value.trim(),
+                "college-website": document.getElementById("college-website").value.trim(),
+                "college-logo": document.getElementById("college-logo").value.trim()
+            };
+        };
+
+        function showPopup(message, type) {
+            if (!message) return; // Don't show popup if message is empty
+            var popup = document.getElementById("popup-message");
+            popup.innerHTML = message;
+            popup.className = "popup " + type;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 3000);
+        }
+
+        function validateForm() {
+            let changed = false;
+
+            let currentFormData = {
+                "college-name": document.getElementById("college-name").value.trim(),
+                "contact-email": document.getElementById("contact-email").value.trim(),
+                "college-description": document.getElementById("college-description").value.trim(),
+                "college-address": document.getElementById("college-address").value.trim(),
+                "college-website": document.getElementById("college-website").value.trim(),
+                "college-logo": document.getElementById("college-logo").value.trim()
+            };
+
+            for (let key in currentFormData) {
+                if (currentFormData[key] !== initialFormData[key]) {
+                    changed = true;
+                    break;
+                }
+            }
+
+            if (!changed) {
+                return false; // Prevent form submission if no changes
+            }
+
+            // Form validation
+            if (currentFormData["college-name"].length < 3 || currentFormData["college-name"].length > 255) {
+                showPopup("College Name must be between 3-255 characters!", "error");
+                return false;
+            }
+            if (!currentFormData["contact-email"].match(/^\S+@\S+\.\S+$/)) {
+                showPopup("Invalid email format!", "error");
+                return false;
+            }
+            if (currentFormData["college-description"].length > 1000) {
+                showPopup("Description must be under 1000 characters!", "error");
+                return false;
+            }
+            if (currentFormData["college-address"].length > 500) {
+                showPopup("Address must be under 500 characters!", "error");
+                return false;
+            }
+
+            return true; // Allow form submission
+        }
+
+        {% if message and request.method == 'POST' %}
+            showPopup("{{ message }}", "{{ message_type }}");
+        {% endif %}
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+    </script>
+</body>
+</html>

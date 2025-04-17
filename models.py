@@ -265,7 +265,8 @@ class Couponuser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     college = db.relationship('Coupon', backref=db.backref('couponuser', lazy=True))
     user = db.relationship('User', backref=db.backref('couponuser', lazy=True))
     
