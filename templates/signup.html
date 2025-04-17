@@ -29,15 +29,20 @@
         }
 
         .flash-message {
-            margin: 10px;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            animation: fadeInOut 4s ease-in-out forwards;
-            max-width: 600px;
-            width: 90%;
-        }
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeInOut 4s ease-in-out forwards;
+    width: fit-content; /* or something like 80% */
+    max-width: 300px;    /* reduce if needed */
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    text-align: center;
+    word-wrap: break-word;
+}
 
+      
         .alert-success, .success { background-color: #2ecc71; color: #fff; }
         .alert-error, .danger { background-color: #e74c3c; color: #fff; }
         .alert-warning, .warning { background-color: #f39c12; color: #fff; }
