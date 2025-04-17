@@ -147,8 +147,6 @@ class Job(db.Model):
 
 
 # Job Application Table
-from datetime import datetime
-
 class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
@@ -253,7 +251,8 @@ class Coupon(db.Model):
     faculty_id = db.Column(db.String(20), nullable=False)
     year = db.Column(db.String(4), nullable=False)
     college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     college = db.relationship('College', backref=db.backref('coupons', lazy=True))
 
     def __repr__(self):

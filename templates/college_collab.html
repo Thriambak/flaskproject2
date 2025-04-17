@@ -6,7 +6,7 @@
     <title>Collaboration Reports</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* General Styles */
+       /* General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -176,7 +176,7 @@
             <a href="{{ url_for('college.college_dashboard') }}" >
                 <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
             </a>
-            <a href="{{ url_for('college.college_studenttraking') }}" >
+            <a href="{{ url_for('college.college_studenttracking') }}" >
                 <button><i class="fas fa-users"></i> Student Activity Tracking</button>
             </a>
             <a href="{{ url_for('college.generate_coupon') }}">
@@ -199,11 +199,11 @@
             <div class="statistics">
                 <div class="stat-box">
                     <h3>Placed Students</h3>
-                    <p id="placedStudentsPercentage">Percentage of Students Placed: 70%</p>
+                    <p id="placedStudentsPercentage">Percentage of Students Placed: {{ placed_percentage }}%</p>
                 </div>
                 <div class="stat-box">
                     <h3>Total Students</h3>
-                    <p id="totalStudents">Total Students in the College: 1000</p>
+                    <p id="totalStudents">Total Students in the College: {{ total_students }}</p>
                 </div>
             </div>
 
@@ -213,40 +213,12 @@
                     <h3>Partnered Companies</h3>
                 </div>
                 <ul class="partnered-companies-list" id="partneredCompaniesList">
-                    <!-- Placeholder for dynamic company data -->
-                    <li>Company A</li>
-                    <li>Company B</li>
-                    <li>Company C</li>
-                    <li>Company D</li>
-                    <li>Company E</li>
+                    {% for company in partnered_companies %}
+                        <li>{{ company.company_name }}</li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>
     </main>
-
-    <script>
-        // Hardcoded data for the page
-        const totalStudents = 1000;
-        const placedStudents = 700;
-        const partneredCompanies = [
-            'Company A', 'Company B', 'Company C', 'Company D', 'Company E'
-        ];
-
-        // Calculating percentage of students placed
-        const placedPercentage = (placedStudents / totalStudents) * 100;
-
-        // Update statistics
-        document.getElementById('placedStudentsPercentage').innerText = `Percentage of Students Placed: ${placedPercentage.toFixed(2)}%`;
-        document.getElementById('totalStudents').innerText = `Total Students in the College: ${totalStudents}`;
-
-        // Dynamically populate the partnered companies list
-        const companiesListElement = document.getElementById('partneredCompaniesList');
-        companiesListElement.innerHTML = '';  // Clear existing list
-        partneredCompanies.forEach(company => {
-            const li = document.createElement('li');
-            li.textContent = company;
-            companiesListElement.appendChild(li);
-        });
-    </script>
 </body>
 </html>

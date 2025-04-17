@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Activity Tracking</title>
+    <title>Student Activity</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* General Styles */
@@ -55,7 +55,6 @@
             padding: 20px;
         }
 
-        /* Student Activity Section */
         .activity-tracking-container {
             width: 80%;
             background-color: #ffffff;
@@ -74,71 +73,11 @@
             color: #333;
         }
 
-        /* Search and Filter Widgets */
-        .search-filter-widgets {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .search-filter-widgets input,
-        .search-filter-widgets select,
-        .search-filter-widgets button {
-            padding: 15px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            width: 30%;
-        }
-
-        .search-filter-widgets button {
-            background-color: #0a9396;
-            color: white;
-            cursor: pointer;
-            border: none;
-        }
-
-        .search-filter-widgets button:hover {
-            background-color: #005f73;
-        }
-
-        /* Student Activity List */
         .student-activity-list {
             margin-top: 30px;
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-        }
-        .left-panel {
-            width: 20%;
-            background-color: #ffffff;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .left-panel a {
-            text-decoration: none;
-        }
-
-        .left-panel button {
-            padding: 15px;
-            background-color: #0a9396;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-
-        .left-panel button:hover {
-            background-color: #005f73;
         }
 
         .student-activity-list th,
@@ -156,41 +95,20 @@
             background-color: #f9f9f9;
         }
 
-        .status-active {
-            color: green;
-            font-weight: bold;
-        }
-
-        .status-applied {
+        .status-pending {
             color: orange;
             font-weight: bold;
         }
 
-        .status-hired {
-            color: blue;
+        .status-accepted {
+            color: green;
             font-weight: bold;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
+        .status-rejected {
+            color: red;
+            font-weight: bold;
         }
-
-        .pagination button {
-            padding: 10px 15px;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            background-color: #0a9396;
-            color: white;
-            cursor: pointer;
-            margin: 0 5px;
-        }
-
-        .pagination button:hover {
-            background-color: #005f73;
-        }
-
     </style>
 </head>
 <body>
@@ -210,7 +128,7 @@
             <a href="{{ url_for('college.college_dashboard') }}" >
                 <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
             </a>
-            <a href="{{ url_for('college.college_studenttraking') }}" >
+            <a href="{{ url_for('college.college_studenttracking') }}" >
                 <button><i class="fas fa-users"></i> Student Activity Tracking</button>
             </a>
             <a href="{{ url_for('college.generate_coupon') }}">
@@ -226,178 +144,31 @@
         <div class="activity-tracking-container">
             <!-- Activity Tracking Header -->
             <div class="activity-header">
-                <h2>Track Student Activity</h2>
-            </div>
-
-            <!-- Search and Filter Widgets -->
-            <div class="search-filter-widgets">
-                <input type="text" id="searchNameOrId" placeholder="Search by Name or ID" />
-                <select id="statusFilter">
-                    <option value="">Filter by Status</option>
-                    <option value="active">Active</option>
-                    <option value="applied">Applied</option>
-                    <option value="hired">Hired</option>
-                </select>
-                <button id="searchButton">Search</button>
+                <h2>Student Activity</h2>
             </div>
 
             <!-- Student Activity List -->
             <div class="student-activity-list-container">
-                <h3>Student Activity</h3>
                 <table class="student-activity-list">
                     <thead>
                         <tr>
                             <th>Student Name</th>
-                            <th>Student ID</th>
-                            <th>Job Application Status</th>
                             <th>Company Name</th>
-                            <th>Current Status</th>
+                            <th>Job Application Status</th>
                         </tr>
                     </thead>
-                    <tbody id="activityList">
-                        <!-- Hardcoded Data -->
+                    <tbody>
+                        {% for activity in student_activity %}
                         <tr>
-                            <td>John Doe</td>
-                            <td>CS123</td>
-                            <td>Applied for Developer Role</td>
-                            <td>Google</td>
-                            <td class="status-applied">Applied</td>
+                            <td>{{ activity.student_name }}</td>
+                            <td>{{ activity.company_name }}</td>
+                            <td class="status-{{ activity.job_application_status }}">{{ activity.job_application_status }}</td>
                         </tr>
-                        <tr>
-                            <td>Jane Smith</td>
-                            <td>CS124</td>
-                            <td>Applied for Data Analyst Role</td>
-                            <td>Microsoft</td>
-                            <td class="status-hired">Hired</td>
-                        </tr>
-                        <tr>
-                            <td>Sam Wilson</td>
-                            <td>EE345</td>
-                            <td>No applications yet</td>
-                            <td>N/A</td>
-                            <td class="status-active">Active</td>
-                        </tr>
-                        <tr>
-                            <td>Emma Brown</td>
-                            <td>CS126</td>
-                            <td>Applied for UI/UX Designer Role</td>
-                            <td>Apple</td>
-                            <td class="status-applied">Applied</td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-
-            <!-- Pagination -->
-            <div class="pagination">
-                <button id="prevPage">Previous</button>
-                <button id="nextPage">Next</button>
-            </div>
         </div>
     </main>
-
-    <script>
-        // Simulate student data with pagination
-        const students = [
-            { name: "John Doe", id: "CS123", application: "Applied for Developer Role", company: "Google", status: "applied" },
-            { name: "Jane Smith", id: "CS124", application: "Applied for Data Analyst Role", company: "Microsoft", status: "hired" },
-            { name: "Sam Wilson", id: "EE345", application: "No applications yet", company: "N/A", status: "active" },
-            { name: "Emma Brown", id: "CS126", application: "Applied for UI/UX Designer Role", company: "Apple", status: "applied" },
-            { name: "Lucas Green", id: "EE789", application: "Applied for Electrical Engineer Role", company: "Tesla", status: "applied" },
-            { name: "Sophia White", id: "CS130", application: "No applications yet", company: "N/A", status: "active" },
-            { name: "Mason Taylor", id: "ME245", application: "Applied for Mechanical Engineer Role", company: "Ford", status: "hired" },
-            { name: "Olivia Lee", id: "CE234", application: "Applied for Civil Engineer Role", company: "Bechtel", status: "applied" },
-        ];
-
-        let currentPage = 1;
-        const recordsPerPage = 4;
-
-        function displayStudents(page) {
-    const start = (page - 1) * recordsPerPage;
-    const end = page * recordsPerPage;
-    const paginatedStudents = students.slice(start, end);
-
-    const list = document.getElementById('activityList');
-    list.innerHTML = '';
-
-    paginatedStudents.forEach(student => {
-        const row = document.createElement('tr');
-        
-        const nameCell = document.createElement('td');
-        nameCell.textContent = student.name;
-        row.appendChild(nameCell);
-
-        const idCell = document.createElement('td');
-        idCell.textContent = student.id;
-        row.appendChild(idCell);
-
-        const applicationCell = document.createElement('td');
-        applicationCell.textContent = student.application;
-        row.appendChild(applicationCell);
-
-        const companyCell = document.createElement('td');
-        companyCell.textContent = student.company;
-        row.appendChild(companyCell);
-
-        const statusCell = document.createElement('td');
-        statusCell.classList.add(`status-${student.status}`);
-        statusCell.textContent = student.status.charAt(0).toUpperCase() + student.status.slice(1);
-        row.appendChild(statusCell);
-
-        list.appendChild(row);
-    });
-}
-
-function displayFilteredStudents(filteredStudents) {
-    const list = document.getElementById('activityList');
-    list.innerHTML = '';
-
-    filteredStudents.forEach(student => {
-        const row = document.createElement('tr');
-        
-        const nameCell = document.createElement('td');
-        nameCell.textContent = student.name;
-        row.appendChild(nameCell);
-
-        const idCell = document.createElement('td');
-        idCell.textContent = student.id;
-        row.appendChild(idCell);
-
-        const applicationCell = document.createElement('td');
-        applicationCell.textContent = student.application;
-        row.appendChild(applicationCell);
-
-        const companyCell = document.createElement('td');
-        companyCell.textContent = student.company;
-        row.appendChild(companyCell);
-
-        const statusCell = document.createElement('td');
-        statusCell.classList.add(`status-${student.status}`);
-        statusCell.textContent = student.status.charAt(0).toUpperCase() + student.status.slice(1);
-        row.appendChild(statusCell);
-
-        list.appendChild(row);
-    });
-}
-
-        document.getElementById('searchButton').addEventListener('click', searchStudents);
-
-        document.getElementById('prevPage').addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                displayStudents(currentPage);
-            }
-        });
-
-        document.getElementById('nextPage').addEventListener('click', () => {
-            if (currentPage * recordsPerPage < students.length) {
-                currentPage++;
-                displayStudents(currentPage);
-            }
-        });
-
-        // Initial display of students
-        displayStudents(currentPage);
-    </script>
 </body>
 </html> 

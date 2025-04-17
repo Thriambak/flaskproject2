@@ -203,14 +203,12 @@
             </a>
         </div>
     </header>
-
+    
     <main>
         <!-- Left Panel (Navigation and Metrics) -->
         <div class="left-panel">
-            <a href="{{ url_for('college.college_dashboard') }}" >
-                <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
-            </a>
-            <a href="{{ url_for('college.college_studenttraking') }}" >
+            
+            <a href="{{ url_for('college.college_studenttracking') }}" >
                 <button><i class="fas fa-users"></i> Student Activity Tracking</button>
             </a>
           
@@ -231,7 +229,7 @@
             <div class="metrics-cards">
                 <div class="metrics-card">
                     <i class="fas fa-users"></i>
-                    <h3>500</h3>
+                    <h3>{{registered_students_count}}</h3>  <!-- Display the dynamic student count here -->
                     <p>Students Registered</p>
                 </div>
                 <div class="metrics-card">

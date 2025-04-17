@@ -1,15 +1,14 @@
 from datetime import datetime, date
 import random
 import string
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, session, redirect
+from flask import url_for, flash
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
 #from models import Job, JobApplication, db,User,ResumeCertification, Notification
 from flask_login import login_required, current_user
-from werkzeug.utils import secure_filename
-from models import Certification, Coupon, Couponuser, User, db  # Ensure 'db' is the instance of SQLAlchemy
-# Assuming your model is in 'models.py'
+from models import Certification, Company, Coupon, Couponuser, Job, JobApplication, User, db  # Ensure 'db' is the instance of SQLAlchemy
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from models import College, Login
@@ -31,30 +30,46 @@ def login_required(f):
 @college_blueprint.route('/college_dashboard')
 @login_required
 def college_dashboard():
-    user_id = session.get('login_id')
+    college_id = session.get('college_id')
     
-    # Ensure the user_id is in session
-    if not user_id:
-        flash("User is not logged in.", "error")
+    # Ensure the college_id is in session
+    if not college_id:
+        flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
     
-    print("\n\n",session['login_id'],session['username'],session['role'],"\n\n")
+    print("\n\n", session['college_id'], session['username'], session['role'], "\n\n")
 
-    # Query to fetch all jobs (or filter by user_id for jobs posted by the user)
-    
-    # jobs = Job.query.all()  # If you want to show all jobs. If you need jobs posted by the user, filter by created_by 
-    
-# Uncomment this to only show jobs posted by the user
+    # Query to count the number of students registered for coupons for the current college
+    registered_students_count = db.session.query(Couponuser).join(Coupon).filter(Coupon.college_id == college_id).count()
 
-    # Ensure the user is not an admin (or redirect to the admin dashboard)
+    # Ensure the user is a college
     if session.get('role') != 'college':
         return redirect(url_for('admin.admin_dashboard'))
-    
-    return render_template('college_dashboard.html')
-@college_blueprint.route('/college_studenttraking')
+
+    return render_template('college_dashboard.html', registered_students_count=registered_students_count)
+@college_blueprint.route('/college_studenttracking')
 @login_required
-def college_studenttraking():
-    return render_template('college_studenttracking.html')
+def college_studenttracking():
+    college_id = session.get('college_id')
+    
+    if not college_id:
+        flash("College is not logged in.", "error")
+        return redirect(url_for('auth.login'))
+
+    # Query to join the tables and filter by the logged-in college's ID
+    student_activity = db.session.query(
+        User.name.label('student_name'),
+        Company.company_name.label('company_name'),
+        JobApplication.status.label('job_application_status')
+    ).join(Couponuser, Couponuser.user_id == User.id)\
+     .join(Coupon, Coupon.id == Couponuser.coupon_id)\
+     .join(JobApplication, JobApplication.user_id == User.id)\
+     .join(Job, Job.job_id == JobApplication.job_id)\
+     .join(Company, Company.login_id == Job.created_by)\
+     .filter(Coupon.college_id == college_id)\
+     .all()
+
+    return render_template('college_studenttracking.html', student_activity=student_activity)
 @college_blueprint.route('/college_referall')
 @login_required
 def college_referall():
@@ -62,7 +77,47 @@ def college_referall():
 @college_blueprint.route('/college_collab')
 @login_required
 def college_collab():
-    return render_template('college_collab.html')
+    college_id = session.get('college_id')
+    
+    if not college_id:
+        flash("College is not logged in.", "error")
+        return redirect(url_for('auth.login'))
+
+    # Get total students from this college
+    total_students = db.session.query(Couponuser).join(Coupon).filter(Coupon.college_id == college_id).count()
+
+    # Get partnered companies (distinct companies that have hired students from this college)
+    partnered_companies = db.session.query(
+        Company.company_name
+    ).join(Job, Job.created_by == Company.login_id)\
+     .join(JobApplication, JobApplication.job_id == Job.job_id)\
+     .join(User, User.id == JobApplication.user_id)\
+     .join(Couponuser, Couponuser.user_id == User.id)\
+     .join(Coupon, Coupon.id == Couponuser.coupon_id)\
+     .filter(
+         Coupon.college_id == college_id,
+         JobApplication.status == 'accepted'  # Assuming 'accepted' means hired
+     ).distinct().all()
+
+    # Count placed students from this college
+    placed_students = db.session.query(JobApplication)\
+        .join(User, User.id == JobApplication.user_id)\
+        .join(Couponuser, Couponuser.user_id == User.id)\
+        .join(Coupon, Coupon.id == Couponuser.coupon_id)\
+        .filter(
+            Coupon.college_id == college_id,
+            JobApplication.status == 'accepted'
+        ).count()
+
+    # Calculate placement percentage
+    placed_percentage = 0
+    if total_students > 0:
+        placed_percentage = round((placed_students / total_students) * 100, 2)
+
+    return render_template('college_collab.html',
+                         partnered_companies=partnered_companies,
+                         total_students=total_students,
+                         placed_percentage=placed_percentage)
 
 def generate_coupon_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
