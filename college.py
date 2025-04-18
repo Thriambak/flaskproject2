@@ -11,7 +11,8 @@ from models import Certification, Company, Coupon, Couponuser, Job
 from models import College, Login, JobApplication, User, db  # Ensure 'db' is the instance of SQLAlchemy
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
-
+from sqlalchemy.sql import func
+from sqlalchemy import distinct
 
 college_blueprint = Blueprint('college', __name__)
 
@@ -68,26 +69,7 @@ def college_dashboard():
     if selected_year not in available_years:
         selected_year = available_years[-1]
     
-    # Calculate monthly student registrations for the selected year
-    monthly_registrations = [0] * 12  # Initialize with 0 for all 12 months
-    
-    # Process monthly data for student registrations
-    for month in range(1, 13):
-        monthly_registrations[month-1] = db.session.query(Couponuser)\
-            .join(Coupon, Couponuser.coupon_id == Coupon.id)\
-            .filter(
-                Coupon.college_id == college_profile.id,
-                db.func.extract('year', Couponuser.created_at) == selected_year,
-                db.func.extract('month', Couponuser.created_at) == month
-            ).count()
-    
-    # Count total registered students
-    registered_students_count = db.session.query(Couponuser)\
-        .join(Coupon, Couponuser.coupon_id == Coupon.id)\
-        .filter(Coupon.college_id == college_profile.id)\
-        .count()
-    
-    # Get users from this college
+    # Get users from this college (only distinct users)
     college_users = db.session.query(User.id).join(
         Couponuser, User.id == Couponuser.user_id
     ).join(
@@ -96,14 +78,44 @@ def college_dashboard():
         Coupon.college_id == college_profile.id
     ).distinct().subquery()
     
-    # Get min and max years from job hire dates (status_updated_at when status is "Hired")
-    min_max_years = db.session.query(
-        db.func.min(db.func.extract('year', JobApplication.status_updated_at)),
-        db.func.max(db.func.extract('year', JobApplication.status_updated_at))
+    # 1. Count total distinct registered students
+    registered_students_count = db.session.query(db.func.count()).select_from(college_users).scalar() or 0
+    
+    # 2. Count total applications submitted by students from this college
+    total_applications = db.session.query(JobApplication)\
+        .filter(JobApplication.user_id.in_(db.session.query(college_users.c.id)))\
+        .count()
+    
+    # 3. Calculate monthly distinct student registrations for the selected year
+    monthly_registrations = [0] * 12  # Initialize with 0 for all 12 months
+    
+    for month in range(1, 13):
+        # Get distinct students who registered in this month of the selected year
+        monthly_distinct_students = db.session.query(db.func.count(db.func.distinct(Couponuser.user_id)))\
+            .join(Coupon, Couponuser.coupon_id == Coupon.id)\
+            .filter(
+                Coupon.college_id == college_profile.id,
+                db.func.extract('year', Couponuser.created_at) == selected_year,
+                db.func.extract('month', Couponuser.created_at) == month
+            ).scalar() or 0
+        
+        monthly_registrations[month-1] = monthly_distinct_students
+    
+    # 4. Create data for hired students graph, counting each student only in their most recent hiring year
+    # First, create a subquery to get the most recent hiring year for each student
+    student_latest_hire = db.session.query(
+        JobApplication.user_id,
+        db.func.max(db.func.extract('year', JobApplication.status_updated_at)).label('latest_year')
     ).filter(
         JobApplication.user_id.in_(db.session.query(college_users.c.id)),
         JobApplication.status == 'Hired',
         JobApplication.status_updated_at.isnot(None)
+    ).group_by(JobApplication.user_id).subquery()
+    
+    # Get min and max years from the latest hire years
+    min_max_years = db.session.query(
+        db.func.min(student_latest_hire.c.latest_year),
+        db.func.max(student_latest_hire.c.latest_year)
     ).first()
     
     min_year = int(min_max_years[0]) if min_max_years[0] else datetime.now().year
@@ -114,24 +126,16 @@ def college_dashboard():
     yearly_hired_students = []
     
     for year in years_list:
-        # Count unique users from this college who were hired in this year
-        # Using status_updated_at to determine when the status changed to "Hired"
-        hired_count = db.session.query(db.func.count(db.func.distinct(JobApplication.user_id)))\
-            .filter(
-                JobApplication.user_id.in_(db.session.query(college_users.c.id)),
-                JobApplication.status == 'Hired',
-                db.func.extract('year', JobApplication.status_updated_at) == year
-            ).scalar() or 0
+        # Count students whose latest hiring was in this year
+        hired_count = db.session.query(db.func.count())\
+            .select_from(student_latest_hire)\
+            .filter(student_latest_hire.c.latest_year == year)\
+            .scalar() or 0
         
         yearly_hired_students.append({
             'year': year,
             'count': hired_count
         })
-    
-    # Count total applications submitted by students from this college
-    total_applications = db.session.query(JobApplication)\
-        .filter(JobApplication.user_id.in_(db.session.query(college_users.c.id)))\
-        .count()
     
     return render_template('/college/dashboard.html', 
         registered_students_count=registered_students_count,
@@ -260,37 +264,54 @@ def college_referall():
 @college_blueprint.route('/college_collab')
 @login_required
 def college_collab():
-    college_id = session.get('college_id')
+    login_id = session.get('login_id')
     
-    if not college_id or session.get('role') != 'college':
+    if not login_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
 
-    # Get total students from this college
-    total_students = db.session.query(Couponuser).join(Coupon).filter(Coupon.college_id == college_id).count()
+    # Get college profile
+    college_profile = College.query.filter_by(login_id=login_id).first()
+    
+    if not college_profile:
+        flash("College profile not found.", "error")
+        return redirect(url_for('auth.login'))
+        
+    college_id = college_profile.id  # Get college_id from the profile for related queries
 
-    # Get partnered companies (distinct companies that have hired students from this college)
-    partnered_companies = db.session.query(
-        Company.company_name
-    ).join(Job, Job.created_by == Company.login_id)\
-     .join(JobApplication, JobApplication.job_id == Job.job_id)\
-     .join(User, User.id == JobApplication.user_id)\
-     .join(Couponuser, Couponuser.user_id == User.id)\
-     .join(Coupon, Coupon.id == Couponuser.coupon_id)\
-     .filter(
-         Coupon.college_id == college_id,
-         JobApplication.status == 'Hired'  # Assuming 'accepted' means hired
-     ).distinct().all()
+    # Get total students registered through college coupons
+    total_students = db.session.query(func.count(distinct(User.id)))\
+        .join(Couponuser, Couponuser.user_id == User.id)\
+        .join(Coupon, Coupon.id == Couponuser.coupon_id)\
+        .filter(Coupon.college_id == college_id)\
+        .scalar() or 0
 
-    # Count placed students from this college
-    placed_students = db.session.query(JobApplication)\
+    # Comment out the partnered companies query but keep for future reference
+    """
+    # Get partnered companies (all companies that have hired any student from this college)
+    partnered_companies = db.session.query(Company)\
+        .join(Job, Job.created_by == Company.login_id)\
+        .join(JobApplication, JobApplication.job_id == Job.job_id)\
         .join(User, User.id == JobApplication.user_id)\
         .join(Couponuser, Couponuser.user_id == User.id)\
         .join(Coupon, Coupon.id == Couponuser.coupon_id)\
         .filter(
             Coupon.college_id == college_id,
             JobApplication.status == 'Hired'
-        ).count()
+        ).distinct().all()
+    """
+    # Instead of querying, just set partnered_companies to None
+    partnered_companies = []
+
+    # Count distinct placed students from this college
+    placed_students = db.session.query(func.count(distinct(User.id)))\
+        .join(JobApplication, JobApplication.user_id == User.id)\
+        .join(Couponuser, Couponuser.user_id == User.id)\
+        .join(Coupon, Coupon.id == Couponuser.coupon_id)\
+        .filter(
+            Coupon.college_id == college_id,
+            JobApplication.status == 'Hired'
+        ).scalar() or 0
 
     # Calculate placement percentage
     placed_percentage = 0
@@ -298,9 +319,10 @@ def college_collab():
         placed_percentage = round((placed_students / total_students) * 100, 2)
 
     return render_template('/college/collab.html',
-                         partnered_companies=partnered_companies,
-                         total_students=total_students,
-                         placed_percentage=placed_percentage)
+        partnered_companies=partnered_companies,
+        total_students=total_students,
+        placed_percentage=placed_percentage,
+        college_profile=college_profile)
 
 def generate_coupon_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
@@ -362,24 +384,6 @@ def generate_coupon():
         message=message,
         message_type=message_type)
 
-'''
-@college_blueprint.route('/user_details/<int:user_id>')
-@login_required
-def user_details(user_id):
-    user = User.query.get_or_404(user_id)
-    certifications = Certification.query.filter_by(user_id=user_id).all()
-    return render_template('/college/user_details.html', user=user, certifications=certifications)
-
-@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
-@login_required
-def verify_certification(cert_id):
-    certification = Certification.query.get_or_404(cert_id)
-    certification.verification_status = True
-    db.session.commit()
-    flash('Certification verified successfully!', 'success')
-    return redirect(url_for('college.user_details', user_id=certification.user_id))
-
-'''
 
 @college_blueprint.route('/college_endorsement')
 @login_required
@@ -457,3 +461,24 @@ def verify_certification(cert_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
+
+
+
+'''
+@college_blueprint.route('/user_details/<int:user_id>')
+@login_required
+def user_details(user_id):
+    user = User.query.get_or_404(user_id)
+    certifications = Certification.query.filter_by(user_id=user_id).all()
+    return render_template('/college/user_details.html', user=user, certifications=certifications)
+
+@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
+@login_required
+def verify_certification(cert_id):
+    certification = Certification.query.get_or_404(cert_id)
+    certification.verification_status = True
+    db.session.commit()
+    flash('Certification verified successfully!', 'success')
+    return redirect(url_for('college.user_details', user_id=certification.user_id))
+
+'''
