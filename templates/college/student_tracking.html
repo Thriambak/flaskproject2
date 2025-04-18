@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Activity Tracking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/college/student_tracking.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Hide all student rows initially */
+        #student-table tbody tr.student-row {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="logo">
+            <img src="{{ college_profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ college_profile.college_name }}</h4>
+        </div>
+        <div class="profile-settings">
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('college.college_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/college/college_dashboard'"><i class="fas fa-home"></i> Dashboard</button>
+            <button onclick="window.location.href='/college/college_studenttracking'"><i class="fas fa-user-graduate"></i> Student Tracking</button>
+            <button onclick="window.location.href='/college/college_endorsement'"><i class="fas fa-certificate"></i> Endorsement</button>
+            <button onclick="window.location.href='/college/generate_coupon'"><i class="fas fa-ticket-alt"></i> Coupon Management</button>
+            <button onclick="window.location.href='/college/college_collab'"><i class="fas fa-handshake"></i> Collaboration Reports</button>
+        </div>
+
+        <div class="activity">
+            <div class="top-header">
+                <h2>Student Activity Tracking</h2>
+            </div>
+            <div class="filter-bar">
+                <!-- Filter Button -->
+                <div class="filter-container">
+                    <button class="filter-button" type="button"><i class="fas fa-filter"></i> Filter</button>
+                    <div class="filter-dropdown" id="filter-dropdown">
+                        <h4>Status</h4>
+                        <label><input type="checkbox" class="status-filter" value="Pending"> Pending</label>
+                        <label><input type="checkbox" class="status-filter" value="Interviewed"> Interviewed</label>
+                        <label><input type="checkbox" class="status-filter" value="Hired"> Hired</label>
+                        <label><input type="checkbox" class="status-filter" value="Rejected"> Rejected</label>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search students..." style="font-family: monospace;font-size: 14.5px;">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+            
+            <!-- Student List -->
+            <div class="candidate-list">
+                <h3>Student List</h3>
+                <div class="table-container">
+                    <table id="student-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Company Name</th>
+                                <th>Job Title</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if student_activity %}
+                                {% for activity in student_activity %}
+                                <tr class="student-row" data-name="{{ activity.student_name }}" data-company="{{ activity.company_name }}" data-job="{{ activity.job_title }}" data-status="{{ activity.job_application_status }}">
+                                    <td>{{ activity.student_name }}</td>
+                                    <td>{{ activity.company_name }}</td>
+                                    <td>{{ activity.job_title }}</td>
+                                    <td>{{ activity.job_application_status }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4">No student activities found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div id="no-results-message" style="display: none; text-align: center; padding: 20px; font-family: monospace; font-size: 16px; color: #666;">
+                        <p>No matching student activities found.</p>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prev-page" disabled>&laquo; Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" disabled>Next &raquo;</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Pagination variables
+        let currentPage = 1;
+        const rowsPerPage = 5;
+        let filteredRows = [];
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Filter dropdown toggle
+        const filterButton = document.querySelector('.filter-button');
+        const filterDropdown = document.getElementById('filter-dropdown');
+        
+        filterButton.addEventListener('click', function() {
+            filterDropdown.style.display = filterDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.filter-container') && filterDropdown.style.display === 'block') {
+                filterDropdown.style.display = 'none';
+            }
+        });
+
+        // Apply filters
+        document.querySelectorAll('.status-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const statusFilters = Array.from(document.querySelectorAll('.status-filter:checked')).map(el => el.value);
+                filterTable(statusFilters);
+                // Don't close the dropdown so users can continue applying filters
+            });
+        });
+
+        // Live search functionality
+        document.getElementById('search-input').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            filterTableBySearch(searchText);
+        });
+
+        // Filter table by search text
+        function filterTableBySearch(searchText) {
+            const rows = document.querySelectorAll('#student-table tbody tr');
+            filteredRows = [];
+            
+            rows.forEach(row => {
+                const name = row.querySelector('td:first-child').textContent.toLowerCase();
+                const company = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const job = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const status = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                
+                if (name.includes(searchText) || company.includes(searchText) || job.includes(searchText) || status.includes(searchText)) {
+                    row.dataset.visible = "true";
+                    filteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results-message').style.display = filteredRows.length === 0 ? 'block' : 'none';
+            
+            updatePagination();
+            showPage(1);
+        }
+
+        // Update the filterTable function
+        function filterTable(statusFilters) {
+            const rows = document.querySelectorAll('#student-table tbody tr');
+            filteredRows = [];
+            
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                
+                const statusMatch = statusFilters.length === 0 || statusFilters.includes(status);
+                
+                if (statusMatch) {
+                    row.dataset.visible = "true";
+                    filteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results-message').style.display = filteredRows.length === 0 ? 'block' : 'none';
+            
+            updatePagination();
+            showPage(1);
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Show specific page
+        function showPage(pageNum) {
+            currentPage = pageNum;
+            const start = (pageNum - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            const rows = document.querySelectorAll('#student-table tbody tr');
+            rows.forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            for (let i = start; i < end && i < filteredRows.length; i++) {
+                filteredRows[i].style.display = 'table-row';
+            }
+            
+            updatePagination();
+        }
+
+        // Pagination controls
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (currentPage > 1) {
+                showPage(currentPage - 1);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                showPage(currentPage + 1);
+            }
+        });
+
+        // Initialize pagination
+        window.addEventListener('load', function() {
+            const rows = document.querySelectorAll('#student-table tbody tr');
+            filteredRows = Array.from(rows);
+            updatePagination();
+            showPage(1);
+        });
+    </script>
+</body>
+</html>

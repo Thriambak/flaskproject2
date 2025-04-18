@@ -213,33 +213,44 @@ def college_profile():
         .filter(Coupon.college_id == colleges.id if colleges else 0)\
         .scalar()
 
-    return render_template('/college/profile.html', colleges=colleges, profile=colleges, login_id=user_id,
-        student_count=student_count, coupon_count=coupon_count,
-        message=message, message_type=message_type)
+    return render_template('/college/profile.html', 
+        colleges=colleges, 
+        profile=colleges, 
+        login_id=user_id,
+        student_count=student_count, 
+        coupon_count=coupon_count,
+        message=message, 
+        message_type=message_type)
 
 @college_blueprint.route('/college_studenttracking')
 @login_required
 def college_studenttracking():
-    college_id = session.get('college_id')
+    login_id = session.get('login_id')
     
-    if not college_id or session.get('role') != 'college':
+    if not login_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
 
-    # Query to join the tables and filter by the logged-in college's ID
+    # Get college profile
+    college_profile = College.query.filter_by(login_id=login_id).first()
+    
+    # Query to join the tables and filter by the logged-in college's login_id
     student_activity = db.session.query(
         User.name.label('student_name'),
         Company.company_name.label('company_name'),
+        Job.title.label('job_title'),  # Added job title
         JobApplication.status.label('job_application_status')
     ).join(Couponuser, Couponuser.user_id == User.id)\
      .join(Coupon, Coupon.id == Couponuser.coupon_id)\
      .join(JobApplication, JobApplication.user_id == User.id)\
      .join(Job, Job.job_id == JobApplication.job_id)\
      .join(Company, Company.login_id == Job.created_by)\
-     .filter(Coupon.college_id == college_id)\
+     .filter(Coupon.college_id == College.query.filter_by(login_id=login_id).first().id)\
      .all()
 
-    return render_template('/college/studenttracking.html', student_activity=student_activity)
+    return render_template('/college/student_tracking.html',
+        student_activity=student_activity,
+        college_profile=college_profile)
 
 @college_blueprint.route('/college_referall')
 @login_required

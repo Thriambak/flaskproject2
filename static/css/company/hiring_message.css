@@ -403,6 +403,32 @@ table tbody tr:last-child {
     color: #555;
 }
 
+/* Make rows with display:none not visible */
+tr[data-visible="false"] {
+    display: none;
+}
+
+/* Status colors */
+td.status-Pending, tr[data-status="Pending"] td:nth-child(3) {
+    color: rgb(255, 166, 0);
+    font-weight: bold;
+}
+
+td.status-Hired, tr[data-status="Hired"] td:nth-child(3) {
+    color: rgb(28, 155, 28);
+    font-weight: bold;
+}
+
+td.status-Rejected, tr[data-status="Rejected"] td:nth-child(3) {
+    color: rgb(214, 36, 36);
+    font-weight: bold;
+}
+
+td.status-Interviewed, tr[data-status="Interviewed"] td:nth-child(3) {
+    color: rgb(53, 53, 230);
+    font-weight: bold;
+}
+
 /* Modal styles */
 .modal {
     display: none;
