@@ -197,62 +197,6 @@ main {
     font-weight: bold;
 }
 
-.input-widgets {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.input-widgets input {
-    flex: 1;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.input-widgets button {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #0a9396, #005f73);
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: background-color 0.3s, transform 0.2s;
-}
-
-.input-widgets button:hover {
-    transform: translateY(-2px);
-}
-
-.flash-messages {
-    margin-bottom: 20px;
-}
-
-.flash-message {
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.flash-message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.flash-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
 .filter-bar {
     display: flex;
     align-items: center;
@@ -287,8 +231,8 @@ main {
     color: #005f73;
 }
 
-/* Hide all coupon rows initially */
-#coupon-table tbody tr.coupon-row {
+/* Hide all student rows initially */
+#student-table tbody tr.student-row {
     display: none;
 }
 
@@ -334,6 +278,20 @@ table tbody tr:last-child {
     border-bottom: none;
 }
 
+.action-btn {
+    background: linear-gradient(90deg, #0a9396, #005f73);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
 .pagination {
     display: flex;
     justify-content: center;
@@ -371,23 +329,222 @@ tr[data-visible="false"] {
     display: none;
 }
 
+/* Modal styles - similar to application_review.html */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 0;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 60%;
+    max-width: 700px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #555;
+}
+
+.modal h3 {
+    color: #005f73;
+    margin-bottom: 20px;
+}
+
+/* User details styles in modal */
+#modal-user-details {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.info-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.info-group p {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-group p i {
+    color: #0a9396;
+    width: 18px;
+}
+
+/* Certification table styles */
+#certifications-container {
+    margin-top: 20px;
+}
+
+#certifications-container h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.certification-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.certification-table th {
+    background: linear-gradient(90deg, #0a9396, #005f73);
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.certification-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.certification-table tr:last-child td {
+    border-bottom: none;
+}
+
+.verify-button {
+    background: linear-gradient(90deg, #0a9396, #005f73);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s;
+}
+
+.verify-button:hover {
+    transform: translateY(-2px);
+}
+
+.verified-text {
+    color: #28a745;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.unverified-text {
+    color: #dc3545;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.verified-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.no-cert-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+}
+
+.no-cert-message i {
+    font-size: 24px;
+    color: #6c757d;
+}
+
+/* Add fixed height and scrollable functionality for certification table */
+.cert-table-wrapper {
+    max-height: 250px; /* This limits the height to approximately 5 rows */
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Make the table header sticky so it stays visible when scrolling */
+.certification-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Ensure the table maintains its styling */
+.certification-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Popup message styles */
 .popup {
     display: none;
     position: fixed;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
     padding: 15px 20px;
     border-radius: 5px;
     z-index: 1000;
     font-size: 16px;
     text-align: center;
+    color: white;
+    min-width: 250px;
+    max-width: 80%;
 }
 
-.popup.success { background-color: #28a745; }
-.popup.error { background-color: #dc3545; }
+.popup.success {
+    background-color: #28a745;
+}
+
+.popup.error {
+    background-color: #dc3545;
+}
 
 /* Responsive design */
 @media (min-width: 1025px) {
@@ -443,6 +600,10 @@ tr[data-visible="false"] {
     .profile-settings .btn-text {
         display: none;
     }
+    
+    .modal-content {
+        width: 90%;
+    }
 }
 
 @media (max-width: 768px) {
@@ -460,7 +621,7 @@ tr[data-visible="false"] {
         overflow-x: auto;
     }
     
-    .input-widgets {
+    .user-info {
         flex-direction: column;
     }
 }
@@ -510,5 +671,10 @@ tr[data-visible="false"] {
     .pagination button {
         padding: 6px 12px;
         font-size: 12px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 15px;
     }
 }

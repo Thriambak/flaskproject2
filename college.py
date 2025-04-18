@@ -2,7 +2,7 @@ from datetime import datetime, date
 import random
 import re
 import string
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
@@ -310,14 +310,14 @@ def generate_coupon_code():
 @login_required
 def generate_coupon():
     login_id = session.get('login_id')
-
+    
+    if not login_id or session.get('role') != 'college':
+        flash("College is not logged in.", "error")
+        return redirect(url_for('auth.login'))
+    
     # Get college profile using login_id instead of college_id
     college_profile = College.query.filter_by(login_id=login_id).first()
-    
-    if not college_profile:
-        flash("College profile not found!", "error")
-        return redirect(url_for('auth.logout'))
-    
+
     # Fetch all active coupons from the database using the college profile
     coupons = Coupon.query.filter_by(college_id=college_profile.id).all()
 
@@ -362,6 +362,7 @@ def generate_coupon():
         message=message,
         message_type=message_type)
 
+'''
 @college_blueprint.route('/user_details/<int:user_id>')
 @login_required
 def user_details(user_id):
@@ -378,9 +379,20 @@ def verify_certification(cert_id):
     flash('Certification verified successfully!', 'success')
     return redirect(url_for('college.user_details', user_id=certification.user_id))
 
+'''
+
 @college_blueprint.route('/college_endorsement')
 @login_required
 def college_endorsement():
+    login_id = session.get('login_id')
+    
+    if not login_id or session.get('role') != 'college':
+        flash("College is not logged in.", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Get college profile using login_id instead of college_id
+    college_profile = College.query.filter_by(login_id=login_id).first()
+
     # Fetch the necessary data from the database
     coupon_users = db.session.query(
         Coupon.code.label('coupon_code'),
@@ -393,4 +405,55 @@ def college_endorsement():
      .filter(Coupon.college_id == session.get('college_id'))\
      .all()
 
-    return render_template('/college/endorse.html', coupon_users=coupon_users)
+    return render_template('/college/endorse.html', 
+        coupon_users=coupon_users,
+        college_profile=college_profile)
+
+# API endpoint to get user details for the modal
+@college_blueprint.route('/api/user_details/<int:user_id>')
+@login_required
+def api_user_details(user_id):
+    if session.get('role') != 'college':
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    user = User.query.get_or_404(user_id)
+    certifications = Certification.query.filter_by(user_id=user_id).all()
+    
+    # Format user data for JSON response
+    user_data = {
+        "name": user.name,
+        "email": user.email,
+        "phone": user.phone if hasattr(user, 'phone') else "Not provided",
+        "age": user.age if hasattr(user, 'age') else "Not provided"
+    }
+    
+    # Format certifications data for JSON response
+    cert_data = []
+    for cert in certifications:
+        cert_data.append({
+            "id": cert.id,
+            "certification_name": cert.certification_name,
+            "verification_status": cert.verification_status
+        })
+    
+    return jsonify({
+        "user": user_data,
+        "certifications": cert_data
+    })
+
+# Endpoint to verify certification
+@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
+@login_required
+def verify_certification(cert_id):
+    if session.get('role') != 'college':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    certification = Certification.query.get_or_404(cert_id)
+    
+    try:
+        certification.verification_status = True
+        db.session.commit()
+        return jsonify({"success": True, "message": "Certification verified successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
