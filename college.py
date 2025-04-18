@@ -309,19 +309,29 @@ def generate_coupon_code():
 @college_blueprint.route('/generate_coupon', methods=['GET', 'POST'])
 @login_required
 def generate_coupon():
-    # Fetch all active coupons from the database
-    college_id = session.get('college_id')
-    coupons = Coupon.query.filter_by(college_id=college_id).all()
+    login_id = session.get('login_id')
+
+    # Get college profile using login_id instead of college_id
+    college_profile = College.query.filter_by(login_id=login_id).first()
+    
+    if not college_profile:
+        flash("College profile not found!", "error")
+        return redirect(url_for('auth.logout'))
+    
+    # Fetch all active coupons from the database using the college profile
+    coupons = Coupon.query.filter_by(college_id=college_profile.id).all()
 
     if request.method == 'POST':
         faculty_id = request.form['faculty_id']
         year = request.form['year']
         
-        # Get the logged-in college's ID
-        college = College.query.filter_by(id=college_id).first()
-        
-        if not college:
-            flash("College not found!", "error")
+        # Validate input server-side as well
+        if not re.match(r'^[a-zA-Z0-9#@\-_]{1,20}$', year):
+            flash("Batch can only contain letters, numbers, and certain symbols (#, @, -, _)!", "error")
+            return redirect(url_for('college.generate_coupon'))
+            
+        if not re.match(r'^[a-zA-Z0-9\-_]{1,20}$', faculty_id):
+            flash("Faculty ID can only contain letters and numbers!", "error")
             return redirect(url_for('college.generate_coupon'))
         
         # Generate a unique coupon code
@@ -330,15 +340,27 @@ def generate_coupon():
             coupon_code = generate_coupon_code()
         
         # Add the coupon to the database
-        new_coupon = Coupon(code=coupon_code, faculty_id=faculty_id, year=year, college_id=college.id)
+        new_coupon = Coupon(code=coupon_code, faculty_id=faculty_id, year=year, college_id=college_profile.id)
         db.session.add(new_coupon)
         db.session.commit()
         
         flash('Coupon generated successfully!', 'success')
         return redirect(url_for('college.generate_coupon'))
     
-    # Render the template with the coupons data for both GET and POST requests
-    return render_template('/college/coupon.html', coupons=coupons)
+    # Set message to pass to template for both GET and POST requests
+    message = None
+    message_type = None
+    
+    if 'message' in session:
+        message = session.pop('message')
+        message_type = session.pop('message_type', 'success')
+    
+    # Render the template with data
+    return render_template('/college/coupon.html', 
+        coupons=coupons,
+        college_profile=college_profile,
+        message=message,
+        message_type=message_type)
 
 @college_blueprint.route('/user_details/<int:user_id>')
 @login_required

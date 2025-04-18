@@ -249,7 +249,7 @@ class Coupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(10), unique=True, nullable=False)
     faculty_id = db.Column(db.String(20), nullable=False)
-    year = db.Column(db.String(4), nullable=False)
+    year = db.Column(db.String(20), nullable=False)
     college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     

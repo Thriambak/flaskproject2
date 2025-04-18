@@ -4,247 +4,275 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coupon Code Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/college/coupon.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>       /* General Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f7fc;
-            color: #333;
-        }
-
-        header {
-            background: #0a9396;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        header .logo {
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        header .profile-settings button {
-            background-color: #ffffff;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #0a9396;
-            transition: background-color 0.3s;
-        }
-
-        header .profile-settings button:hover {
-            background-color: #e0f4f1;
-        }
-
-        main {
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        /* Coupon Code Management Section */
-        .coupon-management-container {
-            width: 80%;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .coupon-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .coupon-header h2 {
-            font-size: 28px;
-            color: #333;
-        }
-
-        /* Input Widgets */
-        .input-widgets {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .input-widgets input,
-        .input-widgets select,
-        .input-widgets button {
-            padding: 15px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            width: 30%;
-        }
-        .left-panel {
-            width: 20%;
-            background-color: #ffffff;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .left-panel a {
-            text-decoration: none;
-        }
-
-        .left-panel button {
-            padding: 15px;
-            background-color: #0a9396;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-
-        .left-panel button:hover {
-            background-color: #005f73;
-        }
-
-        .input-widgets button {
-            background-color: #0a9396;
-            color: white;
-            cursor: pointer;
-            border: none;
-        }
-
-        .input-widgets button:hover {
-            background-color: #005f73;
-        }
-
-        /* Active Codes List */
-        .active-codes-list {
-            margin-top: 30px;
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        .active-codes-list th,
-        .active-codes-list td {
-            padding: 15px;
-            border: 1px solid #ddd;
-        }
-
-        .active-codes-list th {
-            background-color: #0a9396;
-            color: white;
-        }
-
-        .active-codes-list td {
-            background-color: #f9f9f9;
-        }
-
-        .status-active {
-            color: green;
-            font-weight: bold;
-        }
-
-        .status-inactive {
-            color: red;
-            font-weight: bold;
+    <style>
+        /* Hide all coupon rows initially */
+        #coupon-table tbody tr.coupon-row {
+            display: none;
         }
     </style>
 </head>
 <body>
+    <div id="popup-message" class="popup"></div> <!-- Added popup message div -->
     <header>
+        <div class="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <div class="logo">
-            <i class="fas fa-ticket-alt"></i> Coupon Code Management
+            <img src="{{ college_profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <h4>{{ college_profile.college_name }}</h4>
         </div>
         <div class="profile-settings">
-            <button><i class="fas fa-user"></i> Profile</button>
-            <button><i class="fas fa-cog"></i> Settings</button>
-            <button><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('college.college_profile') }}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
-
     <main>
-        <div class="left-panel">
-            <a href="{{ url_for('college.college_dashboard') }}" >
-                <button><i class="fas fa-tachometer-alt"></i>Dashboard</button>
-            </a>
-            <a href="{{ url_for('college.college_studenttracking') }}" >
-                <button><i class="fas fa-users"></i> Student Activity Tracking</button>
-            </a>
-            <a href="{{ url_for('college.generate_coupon') }}">
-                <button><i class="fas fa-gift"></i> Coupon Code Management</button>
-            </a>
-            <a href="{{ url_for('college.college_collab') }}">
-                <button><i class="fas fa-chart-line"></i> Collaboration Reports</button>
-            </a>
-            <a href="{{ url_for('college.college_endorsement') }}">
-                <button><i class="fas fa-chart-line"></i> Endorsement</button>
-            </a>
+        <div class="navigation" id="side-navigation">
+            <button onclick="window.location.href='/college/college_dashboard'"><i class="fas fa-home"></i> Dashboard</button>
+            <button onclick="window.location.href='/college/college_studenttracking'"><i class="fas fa-user-graduate"></i> Student Tracking</button>
+            <button onclick="window.location.href='/college/college_endorsement'"><i class="fas fa-certificate"></i> Endorsement</button>
+            <button onclick="window.location.href='/college/generate_coupon'"><i class="fas fa-ticket-alt"></i> Coupon Management</button>
+            <button onclick="window.location.href='/college/college_collab'"><i class="fas fa-handshake"></i> Collaboration Reports</button>
         </div>
-        <div class="coupon-management-container">
-            <!-- Coupon Management Header -->
-            <div class="coupon-header">
-                <h2>Generate Coupon</h2>
+
+        <div class="activity">
+            <div class="top-header">
+                <h2>Coupon Code Management</h2>
             </div>
 
             <!-- Input Widgets -->
-            <form method="POST" action="{{ url_for('college.generate_coupon') }}">
+            <form method="POST" action="{{ url_for('college.generate_coupon') }}" onsubmit="return validateForm()">
                 <div class="input-widgets">
-                    <input type="text" id="year" name="year" placeholder="Enter Year" required />
-                    <input type="text" id="faculty_id" name="faculty_id" placeholder="Enter Faculty ID" required />
-                    <button type="submit">Generate Coupon</button>
+                    <input type="text" id="year" name="year" placeholder="Enter Batch (Name / Year)" required maxlength="20" />
+                    <input type="text" id="faculty_id" name="faculty_id" placeholder="Enter Faculty ID" required maxlength="20" />
+                    <button type="submit"><i class="fas fa-plus-circle"></i> Generate Coupon</button>
                 </div>
             </form>
 
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul>
-                {% for category, message in messages %}
-                    <li><strong>{{ category.title() }}:</strong> {{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-            {% endwith %}
-
-            <!-- Active Codes List -->
-            <div class="active-codes-list-container">
+            <div class="filter-bar">
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search coupons..." style="font-family: monospace;font-size: 14.5px;">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+            
+            <!-- Coupon List -->
+            <div class="candidate-list">
                 <h3>Active Coupon Codes</h3>
-                <table class="active-codes-list">
-                    <thead>
-                        <tr>
-                            <th>Coupon Code</th>
-                            <th>Faculty ID</th>
-                            <th>Year</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for coupon in coupons %}
-                        <tr>
-                            <td>{{ coupon.code }}</td>
-                            <td>{{ coupon.faculty_id }}</td>
-                            <td>{{ coupon.year }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table id="coupon-table">
+                        <thead>
+                            <tr>
+                                <th>Coupon Code</th>
+                                <th>Faculty ID</th>
+                                <th>Year</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if coupons %}
+                                {% for coupon in coupons %}
+                                <tr class="coupon-row" data-code="{{ coupon.code }}" data-faculty="{{ coupon.faculty_id }}" data-year="{{ coupon.year }}">
+                                    <td>{{ coupon.code }}</td>
+                                    <td>{{ coupon.faculty_id }}</td>
+                                    <td>{{ coupon.year }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3">No coupon codes found</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div id="no-results-message" style="display: none; text-align: center; padding: 20px; font-family: monospace; font-size: 16px; color: #666;">
+                        <p>No matching coupon codes found.</p>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button id="prev-page" disabled>&laquo; Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" disabled>Next &raquo;</button>
+                </div>
             </div>
         </div>
     </main>
+
+    <script>
+        function showPopup(message, type) {
+            if (!message) return; // Don't show popup if message is empty
+            var popup = document.getElementById("popup-message");
+            popup.innerHTML = message;
+            popup.className = "popup " + type;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 3000);
+        }
+
+        function validateForm() {
+            const year = document.getElementById('year').value.trim();
+            const facultyId = document.getElementById('faculty_id').value.trim();
+            
+            // Validate Year - letters, numbers, and certain symbols (#,@)
+            const yearRegex = /^[a-zA-Z0-9#@\-_]+$/;
+            if (!yearRegex.test(year)) {
+                showPopup("Year can only contain letters, numbers, and certain symbols (#, @, -, _)!", "error");
+                return false;
+            }
+            
+            // Validate Faculty ID - letters and numbers
+            const facultyRegex = /^[a-zA-Z0-9\-_]+$/;
+            if (!facultyRegex.test(facultyId)) {
+                showPopup("Faculty ID can only contain letters and numbers!", "error");
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Display flash messages as popups
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    showPopup("{{ message }}", "{{ category }}");
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const dropdownBtn = document.querySelector('.profile-icon-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+        
+        // Toggle dropdown on click (alternative to hover)
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Pagination variables
+        let currentPage = 1;
+        const rowsPerPage = 5;
+        let filteredRows = [];
+
+        // Menu toggle function
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('side-navigation').classList.toggle('active');
+            document.querySelector('.menu-toggle').classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sideNav = document.getElementById('side-navigation');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (sideNav.classList.contains('active') && 
+                !sideNav.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sideNav.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
+        });
+
+        // Live search functionality
+        document.getElementById('search-input').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            filterTableBySearch(searchText);
+        });
+
+        // Filter table by search text
+        function filterTableBySearch(searchText) {
+            const rows = document.querySelectorAll('#coupon-table tbody tr.coupon-row');
+            filteredRows = [];
+            
+            rows.forEach(row => {
+                const code = row.querySelector('td:first-child').textContent.toLowerCase();
+                const faculty = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const year = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (code.includes(searchText) || faculty.includes(searchText) || year.includes(searchText)) {
+                    row.dataset.visible = "true";
+                    filteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
+                }
+            });
+            
+            // Show/hide no results message
+            document.getElementById('no-results-message').style.display = filteredRows.length === 0 ? 'block' : 'none';
+            
+            updatePagination();
+            showPage(1);
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Show specific page
+        function showPage(pageNum) {
+            currentPage = pageNum;
+            const start = (pageNum - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            const rows = document.querySelectorAll('#coupon-table tbody tr.coupon-row');
+            rows.forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            for (let i = start; i < end && i < filteredRows.length; i++) {
+                filteredRows[i].style.display = 'table-row';
+            }
+            
+            updatePagination();
+        }
+
+        // Pagination controls
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (currentPage > 1) {
+                showPage(currentPage - 1);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                showPage(currentPage + 1);
+            }
+        });
+
+        // Initialize pagination
+        window.addEventListener('load', function() {
+            const rows = document.querySelectorAll('#coupon-table tbody tr.coupon-row');
+            filteredRows = Array.from(rows);
+            updatePagination();
+            showPage(1);
+        });
+    </script>
 </body>
 </html>
