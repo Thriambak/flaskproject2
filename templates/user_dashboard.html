@@ -4,12 +4,195 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard</title>
-  <!-- Link to external CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/userstyles.css') }}">
-  <!-- Font Awesome for icons -->
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  
+  <!-- Balloon.css -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css">
+  
   <style>
-    /* Flash Message Container - fixed at top center */
+    /* Global styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f1f3f6;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    /* Header */
+    header {
+      background: linear-gradient(90deg, #005f73, #0a9396);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    header .logo {
+      display: flex;
+      align-items: center;
+      font-size: 28px;
+      font-weight: bold;
+      gap: 10px;
+    }
+    header .logo i { font-size: 32px; color: white; }
+    header .profile-settings {
+      display: flex;
+      gap: 15px;
+    }
+  
+    header .profile-settings button {
+      background-color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #005f73;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+  
+    /* Menu toggle button */
+    .menu-toggle {
+      display: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: white;
+      margin-right: 15px;
+    }
+    
+    .menu-toggle.active {
+      color: #e6e6e6;
+    }
+  
+    .profile-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+  
+    .profile-icon-btn {
+      background-color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+    }
+  
+    .profile-icon-btn i {
+      font-size: 30px;
+      color: #005f73;
+    }
+  
+    .profile-icon-btn:hover {
+      background-color: #e6e6e6;
+    }
+  
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  
+    .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s;
+    }
+  
+    .dropdown-content a i {
+      color: #0a9396;
+    }
+  
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+  
+    .profile-dropdown:hover .dropdown-content {
+      display: block;
+    }
+    
+    /* Layout: Navigation and Activity */
+    main {
+      display: flex;
+      flex-wrap: nowrap;
+      flex: 1;
+    }
+    
+    .navigation {
+      width: 280px;
+      background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      border-right: 1px solid #ccc;
+      box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    .navigation button {
+      padding: 12px 20px;
+      border: none;
+      background: linear-gradient(90deg, #f0f4ff, #ffffff);
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 8px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: background 0.3s, transform 0.2s;
+    }
+    
+    .navigation button i {
+      font-size: 18px;
+      color: #005f73;
+    }
+    
+    .navigation button:hover {
+      background: linear-gradient(90deg, #dce4ff, #f9faff);
+      transform: scale(1.05);
+    }
+    
+    /* Activity Section */
+    .activity {
+      flex: 1;
+      padding: 20px;
+      background: linear-gradient(to bottom, #ffffff, #f7f7f7);
+      border-left: 1px solid #ccc;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Flash Messages */
     .flash-container {
       position: fixed;
       top: 10px;
@@ -54,141 +237,8 @@
       85% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-10px); }
     }
-    header {
-      background: linear-gradient(90deg, #005f73, #0a9396);
-      color: white;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    header .logo {
-      display: flex;
-      align-items: center;
-      font-size: 28px;
-      font-weight: bold;
-      gap: 10px;
-    }
-    header .logo i { font-size: 32px; color: white; }
-    header .profile-settings {
-      display: flex;
-      gap: 15px;
-  }
-  
-  header .profile-settings button {
-      background-color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 10px 20px;
-      cursor: pointer;
-      font-size: 14px;
-      color: #005f73;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .profile-dropdown {
-      position: relative;
-      display: inline-block;
-  }
-  
-  .profile-icon-btn {
-      background-color: white;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.3s;
-  }
-  
-  .profile-icon-btn i {
-      font-size: 30px;
-      color: #005f73;
-  }
-  
-  .profile-icon-btn:hover {
-      background-color: #e6e6e6;
-  }
-  
-  .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background-color: white;
-      min-width: 160px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      z-index: 10;
-      border-radius: 8px;
-      overflow: hidden;
-  }
-  
-  .dropdown-content a {
-      color: #333;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: background-color 0.3s;
-  }
-  
-  .dropdown-content a i {
-      color: #0a9396;
-  }
-  
-  .dropdown-content a:hover {
-      background-color: #f1f1f1;
-  }
-  
-  .profile-dropdown:hover .dropdown-content {
-      display: block;
-  }
-    .navigation {
-      width: 20%;
-      background: linear-gradient(to bottom, #ffffff, #f0f4f9);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      border-right: 1px solid #ccc;
-      box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .navigation button {
-      padding: 12px 20px;
-      border: none;
-      background: linear-gradient(90deg, #f0f4ff, #ffffff);
-      cursor: pointer;
-      font-size: 16px;
-      border-radius: 8px;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      transition: background 0.3s, transform 0.2s;
-    }
-    .navigation button i {
-      font-size: 18px;
-      color: #005f73;
-    }
-    .navigation button:hover {
-      background: linear-gradient(90deg, #dce4ff, #f9faff);
-      transform: scale(1.05);
-    }
-    .activity {
-      width: 60%;
-      padding: 20px;
-      background: linear-gradient(to bottom, #ffffff, #f7f7f7);
-      border-left: 1px solid #ccc;
-      border-right: 1px solid #ccc;
-      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
-    }
+    
+    /* Dashboard-specific styles */
     .activity h2 {
       font-size: 22px;
       font-family: 'Source Sans Pro', sans-serif;
@@ -242,6 +292,7 @@
       position: relative;
       border: 1px solid #ddd;
       animation: fadeInUp 0.5s ease-out;
+      display: none; /* Hide all job postings initially */
     }
     .activity .job-posting:nth-child(even) {
       animation-delay: 0.2s;
@@ -289,41 +340,53 @@
       margin: 10px 0;
       display: inline-block;
     }
+    
+    /* Button container for desktop layout */
+    .activity .job-posting .job-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    /* Apply Now Button - Desktop Layout */
     .activity .job-posting .btn {
       background-color: #1abc9c;
       color: white;
-      padding: 12px 20px;
+      padding: 10px 18px;
       border-radius: 25px;
       text-transform: uppercase;
       font-weight: bold;
       transition: background-color 0.3s ease-in-out, transform 0.3s ease;
       border: none;
       cursor: pointer;
-      width: 100%;
-      margin-top: 20px;
+      font-size: 14px;
     }
+    
     .activity .job-posting .btn:hover {
       background-color: #16a085;
       transform: scale(1.05);
     }
-    /* New Save Button Style */
+    
+    /* Save Button - Desktop Layout */
     .activity .job-posting .btn-save {
-      background-color: #f39c12;
+      background-color:rgb(9, 177, 249);
       color: white;
-      padding: 12px 20px;
+      padding: 10px 18px;
       border-radius: 25px;
       text-transform: uppercase;
       font-weight: bold;
       transition: background-color 0.3s ease-in-out, transform 0.3s ease;
       border: none;
       cursor: pointer;
-      width: 100%;
-      margin-top: 10px;
+      font-size: 14px;
     }
+    
     .activity .job-posting .btn-save:hover {
-      background-color: #e67e22;
+      background-color:rgb(9, 177, 249);
       transform: scale(1.05);
     }
+    
     .pagination {
       display: flex;
       justify-content: center;
@@ -340,7 +403,11 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
-    .pagination button:hover {
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .pagination button:hover:not(:disabled) {
       background-color: #16a085;
     }
     .pagination span {
@@ -363,103 +430,157 @@
       background: #f9f9f9;
       border-color: #1abc9c;
     }
+    #no-jobs-message {
+      text-align: center;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 16px;
+      color: #666;
+      display: none;
+    }
+    
+    /* Responsive Design */
+    @media (min-width: 1025px) {
+      .navigation {
+          position: sticky;
+          top: 65px; /* Matches the height of your header */
+          height: calc(100vh - 65px);
+          overflow-y: auto;
+      }
+      
+      main {
+          overflow: hidden;
+      }
+      
+      .activity {
+          overflow-y: auto;
+          max-height: calc(100vh - 65px);
+      }
+    }
+    
+    @media (max-width: 1024px) {
+      .navigation {
+          position: fixed;
+          left: -280px;
+          top: 65px;
+          height: calc(100vh - 65px);
+          z-index: 90;
+          transition: left 0.3s ease;
+      }
+      
+      .navigation.active {
+          left: 0;
+      }
+      
+      .menu-toggle {
+          display: block;
+      }
+  
+      .navigation:not(.active) {
+          display: none;
+      }
+      
+      .activity {
+          padding-left: 20px;
+          width: 100%;
+          margin-left: 0;
+      }
+      
+      main {
+          width: 100%;
+      }
+      
+      .profile-settings .btn-text {
+          display: none;
+      }
+    }
+    
     @media screen and (max-width: 768px) {
+      /* Mobile header adjustments */
+      header { padding: 12px 15px; }
+      header .logo { font-size: 22px; }
+      header .logo i { font-size: 26px; }
+      header .profile-settings { gap: 10px; }
+      
+      /* Mobile top buttons */
+      .activity .top-buttons { 
+        flex-wrap: wrap; 
+        justify-content: center;
+        gap: 10px; 
+      }
+      .activity .top-buttons button { 
+        padding: 10px 18px; 
+        font-size: 14px;
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+      }
+      
+      /* Mobile job posting cards */
       .activity .job-posting {
         padding: 15px;
       }
       .activity .job-posting h3 {
-        font-size: 20px;
+        font-size: 18px;
       }
       .activity .job-posting p {
         font-size: 14px;
       }
-      .activity .btn,
-      .activity .btn-save {
-        padding: 10px 15px;
+      
+      /* Mobile buttons - return to full width stacked */
+      .activity .job-posting .job-buttons {
+        flex-direction: column;
+        justify-content: center;
+        gap: 10px;
       }
-    }/* Modal & Cursor Logo */
-  .modal-content { /* use as needed for your modals */ }
-  .chrome-ext-link {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--accent-color);
-    font-size: 0.9rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-  }
-  .chrome-ext-link:hover { opacity: 1; }
-  .chrome-ext-link svg { width: 20px; height: 20px; }
-  .cursor-logo {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent-color);
-    opacity: 0.8;
-    transition: all 0.2s ease;
-    font-size: 0.85rem;
-    margin-right: 8px;
-  }
-  .cursor-logo:hover { opacity: 1; transform: translateY(-1px); }
-  .cursor-logo svg { width: 16px; height: 16px; }
-  
-  /* Platform Selectors */
-  .platform-selectors {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-right: 16px;
-  }
-  
-  /* ==========================================================================
-     RESPONSIVE ADJUSTMENTS
-     ========================================================================== */
-  @media screen and (max-width: 768px) {
-    .navigation, .activity { width: 100%; border: none; }
-    .activity .job-posting {
-      padding: 15px;
+      
+      .activity .job-posting .btn,
+      .activity .job-posting .btn-save {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+        text-align: center;
+      }
+      
+      .metrics-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
-    .activity .job-posting h3 {
-      font-size: 20px;
+        
+    @media screen and (max-width: 480px) {
+      header .logo { 
+        font-size: 20px;
+      }
+      
+      header .logo i { 
+        font-size: 24px;
+      }
+      
+      .activity h2 {
+        font-size: 20px;
+      }
+      
+      .activity .notification-item {
+        padding: 12px;
+      }
+      
+      .activity .notification-message {
+        font-size: 14px;
+      }
+      
+      .activity .notification-timestamp {
+        font-size: 12px;
+      }
+      
+      .activity .action-buttons form button {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
     }
-    .activity .job-posting p {
-      font-size: 14px;
-    }
-    .activity .btn, .activity .btn-save {
-      padding: 10px 15px;
-    }
-    .platform-selectors {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-      margin-bottom: 12px;
-      width: 100%;
-    }
-    .custom-select, .custom-input {
-      width: 100%;
-    }
-  }
-  
-  /* Additional mobile tweaks for futuristic header content */
-  @media (max-width: 480px) {
-    .copilot-suggestion-modal {
-      padding: 24px;
-      max-width: 100%;
-      margin: 0 16px;
-    }
-    .copilot-suggestion-content {
-      font-size: 1rem;
-      margin-bottom: 20px;
-    }
-    .copilot-suggestion-button {
-      padding: 10px 16px;
-      font-size: 0.9rem;
-    }
-  }
   </style>
 </head>
-<body>
-  <!-- Flash Message Container -->
+<body class="bg-gray-100">
+  <!-- Flash Messages -->
   <div class="flash-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -472,65 +593,64 @@
       {% endif %}
     {% endwith %}
   </div>
-  
+
+  <!-- Header -->
   <header>
+    <div class="menu-toggle">
+      <i class="fas fa-bars"></i>
+    </div>
     <div class="logo">
-      <i class="fas fa-globe"></i>
-      Employee Recruitment
+      <i class="fas fa-globe"></i> Employee Recruitment
     </div>
-    <div>
-      Welcome, {{ session['username'] }}!
-    </div>
+    <div>Welcome, {{ session['username'] }}!</div>
     <div class="profile-settings">
       <div class="profile-dropdown">
-          <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
-          <div class="dropdown-content">
-              <a href="{{ url_for('user.profile') }}">
-                  <i class="fas fa-user"></i> Profile
-              </a>
-              <a href="{{ url_for('auth.logout') }}">
-                  <i class="fas fa-sign-out-alt"></i> Logout
-              </a>
-          </div>
+        <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('user.profile') }}">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
       </div>
-        </div>
+    </div>
   </header>
   
+  <!-- Main Layout -->
   <main>
-    <div class="navigation">
-      <button onclick="location.reload();">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <button onclick="window.location.href='/user/application_history'">
-        <i class="fas fa-history"></i> Application History
-      </button>
-      <a href="{{ url_for('user.notifications') }}">
-        <button><i class="fas fa-bell"></i> Notifications</button>
-      </a>
-      <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
+    <!-- Navigation Sidebar -->
+    <div class="navigation" id="side-navigation">
+      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
+      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
+      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
+      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
       <button onclick="window.location.href='/user/analytics'">
         <i class="fas fa-chart-line"></i> Analytics
       </button>
     </div>
     
-    <div class="activity">
+    <!-- Activity Section - Dashboard Content -->
+    <div class="activity" id="activityContent">
+      
+      
+      <!-- Dashboard Top Buttons -->
       <div class="top-buttons">
-        <button><i class="fas fa-star"></i> For You</button>
+      
         <a href="{{ url_for('user.job_search') }}">
           <button><i class="fas fa-compass"></i> Explore</button>
         </a>
         <a href="{{ url_for('user.favorites') }}">
           <button><i class="fas fa-heart"></i> Favourites</button>
         </a>
-        
       </div>
       
+      <!-- Job Postings -->
       <div class="job-postings">
         {% if jobs %}
           {% for job in jobs %}
-            <div class="job-posting">
+            <div class="job-posting job-item" data-visible="true">
               <div class="job-header">
                 <h3>{{ job.title }}</h3>
                 <div class="job-type">
@@ -543,36 +663,43 @@
               <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
               <p><i class="fas fa-cogs"></i> <strong>Skills Required:</strong> {{ job.skills }}</p>
               <p><i class="fas fa-briefcase"></i> <strong>Years of Experience:</strong> {{ job.years_of_exp }}</p>
-              {% if job.form_url %}
-                <p>
-                  <i class="fas fa-external-link-alt"></i>
-                  <strong>Application Form:</strong>
-                  <a href="{{ job.form_url }}" target="_blank" class="form-link">Open Application Form</a>
-                </p>
-              {% endif %}
-              <!-- Apply Now Form -->
-              <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
-                <button type="submit" class="btn apply-btn">Apply Now</button>
-              </form>
-              <!-- Save Job Form (Backend integration pending) -->
-              <form action="{{ url_for('user.save_job', job_id=job.job_id) }}" method="POST">
-                <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
-              </form>
+              <p>
+                <i class="fas fa-building"></i> <strong>Company:</strong>
+                {% if job.user and job.user.company %}
+                  {% if job.user.company.website %}
+                    <a href="{{ job.user.company.website }}" style="color: #007bff;">{{ job.user.company.company_name }}</a>
+                  {% else %}
+                    {{ job.user.company.company_name }}
+                  {% endif %}
+                {% else %}
+                  Unknown
+                {% endif %}
+              </p>
+              <!-- Job buttons container for better alignment -->
+              <div class="job-buttons">
+                <!-- Apply Now Button -->
+                <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
+                  <button type="submit" class="btn apply-btn">Apply Now</button>
+                </form>
+                
+                <!-- Save Job Button -->
+                <form action="{{ url_for('user.save_job', job_id=job.job_id) }}" method="POST">
+                  <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
+                </form>
+              </div>
             </div>
           {% endfor %}
+          
+          <!-- No jobs message -->
+          <div id="no-jobs-message">
+            <p>No matching job listings available.</p>
+          </div>
+          
           <!-- Pagination Controls -->
-          <div class="pagination" style="text-align: center; margin-top: 30px;">
-            {% if page > 1 %}
-              <a href="?page={{ page - 1 }}">
-                <button class="btn apply-btn" style="width: auto; margin: 0 5px;">Previous</button>
-              </a>
-            {% endif %}
-            <span style="font-size: 16px; margin: 0 10px;">Page {{ page }} of {{ total_pages }}</span>
-            {% if page < total_pages %}
-              <a href="?page={{ page + 1 }}">
-                <button class="btn apply-btn" style="width: auto; margin: 0 5px;">Next</button>
-              </a>
-            {% endif %}
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page 1 of 1</span>
+            <button id="next-page" disabled>Next &raquo;</button>
           </div>
         {% else %}
           <div class="alert alert-info" role="alert">
@@ -583,7 +710,128 @@
     </div>
   </main>
   
-  <!-- Link to external JavaScript -->
-  <script src="{{ url_for('static', filename='/js/userjs.js') }}"></script>
+  <!-- JavaScript -->
+  <script>
+    // Toggle dropdown for profile menu
+    document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+      event.stopPropagation();
+      const dropdownContent = document.querySelector('.dropdown-content');
+      dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    // Close dropdown if clicking outside
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (!dropdown.contains(event.target)) {
+        document.querySelector('.dropdown-content').style.display = 'none';
+      }
+    });
+    
+    // Menu toggle function
+    document.querySelector('.menu-toggle').addEventListener('click', function() {
+      document.getElementById('side-navigation').classList.toggle('active');
+      document.querySelector('.menu-toggle').classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const sideNav = document.getElementById('side-navigation');
+      const menuToggle = document.querySelector('.menu-toggle');
+      
+      if (sideNav.classList.contains('active') && 
+          !sideNav.contains(event.target) && 
+          !menuToggle.contains(event.target)) {
+        sideNav.classList.remove('active');
+        menuToggle.classList.remove('active');
+      }
+    });
+    
+    // Auto-hide flash messages
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        message.classList.remove('show');
+        setTimeout(() => {
+          message.remove();
+        }, 500);
+      });
+    }, 3000);
+    
+    // Pagination variables
+    let currentPage = 1;
+    const rowsPerPage = 5;
+    let filteredJobs = [];
+    
+    // Initialize pagination
+    window.addEventListener('load', function() {
+      const jobs = document.querySelectorAll('.job-item');
+      filteredJobs = Array.from(jobs);
+      updatePagination();
+      showPage(1);
+    });
+    
+    // Update pagination controls
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
+      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+      
+      document.getElementById('prev-page').disabled = currentPage === 1;
+      document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+    }
+    
+    // Show specific page
+    function showPage(pageNum) {
+      currentPage = pageNum;
+      const start = (pageNum - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      
+      const jobs = document.querySelectorAll('.job-item');
+      jobs.forEach(job => {
+        job.style.display = 'none';
+      });
+      
+      for (let i = start; i < end && i < filteredJobs.length; i++) {
+        filteredJobs[i].style.display = 'block';
+      }
+      
+      // Show/hide no jobs message
+      document.getElementById('no-jobs-message').style.display = 
+        filteredJobs.length === 0 ? 'block' : 'none';
+      
+      updatePagination();
+    }
+    
+    // Pagination controls
+    document.getElementById('prev-page').addEventListener('click', function() {
+      if (currentPage > 1) {
+        showPage(currentPage - 1);
+      }
+    });
+    
+    document.getElementById('next-page').addEventListener('click', function() {
+      const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
+      if (currentPage < totalPages) {
+        showPage(currentPage + 1);
+      }
+    });
+    
+    // Function to resize properly for better readability on different screens
+    function resizeHandler() {
+      const availableWidth = window.innerWidth;
+      
+      // Check if we're in mobile view
+      if (availableWidth <= 768) {
+        document.body.classList.add('mobile-view');
+      } else {
+        document.body.classList.remove('mobile-view');
+      }
+    }
+    
+    // Initial resize
+    resizeHandler();
+    
+    // Resize on window resize
+    window.addEventListener('resize', resizeHandler);
+  </script>
 </body>
 </html>
