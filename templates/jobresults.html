@@ -25,6 +25,7 @@
       flex-direction: column;
       min-height: 100vh;
     }
+    
     /* Header */
     header {
       background: linear-gradient(90deg, #005f73, #0a9396);
@@ -34,6 +35,8 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      flex-wrap: wrap;
+      gap: 10px;
     }
     header .logo {
       display: flex;
@@ -43,31 +46,36 @@
       gap: 10px;
     }
     header .logo i { font-size: 32px; color: white; }
+    header .welcome-text {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 500;
+    }
     header .profile-settings {
       display: flex;
       gap: 15px;
-  }
-  
-  header .profile-settings button {
-      background-color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 10px 20px;
+    }
+    
+    /* Menu toggle button */
+    .menu-toggle {
+      display: none;
       cursor: pointer;
-      font-size: 14px;
-      color: #005f73;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .profile-dropdown {
+      font-size: 24px;
+      color: white;
+      margin-right: 15px;
+    }
+    
+    .menu-toggle.active {
+      color: #e6e6e6;
+    }
+    
+    .profile-dropdown {
       position: relative;
       display: inline-block;
-  }
+    }
   
-  .profile-icon-btn {
+    .profile-icon-btn {
       background-color: white;
       border: none;
       border-radius: 50%;
@@ -78,18 +86,18 @@
       align-items: center;
       justify-content: center;
       transition: background-color 0.3s;
-  }
+    }
   
-  .profile-icon-btn i {
+    .profile-icon-btn i {
       font-size: 30px;
       color: #005f73;
-  }
+    }
   
-  .profile-icon-btn:hover {
+    .profile-icon-btn:hover {
       background-color: #e6e6e6;
-  }
+    }
   
-  .dropdown-content {
+    .dropdown-content {
       display: none;
       position: absolute;
       right: 0;
@@ -99,9 +107,9 @@
       z-index: 10;
       border-radius: 8px;
       overflow: hidden;
-  }
+    }
   
-  .dropdown-content a {
+    .dropdown-content a {
       color: #333;
       padding: 12px 16px;
       text-decoration: none;
@@ -109,25 +117,18 @@
       align-items: center;
       gap: 10px;
       transition: background-color 0.3s;
-  }
+    }
   
-  .dropdown-content a i {
+    .dropdown-content a i {
       color: #0a9396;
-  }
+    }
   
-  .dropdown-content a:hover {
+    .dropdown-content a:hover {
       background-color: #f1f1f1;
-  }
+    }
   
-  .profile-dropdown:hover .dropdown-content {
+    .profile-dropdown:hover .dropdown-content {
       display: block;
-  }
-    .dark-toggle {
-      background: transparent;
-      border: 1px solid white;
-      border-radius: 50%;
-      padding: 8px;
-      cursor: pointer;
     }
     
     /* Layout: Navigation & Activity */
@@ -136,7 +137,7 @@
       flex: 1;
     }
     .navigation {
-      width: 20%;
+      width: 280px;
       background: linear-gradient(to bottom, #ffffff, #f0f4f9);
       padding: 20px;
       display: flex;
@@ -144,8 +145,10 @@
       gap: 15px;
       border-right: 1px solid #ccc;
       box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
     }
     .navigation button {
+      text-decoration: none;
       padding: 12px 20px;
       border: none;
       background: linear-gradient(90deg, #f0f4ff, #ffffff);
@@ -167,11 +170,10 @@
       transform: scale(1.05);
     }
     .activity {
-      width: 80%;
+      flex: 1;
       padding: 20px;
       background: linear-gradient(to bottom, #ffffff, #f7f7f7);
       border-left: 1px solid #ccc;
-      border-right: 1px solid #ccc;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
     }
     .activity h2 {
@@ -183,6 +185,52 @@
       text-align: center;
       margin-bottom: 20px;
     }
+    
+    /* Flash Message Styling */
+    .flash-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 300px;
+      max-width: 500px;
+      z-index: 1050;
+    }
+    .flash-message {
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+      animation: fadeInOut 3s ease-in-out forwards;
+    }
+    /* Contrasting colors for alerts */
+    .alert-success.flash-message {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+    }
+    .alert-danger.flash-message {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+    }
+    .alert-warning.flash-message {
+      background-color: #ffc107;
+      color: #212529;
+      border: none;
+    }
+    .alert-info.flash-message {
+      background-color: #17a2b8;
+      color: #fff;
+      border: none;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-10px); }
+      15% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+    
     /* Job Results Specific Styles */
     .results-header {
       display: flex;
@@ -190,120 +238,394 @@
       align-items: center;
       margin-bottom: 20px;
     }
+    .sort-filters {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
     .sort-dropdown {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.3);
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px 12px;
       color: #333;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    .sort-dropdown:focus {
+      border-color: #1abc9c;
+      box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.2);
+    }
+    .filter-btn {
+      background: linear-gradient(90deg, #0a9396, #005f73);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    .filter-btn:hover {
+      background: linear-gradient(90deg, #005f73, #0a9396);
+      transform: translateY(-2px);
     }
     .job-listings .card {
       background: #fff;
       border: none;
       border-radius: 10px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      height: 100%;
     }
     .job-listings .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .job-listings .card-title {
+      color: #005f73;
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+    .job-listings .card-text {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .job-listings p {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .job-listings p i {
+      color: #0a9396;
+      width: 16px;
+      text-align: center;
     }
     .btn-custom {
       background: linear-gradient(90deg, #1abc9c, #16a085);
       border: none;
       color: white;
-      padding: 10px 15px;
+      padding: 10px 20px;
       border-radius: 25px;
       text-transform: uppercase;
       font-weight: bold;
       font-size: 16px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
     }
-    /* Remove underline from the links */
-a {
-    text-decoration: none;
-  }
-  
-  /* Remove underline from buttons within links */
-  a button {
-    text-decoration: none;
-  }
-  
-  /* Optional: If you want to also ensure buttons don’t get any default styling */
-  button {
-    text-decoration: none;
-  }
-  
     .btn-custom:hover {
       background: linear-gradient(90deg, #16a085, #1abc9c);
       transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4);
     }
     .badge {
       font-size: 0.85rem;
+      padding: 5px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      display: inline-block;
     }
-    /* Responsive Adjustments */
+    .back-to-search {
+      background: transparent;
+      border: 1px solid #0a9396;
+      color: #0a9396;
+      padding: 8px 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .back-to-search:hover {
+      background: rgba(10, 147, 150, 0.1);
+      transform: translateX(-5px);
+    }
+    
+    /* Remove underline from links */
+    a {
+      text-decoration: none;
+    }
+  
+    /* Remove underline from buttons within links */
+    a button {
+      text-decoration: none;
+    }
+    
+    .flash-message {
+      pointer-events: auto;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      animation: fadeInOut 3s ease-in-out forwards;
+    }
+    .alert-success.flash-message {
+      background-color: #2ecc71;
+      color: #fff;
+      border: 1px solid #27ae60;
+    }
+    .alert-error.flash-message {
+      background-color: #e74c3c;
+      color: #fff;
+      border: 1px solid #c0392b;
+    }
+    .alert-warning.flash-message {
+      background-color: #f39c12;
+      color: #fff;
+      border: 1px solid #d35400;
+    }
+    .alert-info.flash-message {
+      background-color: #3498db;
+      color: #fff;
+      border: 1px solid #2980b9;
+    }
+    /* Responsive design */
+    @media (min-width: 1025px) {
+      .navigation {
+        position: sticky;
+        top: 65px; /* Matches the height of your header */
+        height: calc(100vh - 65px);
+        overflow-y: auto;
+      }
+      
+      main {
+        overflow: hidden;
+      }
+      
+      .activity {
+        overflow-y: auto;
+        max-height: calc(100vh - 65px);
+      }
+    }
+    
+    @media (max-width: 1024px) {
+      .navigation {
+        position: fixed;
+        left: -280px;
+        top: 65px;
+        height: calc(100vh - 65px);
+        z-index: 90;
+        transition: left 0.3s ease;
+      }
+      
+      .navigation.active {
+        left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+  
+      .navigation:not(.active) {
+        display: none;
+      }
+      
+      .activity {
+        padding-left: 20px;
+        width: 100%;
+        margin-left: 0;
+      }
+      
+      main {
+        width: 100%;
+      }
+      
+      .profile-settings .btn-text {
+        display: none;
+      }
+      
+      .job-listings .card {
+        height: auto;
+      }
+    }
+    
     @media screen and (max-width: 768px) {
-      .navigation { display: none; }
-      .activity { width: 100%; }
-      header .logo { font-size: 24px; }
-      header .profile-settings button { padding: 8px 15px; font-size: 12px; }
-      .activity h2 { font-size: 20px; }
+      /* Mobile header adjustments */
+      header { 
+        padding: 12px 15px; 
+        justify-content: space-between;
+      }
+      header .logo { 
+        font-size: 22px; 
+        order: 1;
+      }
+      header .logo i { font-size: 26px; }
+      header .welcome-text {
+        order: 3;
+        width: 100%;
+        text-align: left;
+        margin-top: 8px;
+      }
+      header .profile-settings { 
+        gap: 10px; 
+        order: 2;
+      }
+      
+      .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .sort-filters {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .job-listings .col-md-6 {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      
+      .job-listings .card {
+        margin-bottom: 15px;
+      }
+      
+      .btn-custom {
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+    }
+    
+    @media screen and (max-width: 480px) {
+      header .logo { 
+        font-size: 20px;
+      }
+      
+      header .logo i { 
+        font-size: 24px;
+      }
+      
+      .activity h2 {
+        font-size: 20px;
+      }
+      
+      .job-listings .card {
+        padding: 15px;
+      }
+      
+      .sort-filters {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      
+      .sort-dropdown {
+        width: 100%;
+      }
+      
+      .filter-btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body data-aos-duration="1000">
   <!-- Header -->
   <header>
+    <div class="menu-toggle">
+      <i class="fas fa-bars"></i>
+    </div>
     <div class="logo">
       <i class="fas fa-globe"></i> Employee Recruitment
     </div>
-    <div>Welcome, {{ session['username'] }}!</div>
+    <div class="welcome-text">Welcome, {{ session['username'] }}!</div>
     <div class="profile-settings">
       <div class="profile-dropdown">
-          <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
-          <div class="dropdown-content">
-              <a href="{{ url_for('user.profile') }}">
-                  <i class="fas fa-user"></i> Profile
-              </a>
-              <a href="{{ url_for('auth.logout') }}">
-                  <i class="fas fa-sign-out-alt"></i> Logout
-              </a>
-          </div>
+        <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('user.profile') }}">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
       </div>
-  </div>
+    </div>
   </header>
   
   <!-- Layout -->
   <main>
     <!-- Navigation Sidebar -->
-    <div class="navigation">
-      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
-      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
-      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
-      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
-      <button onclick="window.location.href='/user/analytics'"><i class="fas fa-chart-line"></i> Analytics</button>
+    <div class="navigation" id="side-navigation">
+      <button onclick="window.location.href='/user/user_dashboard'">
+        <i class="fas fa-home"></i> Home
+      </button>
+      <button onclick="window.location.href='/user/application_history'">
+        <i class="fas fa-history"></i> Application History
+      </button>
+      <a href="{{ url_for('user.notifications') }}">
+        <button><i class="fas fa-bell"></i> Notifications</button>
+      </a>
+      <a href="{{ url_for('user.resume_certifications') }}">
+        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
+      </a>
+      <button onclick="window.location.href='/user/analytics'">
+        <i class="fas fa-chart-line"></i> Analytics
+      </button>
     </div>
     
     <!-- Main Content -->
-    <div class="activity">
+    <div class="activity" id="activityContent">
+      <button class="back-to-search" onclick="window.location.href='/user/job_search'">
+        <i class="fas fa-arrow-left"></i> Back to Search
+      </button>
+      
+      <!-- Flash Message Container -->
+      <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+      
       <div class="results-header">
         <h2>Job Listings</h2>
-        <select class="form-select sort-dropdown" style="width: 180px;">
-          <option selected>Sort by</option>
-          <option value="recent">Most Recent</option>
-          <option value="salary">Salary</option>
-          <option value="experience">Experience</option>
-        </select>
+        
       </div>
-      <div class="container job-listings">
+      
+      <div class="container-fluid job-listings">
         <div class="row g-4">
           {% if jobs %}
             {% for job in jobs %}
-              <div class="col-md-6 col-lg-4">
-                <div class="card p-3">
+              <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div class="card h-100">
                   <div class="card-body">
                     <h5 class="card-title">{{ job.title }}</h5>
                     <span class="badge bg-info text-dark">{{ job.job_type }}</span>
-                    <p class="card-text mt-2">{{ job.description }}</p>
+                    <p class="card-text">{{ job.description }}</p>
                     <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ job.location }}</p>
                     <p><i class="fas fa-wallet"></i> <strong>Salary:</strong> ₹{{ job.salary }}</p>
                     <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
@@ -316,46 +638,124 @@ a {
                       </p>
                     {% endif %}
                     <form action="{{ url_for('user.apply1_for_job', job_id=job.job_id) }}" method="POST">
-                      <button type="submit" class="btn-custom">Apply Now</button>
+                      <button type="submit" class="btn-custom">
+                        <i class="fas fa-paper-plane"></i> Apply Now
+                      </button>
                     </form>
                   </div>
                 </div>
               </div>
             {% endfor %}
           {% else %}
-            <div class="col-12">
-              <p class="text-center">No job listings available based on your search criteria.</p>
+            <div class="col-12 text-center" data-aos="fade-up">
+              <div class="card p-5">
+                <h4><i class="fas fa-search text-muted"></i></h4>
+                <p class="mb-0">No job listings available based on your search criteria.</p>
+                <p class="mt-3">
+                  <button class="btn-custom" style="max-width: 250px; margin: 0 auto;" onclick="window.location.href='/user/job_search'">
+                    <i class="fas fa-search"></i> Try New Search
+                  </button>
+                </p>
+              </div>
             </div>
           {% endif %}
         </div>
+        
+        <!-- Pagination -->
+        {% if jobs and jobs|length > 9 %}
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+              <a class="page-link" href="#" tabindex="-1">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#">Next</a>
+            </li>
+          </ul>
+        </nav>
+        {% endif %}
       </div>
     </div>
   </main>
   
   <!-- Bootstrap Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- AOS JS (optional) -->
+  <!-- AOS JS -->
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-  <script>
-    AOS.init();
-    window.addEventListener('click', function(event) {
-      const dropdown = document.querySelector('.profile-dropdown');
-      const dropdownBtn = document.querySelector('.profile-icon-btn');
-      
-      if (!dropdown.contains(event.target)) {
-          const dropdownContent = document.querySelector('.dropdown-content');
-          if (dropdownContent.style.display === 'block') {
-              dropdownContent.style.display = 'none';
-          }
-      }
-  });
   
-  // Toggle dropdown on click (alternative to hover)
-  document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+  <script>
+    // Initialize AOS
+    AOS.init();
+    
+    // Toggle dropdown for profile menu
+    document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
       event.stopPropagation();
       const dropdownContent = document.querySelector('.dropdown-content');
       dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-  });
+    });
+    
+    // Close dropdown if clicking outside
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (!dropdown.contains(event.target)) {
+        document.querySelector('.dropdown-content').style.display = 'none';
+      }
+    });
+    
+    // Menu toggle function
+    document.querySelector('.menu-toggle').addEventListener('click', function() {
+      document.getElementById('side-navigation').classList.toggle('active');
+      document.querySelector('.menu-toggle').classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const sideNav = document.getElementById('side-navigation');
+      const menuToggle = document.querySelector('.menu-toggle');
+      
+      if (sideNav.classList.contains('active') && 
+          !sideNav.contains(event.target) && 
+          !menuToggle.contains(event.target)) {
+        sideNav.classList.remove('active');
+        menuToggle.classList.remove('active');
+      }
+    });
+    
+    // Auto-hide flash messages after 5 seconds
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        message.style.display = 'none';
+      });
+    }, 5000);
+    
+    // Add animation to job cards on hover
+    const jobCards = document.querySelectorAll('.job-listings .card');
+    jobCards.forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+        this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+      });
+      
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.08)';
+      });
+    });
+    
+    // Filter button functionality (placeholder)
+    document.querySelector('.filter-btn').addEventListener('click', function() {
+      alert('Filter functionality would open a modal or sidebar with additional filtering options');
+    });
+    
+    // Sort dropdown functionality (placeholder)
+    document.querySelector('.sort-dropdown').addEventListener('change', function() {
+      const value = this.value;
+      alert(`Sorting by: ${value} (This would trigger a resort of job listings)`);
+    });
   </script>
 </body>
 </html>

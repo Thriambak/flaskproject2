@@ -163,7 +163,7 @@ def apply1_for_job(job_id):
     # Check if the user has already applied for this job
     existing_application = JobApplication.query.filter_by(user_id=user.id, job_id=job_id).first()
     if existing_application:
-        flash(f"You have already applied for the job {job.title}.", 'error')
+        flash(f"You have already applied for the job {job.title}.", 'danger')
         return redirect(url_for('user.job_search'))
 
     # ✅ Ensure date_applied and status_updated_at are set properly
@@ -190,7 +190,7 @@ def apply1_for_job(job_id):
 
     flash(f"Application for {job.title} submitted successfully!", 'success')
 
-    return redirect(url_for('user.jobsearch'))
+    return redirect(url_for('user.job_search'))
 
 def get_chart_data_for_user(user_id):
     """
@@ -206,9 +206,12 @@ def get_chart_data_for_user(user_id):
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
     rejected = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
+    
     pending = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
-    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending}
+    interviewed = db.session.query(db.func.count(JobApplication.id))\
+        .filter(JobApplication.user_id == user_id, JobApplication.status == 'Interviewed').scalar() or 0
+    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending,"Interviewed":interviewed}
 
     # Chart data: Application trends (daily count)
     trend_data = db.session.query(
