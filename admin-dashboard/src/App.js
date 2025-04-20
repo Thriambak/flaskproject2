@@ -637,7 +637,7 @@ const JobList = (props) => (
     </List>
 );
 
-const Reports = () => (
+{/* const Reports = () => (
     <Box sx={{ 
         height: '60vh', 
         display: 'flex', 
@@ -654,14 +654,14 @@ const Reports = () => (
             We're working on creating meaningful analytics reports for you.
         </Typography>
     </Box>
-);
+); */}
 
 const App = () => (
     <Admin dataProvider={customDataProvider} dashboard={Dashboard}>
         <Resource name="users" list={UserList} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
-        <Resource name="reports" list={Reports} />
+        {/* <Resource name="reports" list={Reports} /> */}
     </Admin>
 );
 
