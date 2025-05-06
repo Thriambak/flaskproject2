@@ -107,9 +107,9 @@
                         <p>Select a student to view details.</p>
                     </div>
                     <div id="certifications-container">
-                        <h4>Certifications</h4>
+                        <h4>Skills</h4>
                         <div id="modal-certifications">
-                            <p>No certifications available.</p>
+                            <p>No skills available.</p>
                         </div>
                     </div>
                 </div>
@@ -362,7 +362,7 @@
                 document.getElementById('modal-certifications').innerHTML = `
                     <div class="no-cert-message">
                         <i class="fas fa-info-circle"></i>
-                        <p>No certifications available for this student.</p>
+                        <p>No skills available for this student.</p>
                     </div>
                 `;
             }
@@ -385,13 +385,13 @@
                     row.querySelector('td:nth-child(2)').innerHTML = '<span class="verified-text"><i class="fas fa-check-circle"></i> Verified</span>';
                     row.querySelector('td:nth-child(3)').innerHTML = '<span class="verified-badge"><i class="fas fa-shield-alt"></i> Endorsed</span>';
                     
-                    showPopup("Certification verified successfully!", "success");
+                    showPopup("Skill verified successfully!", "success");
                 } else {
-                    showPopup("Failed to verify certification", "error");
+                    showPopup("Failed to verify skill", "error");
                 }
             })
             .catch(error => {
-                console.error('Error verifying certification:', error);
+                console.error('Error verifying skill:', error);
                 showPopup("Error processing your request", "error");
             });
         }

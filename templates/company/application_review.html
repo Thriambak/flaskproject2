@@ -364,7 +364,7 @@
             // Build the certifications HTML
             let certHtml = "";
             if (userCertifications[userId] && userCertifications[userId].length > 0) {
-                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Certifications:</strong></p><ul>";
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'><strong>Skills:</strong></p><ul>";
                 userCertifications[userId].forEach(function(cert) {
                     certHtml += "<li style='font-family: monospace;font-size: 14.5px;margin-left: 20px;'>" + cert.certification_name;
                     if (cert.verified) {
@@ -374,7 +374,7 @@
                 });
                 certHtml += "</ul>";
             } else {
-                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No certifications available.</p>";
+                certHtml += "<p style='font-family: monospace;font-size: 14.5px;'>No skills listed.</p>";
             }
 
             // Handle resume path

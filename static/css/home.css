@@ -1,0 +1,390 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    background-color: #f4f4f9;
+    scroll-padding-top: 70px; /* Add scroll padding to account for fixed navbar */
+}
+
+h1, h2, h3 {
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    color: #0a9396;
+}
+
+/* Button Styles */
+.btn {
+    background-color: #0a9396;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #005f73;
+}
+
+/* Header and Navigation */
+header {
+    background-color: white;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 60px; /* Set a fixed height for the navbar */
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li a {
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #0a9396;
+}
+
+.login-btn {
+    background-color: #0a9396;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #005f73;
+    color: white;
+}
+
+/* Profile dropdown for mobile */
+.profile-dropdown {
+    display: none;
+    position: relative;
+}
+
+.profile-icon-btn {
+    background-color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.profile-icon-btn i {
+    font-size: 24px;
+    color: #005f73;
+}
+
+.profile-icon-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 10;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dropdown-content a, .dropdown-content button {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 1em;
+    cursor: pointer;
+    gap: 10px;
+    transition: background-color 0.3s;
+}
+
+.dropdown-content a i, .dropdown-content button i {
+    color: #0a9396;
+    width: 20px;
+    text-align: center;
+}
+
+.dropdown-content a:hover, .dropdown-content button:hover {
+    background-color: #f1f1f1;
+}
+
+/* Hamburger menu for responsive design */
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: #333;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(to right, #0a9396, #005f73);
+    color: white;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.hero-content h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.hero-content p {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+/* General Section Styles */
+.company-info, .features, .why-choose-us, .testimonials {
+    padding: 50px 20px;
+    text-align: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Add padding top to sections to prevent navbar overlap */
+section[id] {
+    scroll-margin-top: 70px; /* Alternative approach for modern browsers */
+}
+
+h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Company Info */
+.company-info p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.1em;
+    color: #6C757D;
+}
+
+/* Features Section */
+.feature-grid {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.feature-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-card h3 {
+    color: #0a9396;
+    margin-bottom: 10px;
+}
+
+/* Why Choose Us */
+.why-choose-us ul {
+    list-style: none;
+    padding: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.why-choose-us li {
+    margin: 10px 0;
+    font-size: 1.1em;
+    color: #6C757D;
+}
+
+/* Testimonials */
+.testimonial-grid {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.testimonial {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial p:first-child {
+    font-style: italic;
+    color: #333;
+}
+
+.testimonial p:last-child {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #6C757D;
+}
+
+/* Footer */
+footer {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.contact, .quick-links {
+    width: 40%;
+}
+
+.quick-links ul {
+    list-style: none;
+    padding: 0;
+}
+
+.quick-links ul li a {
+    color: white;
+    transition: color 0.3s;
+}
+
+.quick-links ul li a:hover {
+    color: #0a9396;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    nav ul {
+        display: none;
+    }
+    
+    .profile-dropdown {
+        display: block;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+    
+    .hero {
+        padding: 50px 20px;
+    }
+    
+    .hero-content h1 {
+        font-size: 2em;
+    }
+    
+    .hero-content p {
+        font-size: 1em;
+    }
+    
+    .feature-grid, .testimonial-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .feature-card, .testimonial {
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .contact, .quick-links {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 {
+        font-size: 1.8em;
+    }
+    
+    .company-info p, .why-choose-us li {
+        font-size: 1em;
+    }
+    
+    h2 {
+        font-size: 1.7em;
+    }
+    
+    .feature-card h3 {
+        font-size: 1.3em;
+    }
+}

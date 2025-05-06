@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(to bottom, #e8f7f9, #d4e8f5); /* #f4f4f9 */
+    background: linear-gradient(to bottom, #e8f7f9, #d4e8f5);
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -214,7 +214,7 @@ nav ul li a {
     100% { opacity: 0; transform: translateY(10px); }
 }
 
-.signup-container {
+.login-container {
     background: linear-gradient(135deg, #f9f9f9, #ffffff);
     padding: 40px;
     border-radius: 12px;
@@ -225,15 +225,7 @@ nav ul li a {
     transition: all 0.3s ease;
 }
 
-/* Larger container for screens greater than 1024px */
-@media (min-width: 1025px) {
-    .signup-container {
-        max-width: 480px;
-        padding: 45px;
-    }
-}
-
-.signup-container h2 {
+.login-container h2 {
     text-align: center;
     font-size: 28px;
     margin-bottom: 30px;
@@ -253,7 +245,7 @@ nav ul li a {
     font-weight: 500;
 }
 
-.form-group input, .form-group select {
+.form-group input {
     width: 100%;
     padding: 12px 15px;
     font-size: 16px;
@@ -263,17 +255,7 @@ nav ul li a {
     transition: border 0.3s, box-shadow 0.3s;
 }
 
-.form-group select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    padding-right: 40px;
-}
-
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus {
     border-color: #0a9396;
     box-shadow: 0 0 0 2px rgba(10, 147, 150, 0.2);
     outline: none;
@@ -323,19 +305,19 @@ nav ul li a {
     transform: translateY(0);
 }
 
-.login-link {
+.forgot-password, .signup-link {
     text-align: center;
     margin-top: 20px;
     font-size: 16px;
 }
 
-.login-link a {
+.forgot-password a, .signup-link a {
     text-decoration: none;
     color: #0a9396;
     transition: color 0.3s;
 }
 
-.login-link a:hover {
+.forgot-password a:hover, .signup-link a:hover {
     color: #005f73;
     text-decoration: underline;
 }
@@ -358,12 +340,12 @@ nav ul li a {
         display: block;
     }
 
-    .signup-container {
+    .login-container {
         padding: 30px;
         max-width: 360px;
     }
 
-    .signup-container h2 {
+    .login-container h2 {
         font-size: 24px;
         margin-bottom: 24px;
     }
@@ -376,7 +358,7 @@ nav ul li a {
         font-size: 15px;
     }
 
-    .form-group input, .form-group select {
+    .form-group input {
         padding: 10px 12px;
         font-size: 15px;
     }
@@ -392,12 +374,12 @@ nav ul li a {
         padding: 20px 15px;
     }
 
-    .signup-container {
+    .login-container {
         padding: 25px 20px;
         border-radius: 10px;
     }
 
-    .signup-container h2 {
+    .login-container h2 {
         font-size: 22px;
         margin-bottom: 20px;
     }
@@ -411,13 +393,9 @@ nav ul li a {
         margin-bottom: 6px;
     }
 
-    .form-group input, .form-group select {
+    .form-group input {
         padding: 10px;
         font-size: 14px;
-    }
-
-    .form-group select {
-        background-position: right 10px center;
     }
 
     .form-group button {
@@ -425,7 +403,7 @@ nav ul li a {
         font-size: 16px;
     }
 
-    .login-link {
+    .forgot-password, .signup-link {
         font-size: 14px;
         margin-top: 16px;
     }
@@ -438,11 +416,11 @@ nav ul li a {
 
 /* For very small screens */
 @media (max-width: 360px) {
-    .signup-container {
+    .login-container {
         padding: 20px 15px;
     }
 
-    .signup-container h2 {
+    .login-container h2 {
         font-size: 20px;
     }
 

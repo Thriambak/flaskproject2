@@ -4,186 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f4f4f9;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .flash-message-container {
-            width: 350px;
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .flash-message {
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            animation: fadeInOut 4s ease-in-out forwards;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-
-        .alert-success { background-color: #2ecc71; color: #fff; }
-        .alert-error { background-color: #e74c3c; color: #fff; }
-        .alert-warning { background-color: #f39c12; color: #fff; }
-        .alert-info { background-color: #3498db; color: #fff; }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(10px); }
-            15% { opacity: 1; transform: translateY(0); }
-            85% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(10px); }
-        }
-
-        .login-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            z-index: 1;
-        }
-
-        .login-container h2 {
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .form-group input {
-            width: calc(100% - 40px);
-            padding: 10px;
-            padding-right: 8%;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-
-        .password-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-container input {
-            flex-grow: 1;
-            padding-right: 40px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            cursor: pointer;
-            color: #888;
-        }
-
-        .form-group button {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            background-color: #0a9396;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .form-group button:hover {
-            background-color: #005f73;
-        }
-
-        .forgot-password, .signup-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1em;
-        }
-
-        .forgot-password a {
-            text-decoration: none;
-            color: #0a9396;
-        }
-
-        .signup-link a {
-            text-decoration: none;
-            color: #0a9396;
-        }
-    </style>
 </head>
 <body>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            setTimeout(() => {
-                document.querySelectorAll('.flash-message').forEach(msg => {
-                    msg.style.transition = 'opacity 1s ease-out';
-                    msg.style.opacity = '0';
-                    setTimeout(() => msg.remove(), 1000);
-                });
-            }, 4000);
-        });
-
-        function togglePassword() {
-            var passwordField = document.getElementById("password");
-            var toggleIcon = document.getElementById("togglePassword");
-            if (passwordField.type === "password") {
-                passwordField.type = "text";
-                toggleIcon.classList.remove("fa-eye");
-                toggleIcon.classList.add("fa-eye-slash");
-            } else {
-                passwordField.type = "password";
-                toggleIcon.classList.remove("fa-eye-slash");
-                toggleIcon.classList.add("fa-eye");
-            }
-        }
-    </script>
-    
-    <div class="login-container">
-        <h2>Login</h2>
-        <form action="{{ url_for('auth.login') }}" method="POST">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="password-container">
-                    <input type="password" id="password" name="password" required>
-                    <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePassword()"></i>
+    <!-- Header with Navigation - Fixed vertical alignment -->
+    <header>
+        <nav>
+            <div class="logo">Recruitment Platform</div>
+            
+            <!-- Desktop Navigation -->
+            <ul class="desktop-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/#footer">Contact</a></li>
+                <!--<li><button class="login-btn" onclick="window.location.href='/auth/login'">Login</button></li>-->
+            </ul>
+            
+            <!-- Mobile Navigation -->
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="/"><i class="fas fa-home"></i> Home</a>
+                    <a href="/#about"><i class="fas fa-info-circle"></i> About</a>
+                    <a href="/#footer"><i class="fas fa-envelope"></i> Contact</a>
+                    <!--<a href="/auth/login"><i class="fas fa-sign-in-alt"></i> Login</a>-->
                 </div>
             </div>
-            <div class="form-group">
-                <button type="submit">Login</button>
-            </div>
-        </form>
+        </nav>
+    </header>
 
-        <p class="forgot-password"><a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a></p>
-        <p class="signup-link">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="login-container">
+            <h2>Login</h2>
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required>
+                        <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePassword()"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Login</button>
+                </div>
+            </form>
+
+            <p class="forgot-password"><a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a></p>
+            <p class="signup-link">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
+        </div>
     </div>
     
-    <!-- Flash messages container moved below login container -->
+    <!-- Flash messages container -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="flash-message-container">
@@ -204,5 +81,51 @@
             </div>
         </div>
     {% endif %}
+
+    <script>
+        // Flash message handling
+        document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(() => {
+                document.querySelectorAll('.flash-message').forEach(msg => {
+                    msg.style.transition = 'opacity 1s ease-out';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 1000);
+                });
+            }, 4000);
+        });
+
+        // Password toggle function
+        function togglePassword() {
+            var passwordField = document.getElementById("password");
+            var toggleIcon = document.getElementById("togglePassword");
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleIcon.classList.remove("fa-eye");
+                toggleIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordField.type = "password";
+                toggleIcon.classList.remove("fa-eye-slash");
+                toggleIcon.classList.add("fa-eye");
+            }
+        }
+
+        // Toggle dropdown when profile icon is clicked
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

@@ -4,159 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            position: relative;
-        }
-
-        .flash-message-container {
-            position: absolute;
-            bottom: 20px; /* Position the flash messages at the bottom */
-            left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
-            width: 100%;
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-        }
-
-        .flash-message {
-    padding: 10px 15px;
-    font-size: 14px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    animation: fadeInOut 4s ease-in-out forwards;
-    width: fit-content; /* or something like 80% */
-    max-width: 300px;    /* reduce if needed */
-    box-sizing: border-box;
-    margin-bottom: 10px;
-    text-align: center;
-    word-wrap: break-word;
-}
-
-      
-        .alert-success, .success { background-color: #2ecc71; color: #fff; }
-        .alert-error, .danger { background-color: #e74c3c; color: #fff; }
-        .alert-warning, .warning { background-color: #f39c12; color: #fff; }
-        .alert-info, .info { background-color: #3498db; color: #fff; }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(10px); }
-            15% { opacity: 1; transform: translateY(0); }
-            85% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(10px); }
-        }
-
-        .signup-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            z-index: 1;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .form-group input {
-            width: calc(100% - 22px);
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-
-        .form-group select {
-            width: 100%; /* Match the width of other inputs */
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-            box-sizing: border-box; /* Include padding and border in the element's width */
-            -webkit-appearance: none; /* Remove default styling in webkit browsers */
-            -moz-appearance: none; /* Remove default styling in Firefox */
-            appearance: none; /* Standard syntax */
-            background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            padding-right: 30px; /* Make room for the custom arrow */
-        }
-
-        .password-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-container input {
-            flex-grow: 1;
-            padding-right: 40px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #888;
-        }
-
-        .form-group button {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            background-color: #0a9396;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .form-group button:hover {
-            background-color: #005f73;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1em;
-        }
-
-        .login-link a {
-            text-decoration: none;
-            color: #0a9396;
-        }
-
-        h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
+    <!-- Header with Navigation - Fixed vertical alignment -->
+    <header>
+        <nav>
+            <div class="logo">Recruitment Platform</div>
+            
+            <!-- Desktop Navigation -->
+            <ul class="desktop-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/#footer">Contact</a></li>
+                <!--<li><button class="login-btn" onclick="window.location.href='/auth/login'">Login</button></li>-->
+            </ul>
+            
+            <!-- Mobile Navigation -->
+            <div class="profile-dropdown">
+                <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+                <div class="dropdown-content">
+                    <a href="/"><i class="fas fa-home"></i> Home</a>
+                    <a href="/#about"><i class="fas fa-info-circle"></i> About</a>
+                    <a href="/#footer"><i class="fas fa-envelope"></i> Contact</a>
+                    <!--<a href="/auth/login"><i class="fas fa-sign-in-alt"></i> Login</a>-->
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="signup-container">
+            <h2>Create an Account</h2>
+            <form action="{{ url_for('auth.signup') }}" method="POST">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required>
+                        <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePassword()"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required>
+                        <option value="user">Job Seeker</option>
+                        <option value="company">Company</option>
+                        <option value="college">College</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Sign Up</button>
+                </div>
+            </form>
+
+            <p class="login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+        </div>
+    </div>
+    
+    <!-- Flash messages container -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-message-container">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+    
+    <!-- Error message from context -->
+    {% if error %}
+        <div class="flash-message-container">
+            <div class="flash-message alert-error">
+                {{ error }}
+            </div>
+        </div>
+    {% endif %}
+
     <script>
+        // Flash message handling
         document.addEventListener("DOMContentLoaded", function () {
             setTimeout(() => {
                 document.querySelectorAll('.flash-message').forEach(msg => {
@@ -167,6 +105,7 @@
             }, 4000);
         });
 
+        // Password toggle function
         function togglePassword() {
             var passwordField = document.getElementById("password");
             var toggleIcon = document.getElementById("togglePassword");
@@ -180,58 +119,24 @@
                 toggleIcon.classList.add("fa-eye");
             }
         }
+
+        // Toggle dropdown when profile icon is clicked
+        document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = document.querySelector('.dropdown-content');
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (!dropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.dropdown-content');
+                if (dropdownContent.style.display === 'block') {
+                    dropdownContent.style.display = 'none';
+                }
+            }
+        });
     </script>
-    
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-message-container">
-            {% for category, message in messages %}
-                <div class="flash-message {{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% endwith %}
-    
-    <div class="signup-container">
-        <h2>Create an Account</h2>
-        <form action="{{ url_for('auth.signup') }}" method="POST">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="password-container">
-                    <input type="password" id="password" name="password" required>
-                    <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePassword()"></i>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select id="role" name="role" required>
-                    <option value="user">Job Seeker</option>
-                    <option value="company">Company</option>
-                    <option value="college">College</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="submit">Sign Up</button>
-            </div>
-        </form>
-
-        {% if error %}
-            <div class="flash-message alert-error">
-                {{ error }}
-            </div>
-        {% endif %}
-
-        <p class="login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
-    </div>
 </body>
 </html>
