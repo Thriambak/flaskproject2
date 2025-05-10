@@ -38,7 +38,7 @@ def user_dashboard():
     
     # Ensure that only regular users access this page
     if session.get('role') != 'user':
-        return redirect(url_for('admin.admin_dashboard'))
+        return redirect(url_for('auth.login'))
     
     # Get the User object using login_id from the Login table
     user = User.query.filter_by(login_id=login_id).first()
@@ -66,7 +66,7 @@ def user_dashboard():
     recent_notifications = Notification.query.filter_by(user_id=user_id, hidden=False)\
         .order_by(Notification.timestamp.desc()).limit(5).all()
     
-    return render_template('user_dashboard.html',
+    return render_template('/user/user_dashboard.html',
                            jobs=jobs,
                            upcoming_events=upcoming_events,
                            recent_notifications=recent_notifications,
@@ -252,7 +252,7 @@ def analytics():
     user_id = session.get('user_id')
     user_success_rate, application_trends, recent_activities, live_feed = get_chart_data_for_user(user_id)
     return render_template(
-        'analytics.html',
+        '/user/analytics.html',
         user_success_rate=user_success_rate,
         application_trends=application_trends,
         recent_activities=recent_activities,
@@ -281,7 +281,7 @@ def notifications():
     unread_count = Communication.query.filter_by(user_id=user.login_id, read_status=False, hidden=False).count()
 
     return render_template(
-        'notification.html',
+        '/user/notification.html',
         notifications=notifications,
         unread_count=unread_count
     )
@@ -405,7 +405,7 @@ def resume_certifications():
     certifications = Certification.query.filter_by(user_id=user_id).all()
 
     return render_template(
-        'resume_certifications.html',
+        '/user/resume_certifications.html',
         resume_certifications=resumes,
         certifications=certifications,
         user_success_rate=user_success_rate,
@@ -430,7 +430,7 @@ def application_history():
 
     # Render the template with the application data, chart data, recent activities, and live feed
     return render_template(
-        'applicationhistory.html',
+        '/user/applicationhistory.html',
         applications=applications,
         user_success_rate=user_success_rate,
         applications_overview=applications_overview,
@@ -480,9 +480,9 @@ def job_search():
             query = query.filter(Job.deadline <= deadline)
         
         jobs = query.order_by(Job.created_at.desc()).all()
-        return render_template('jobresults.html', jobs=jobs)
+        return render_template('/user/jobresults.html', jobs=jobs)
     else:
-        return render_template('jobsearch.html')
+        return render_template('/user/jobsearch.html')
 
 
 
@@ -552,7 +552,7 @@ def profile():
             flash(f"Error updating profile: {str(e)}", "error")
             return redirect(url_for('user.profile', edit='true'))
     
-    return render_template('profile.html',
+    return render_template('/user/profile.html',
                            user=user,
                            resumes=resumes,
                            certifications=certifications,
@@ -589,6 +589,33 @@ from datetime import datetime
 
 
 # Save Job Route
+@user_blueprint.route('/save_job1/<int:job_id>', methods=['POST'])
+
+def save_job1(job_id):
+    login_id = session.get('login_id')
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Check if job is already saved
+    existing_favorite = Favorite.query.filter_by(user_id=user.id, job_id=job_id).first()
+    if existing_favorite:
+        flash("Job already saved", "info")
+        return redirect(url_for('user.user_dashboard'))
+    
+    # Create new favorite entry
+    new_favorite = Favorite(user_id=user.id, job_id=job_id)
+    db.session.add(new_favorite)
+    db.session.commit()
+    
+    flash("Job saved to favorites", "success")
+    return redirect(url_for('user.job_search'))
+
 @user_blueprint.route('/save_job/<int:job_id>', methods=['POST'])
 
 def save_job(job_id):
@@ -616,7 +643,6 @@ def save_job(job_id):
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.user_dashboard'))
 
-
 # Favorites Page Route
 @user_blueprint.route('/favorites')
 
@@ -643,7 +669,7 @@ def favorites():
     # Extract the Job objects from the tuple results.
     favorites = [job for favorite, job in favorites_data]
     
-    return render_template('favorites.html', favorites=favorites)
+    return render_template('/user/favorites.html', favorites=favorites)
 @user_blueprint.route('/remove_favorite/<int:job_id>', methods=['POST'])
 def remove_favorite(job_id):
     login_id = session.get('login_id')

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Notifications</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  
+  <!-- Balloon.css -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/user/notification.css') }}">
+  
+</head>
+<body class="bg-gray-100">
+  <!-- Flash Messages -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="menu-toggle">
+      <i class="fas fa-bars"></i>
+    </div>
+    <div class="logo">
+      <i class="fas fa-globe"></i> Employee Recruitment
+    </div>
+    <div class="welcome-text">Welcome, {{ session['username'] }}!</div>
+    <div class="profile-settings">
+      <div class="profile-dropdown">
+        <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('user.profile') }}">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Main Layout -->
+  <main>
+    <!-- Navigation Sidebar -->
+    <div class="navigation" id="side-navigation">
+      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
+      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
+      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
+      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
+      <button onclick="window.location.href='/user/analytics'">
+        <i class="fas fa-chart-line"></i> Analytics
+      </button>
+    </div>
+    
+    <!-- Activity Section -->
+    <div class="activity" id="activityContent">
+      <h2>Notifications</h2>
+      
+      <!-- Search and Filters -->
+      <div class="search-filter-container">
+        <input type="text" id="search" onkeyup="filterAndSearchNotifications()" placeholder="Search notifications..." class="search-bar" />
+        <div class="filters">
+          <button id="filterUnread" class="unread" onclick="setFilter('unread')">Unread</button>
+          <button id="filterRead" class="read" onclick="setFilter('read')">Read</button>
+          <button id="filterAll" class="bg-gray-300 text-gray-800" onclick="setFilter('all')">All</button>
+        </div>
+      </div>
+      
+      <!-- Notifications List -->
+      <div id="notifications-list">
+        {% if notifications %}
+          {% for notification in notifications %}
+          <div class="notification-item {% if not notification.read_status %}unread{% else %}read{% endif %} animate__animated animate__fadeInUp">
+            <div class="flex items-start">
+              <i class="notification-icon fas fa-info-circle"></i>
+              <div class="ml-4 flex-1">
+                <p class="notification-message">{{ notification.message }}</p>
+                <p class="notification-timestamp">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
+              </div>
+              <div class="action-buttons flex gap-2">
+                {% if not notification.read_status %}
+                <form action="{{ url_for('user.mark_single_notification_read', notification_id=notification.id) }}" method="POST">
+                  <button type="submit" class="mark-read"><i class="fas fa-check"></i></button>
+                </form>
+                
+                
+              {% endif %}
+              
+              <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
+                <button type="submit" class="delete"><i class="fas fa-trash-alt"></i></button>
+              </form>
+              
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center text-gray-600 mt-8">
+            <i class="fas fa-bell-slash text-5xl text-gray-300"></i>
+            <p class="mt-4 font-semibold">You have no notifications at the moment.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+  
+  <!-- JavaScript for Search, Filter, and Dropdown -->
+  <script>
+    // Global filter state: 'all', 'read', or 'unread'
+    let currentFilter = 'all';
+
+    // Set the filter and update button styles
+    function setFilter(filterType) {
+      currentFilter = filterType;
+      document.getElementById('filterUnread').classList.toggle('bg-gray-300', filterType !== 'unread');
+      document.getElementById('filterUnread').classList.toggle('bg-green-500', filterType === 'unread');
+      document.getElementById('filterRead').classList.toggle('bg-gray-300', filterType !== 'read');
+      document.getElementById('filterRead').classList.toggle('bg-gray-800', filterType === 'read');
+      document.getElementById('filterAll').classList.toggle('bg-gray-300', filterType !== 'all');
+      document.getElementById('filterAll').classList.toggle('bg-blue-500', filterType === 'all');
+      
+      filterAndSearchNotifications();
+    }
+    
+    // Combine search and filter criteria
+    function filterAndSearchNotifications() {
+      const searchInput = document.getElementById("search").value.toLowerCase();
+      const notifications = document.querySelectorAll("#notifications-list .notification-item");
+      
+      notifications.forEach(notification => {
+        const message = notification.querySelector(".notification-message").innerText.toLowerCase();
+        const matchesSearch = message.includes(searchInput);
+        
+        let matchesFilter = true;
+        if (currentFilter === 'read') {
+          matchesFilter = notification.classList.contains("read");
+        } else if (currentFilter === 'unread') {
+          matchesFilter = notification.classList.contains("unread");
+        }
+        
+        notification.style.display = (matchesSearch && matchesFilter) ? "block" : "none";
+      });
+    }
+    
+    // Toggle dropdown for profile menu
+    document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
+      event.stopPropagation();
+      const dropdownContent = document.querySelector('.dropdown-content');
+      dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    // Close dropdown if clicking outside
+    window.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (!dropdown.contains(event.target)) {
+        document.querySelector('.dropdown-content').style.display = 'none';
+      }
+    });
+    
+    // Menu toggle function for mobile
+    document.querySelector('.menu-toggle').addEventListener('click', function() {
+      document.getElementById('side-navigation').classList.toggle('active');
+      document.querySelector('.menu-toggle').classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const sideNav = document.getElementById('side-navigation');
+      const menuToggle = document.querySelector('.menu-toggle');
+      
+      if (sideNav.classList.contains('active') && 
+          !sideNav.contains(event.target) && 
+          !menuToggle.contains(event.target)) {
+        sideNav.classList.remove('active');
+        menuToggle.classList.remove('active');
+      }
+    });
+    
+    // Flash message auto-dismiss
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        // Remove the "show" class to trigger any CSS fade-out if available
+        message.classList.remove('show');
+        // Optionally remove the element from the DOM after fade-out (500ms delay)
+        setTimeout(() => {
+          message.remove();
+        }, 500);
+      });
+    }, 1200);
+  </script>
+</body>
+</html>
