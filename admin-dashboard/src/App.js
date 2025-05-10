@@ -7,7 +7,6 @@ import {
   TextField,
   SearchInput,
   TopToolbar,
-  FunctionField,
   ExportButton,
   useListContext,
   BooleanField,
@@ -32,11 +31,7 @@ import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
-import BadgeIcon from '@mui/icons-material/Badge';
-import CategoryIcon from '@mui/icons-material/Category';
-import EventIcon from '@mui/icons-material/Event';
-import FactoryIcon from '@mui/icons-material/Factory';
-import LockIcon from '@mui/icons-material/Lock';
+
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 const customDataProvider = {
@@ -354,15 +349,14 @@ const FilterDropdown = () => {
             case 'companies':
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
-                    { label: "Email", value: "email:", icon: <EmailIcon /> },
-		    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+                    { label: "Email", value: "email:", icon: <EmailIcon /> }
                 ];
             case 'jobs':
                 return [
                     { label: "Title", value: "title:", icon: <WorkIcon /> },
-                    { label: "Company", value: "created_by:", icon: <FactoryIcon /> },
-                    { label: "Date Posted", value: "created_at:", icon: <EventIcon /> },
-                    { label: "Status", value: "status:", icon: <LockIcon /> }
+                    { label: "Job Type", value: "job_type:", icon: <WorkIcon /> },
+                    { label: "Location", value: "location:", icon: <LocationOnIcon /> },
+                    { label: "Status", value: "status:", icon: <WorkIcon /> }
                 ];
             default:
                 return [];
@@ -492,11 +486,13 @@ const StyledDatagrid = ({ children, ...props }) => (
     </Datagrid>
 );
 
+// Ban Toggle component for both users and companies
 const BanToggle = ({ record, resource }) => {
     const [update, { isLoading }] = useUpdate();
     const notify = useNotify();
     const theme = useTheme();
     
+    // Default to false if 'is_banned' field doesn't exist
     const [isBanned, setIsBanned] = useState(record.is_banned || false);
     
     const handleToggle = (event) => {
@@ -509,12 +505,14 @@ const BanToggle = ({ record, resource }) => {
             {
                 onSuccess: () => {
                     notify(
-                        newValue ? 'User has been banned' : 'User has been unbanned',
+                        newValue ? 
+                        `${resource === 'users' ? 'User' : 'Company'} has been banned` : 
+                        `${resource === 'users' ? 'User' : 'Company'} has been unbanned`,
                         { type: 'success' }
                     );
                 },
                 onError: (error) => {
-                    setIsBanned(!newValue);
+                    setIsBanned(!newValue); // Revert UI on error
                     notify(
                         `Error: Couldn't update ban status - ${error.message}`,
                         { type: 'error' }
@@ -566,15 +564,24 @@ const UserList = (props) => (
         ]} 
         {...props}
     >
-        <Datagrid>
+        <StyledDatagrid>
             <TextField source="id" />
             <TextField source="name" />
             <TextField source="email" />
-            <FunctionField
+            <BooleanField 
+                source="is_banned" 
                 label="Ban Status"
-                render={(record) => <BanToggle record={record} resource="users" />}
+                TrueIcon={() => <BlockIcon color="error" />}
+                FalseIcon={() => null}
+                sx={{ 
+                    '& .RaBooleanField-true': { color: 'error.main' },
+                }}
             />
-        </Datagrid>
+            {/* Custom ban toggle column */}
+            {(record) => (
+                <BanToggle record={record} resource="users" />
+            )}
+        </StyledDatagrid>
     </List>
 );
 
@@ -591,7 +598,7 @@ const CompanyList = (props) => (
         ]}
         {...props}
     >
-        <Datagrid>
+        <StyledDatagrid>
             <TextField source="id" />
             <TextField source="company_name" />
             <TextField source="email" />
@@ -604,13 +611,14 @@ const CompanyList = (props) => (
                     '& .RaBooleanField-true': { color: 'error.main' },
                 }}
             />
-            <FunctionField
-                label="Ban Toggle"
-                render={(record) => <BanToggle record={record} resource="companies" />}
-            />
-        </Datagrid>
+            {/* Custom ban toggle column */}
+            {(record) => (
+                <BanToggle record={record} resource="companies" />
+            )}
+        </StyledDatagrid>
     </List>
 );
+
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -624,7 +632,8 @@ const JobList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>  <TextField source="id" />
+        <StyledDatagrid>
+            <TextField source="id" />
             <TextField source="title" />
             <TextField source="description" />
             <TextField source="job_type" />
@@ -637,7 +646,7 @@ const JobList = (props) => (
     </List>
 );
 
-{/* const Reports = () => (
+const Reports = () => (
     <Box sx={{ 
         height: '60vh', 
         display: 'flex', 
@@ -654,14 +663,14 @@ const JobList = (props) => (
             We're working on creating meaningful analytics reports for you.
         </Typography>
     </Box>
-); */}
+);
 
 const App = () => (
     <Admin dataProvider={customDataProvider} dashboard={Dashboard}>
         <Resource name="users" list={UserList} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
-        {/* <Resource name="reports" list={Reports} /> */}
+        <Resource name="reports" list={Reports} />
     </Admin>
 );
 
