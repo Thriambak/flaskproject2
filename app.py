@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, make_response, redirect, url_for
 from flask_cors import CORS
 from flask_login import LoginManager
 from config import Config
-from models import db, User, Company, Job, JobApplication
+from models import db, User, Company, Job, JobApplication, seed_admin_user
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
@@ -14,7 +14,7 @@ from sqlalchemy import or_
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # ✅ Enable CORS
+CORS(app,supports_credentials=True)  # ✅ Enable CORS
 
 app.secret_key = 'your_secret_key'
 
@@ -43,6 +43,13 @@ app.register_blueprint(admin_blueprint, url_prefix='/admin')
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+with app.app_context():
+    db.create_all()
+    seed_admin_user(app)
+
+
+
 
 @app.route('/')
 def index():
@@ -424,3 +431,6 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
+
+

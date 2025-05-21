@@ -1,14 +1,18 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,jsonify, current_app
 from config import Config
 from models import Admin, College, db, User, Job, Login, Company
 import re
 import random
 import string
+import datetime
 from extensions import mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+from functools import wraps
+import jwt
 auth_blueprint = Blueprint('auth', __name__)
+
 
 import re
 import os
@@ -396,3 +400,58 @@ def reset_password():
         flash("Error resetting password. Please try again.", "danger")
 
     return render_template('reset_password.html')
+
+@auth_blueprint.route('/admin/login', methods=['POST'])
+def admin_login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'message': 'Username and password required'}), 400
+    
+    # Hardcoded admin (replace with your credentials)
+    if username == "admin" and password == "admin123":
+        # For database auth:
+        # admin = Admin.query.filter_by(username=username).first()
+        # if not admin or not admin.check_password(password):
+        #     return jsonify({'message': 'Invalid credentials'}), 401
+        
+        token = jwt.encode({
+            'sub': 1,  # admin ID
+            'username': username,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+            'role': 'admin'
+        }, current_app.config['SECRET_KEY'], algorithm='HS256')
+        
+        return jsonify({
+            'token': token,
+            'username': username,
+            'id': 1
+        }), 200
+    return jsonify({'message': 'Invalid credentials'}), 401
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(" ")[1]
+        
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+        
+        try:
+            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            if data.get('role') != 'admin':
+                return jsonify({'message': 'Admin access required!'}), 403
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Invalid token!'}), 401
+        
+        return f(*args, **kwargs)
+    
+    return decorated

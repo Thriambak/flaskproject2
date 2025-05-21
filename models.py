@@ -282,3 +282,34 @@ class Favorite(db.Model):
 
     user = db.relationship('User', backref=db.backref('favorites', lazy=True))
     job = db.relationship('Job', backref=db.backref('favorited_by', lazy=True))
+
+def seed_admin_user(app):
+    with app.app_context():
+        from models import db, Login, Admin
+
+        # Check if admin already exists
+        existing = Login.query.filter_by(username='admin@admin.com').first()
+        if existing:
+            print("Admin already exists.")
+            return
+
+        # Create Login entry
+        admin_login = Login(
+            username='admin@admin.com',
+            role='admin'
+        )
+        admin_login.set_password('admin')  # Uses your model's secure password setter
+        db.session.add(admin_login)
+        db.session.commit()
+
+        # Create Admin entry
+        admin_user = Admin(
+            login_id=admin_login.id,
+            name='Default Admin',
+            email='admin@admin.com'
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+
+        print("Default admin created.")
+

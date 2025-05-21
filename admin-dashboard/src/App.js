@@ -37,6 +37,10 @@ import CategoryIcon from '@mui/icons-material/Category';
 import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
+
+// Import the auth provider
+import authProvider from './auth/authProvider';
+
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 const customDataProvider = {
@@ -595,17 +599,8 @@ const CompanyList = (props) => (
             <TextField source="id" />
             <TextField source="company_name" />
             <TextField source="email" />
-            <BooleanField 
-                source="is_banned" 
-                label="Ban Status"
-                TrueIcon={() => <BlockIcon color="error" />}
-                FalseIcon={() => null}
-                sx={{ 
-                    '& .RaBooleanField-true': { color: 'error.main' },
-                }}
-            />
             <FunctionField
-                label="Ban Toggle"
+                label="Ban Status"
                 render={(record) => <BanToggle record={record} resource="companies" />}
             />
         </Datagrid>
