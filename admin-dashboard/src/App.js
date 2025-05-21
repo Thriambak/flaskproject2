@@ -632,31 +632,11 @@ const JobList = (props) => (
     </List>
 );
 
-const Reports = () => (
-    <Box sx={{ 
-        height: '60vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        flexDirection: 'column',
-        textAlign: 'center'
-    }}>
-        <AssignmentIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
-        <Typography variant="h4" color="textSecondary">
-            Reports Section Coming Soon!
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            We're working on creating meaningful analytics reports for you.
-        </Typography>
-    </Box>
-);
-
 const App = () => (
     <Admin dataProvider={customDataProvider} dashboard={Dashboard}>
         <Resource name="users" list={UserList} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
-        <Resource name="reports" list={Reports} />
     </Admin>
 );
 
