@@ -13,6 +13,19 @@ body {
     margin: 0;
     padding: 0;
 }
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+}
+
 
 /* Header and Navigation Styles - Fixed vertical alignment */
 header {

@@ -6,6 +6,8 @@
     <title>Sign Up</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 </head>
 <body>
     <!-- Header with Navigation - Fixed vertical alignment -->
@@ -50,10 +52,20 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div class="password-container">
-                        <input type="password" id="password" name="password" required>
-                        <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePassword()"></i>
+                        <input type="password" id="password" name="password" required title="Password must be at least 8 characters.">
+                        <span class="material-icons password-toggle" id="togglePassword" onclick="togglePassword()">visibility</span>
                     </div>
                 </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <div class="password-container">
+                        <input type="password" id="confirm_password" name="confirm_password" required title="Please re-enter your password.">
+                        <span class="material-icons password-toggle" id="toggleConfirmPassword" onclick="toggleConfirmPassword()">visibility</span>
+                    </div>
+                </div>
+                
+                
                 <div class="form-group">
                     <label for="role">Role</label>
                     <select id="role" name="role" required>
@@ -107,18 +119,21 @@
 
         // Password toggle function
         function togglePassword() {
-            var passwordField = document.getElementById("password");
-            var toggleIcon = document.getElementById("togglePassword");
-            if (passwordField.type === "password") {
-                passwordField.type = "text";
-                toggleIcon.classList.remove("fa-eye");
-                toggleIcon.classList.add("fa-eye-slash");
-            } else {
-                passwordField.type = "password";
-                toggleIcon.classList.remove("fa-eye-slash");
-                toggleIcon.classList.add("fa-eye");
-            }
-        }
+    const field = document.getElementById("password");
+    const icon = document.getElementById("togglePassword");
+    const isVisible = field.type === "text";
+    field.type = isVisible ? "password" : "text";
+    icon.textContent = isVisible ? "visibility" : "visibility_off";
+}
+
+function toggleConfirmPassword() {
+    const field = document.getElementById("confirm_password");
+    const icon = document.getElementById("toggleConfirmPassword");
+    const isVisible = field.type === "text";
+    field.type = isVisible ? "password" : "text";
+    icon.textContent = isVisible ? "visibility" : "visibility_off";
+}
+
 
         // Toggle dropdown when profile icon is clicked
         document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {

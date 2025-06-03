@@ -19,9 +19,14 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm_password = request.form.get('confirm_password')
         role = request.form.get('role', 'user')  # Default to 'user'
         email = request.form['email']
-
+        # Confirm password check
+        if password != confirm_password:
+            flash('Passwords do not match. Please try again.', 'danger')
+            return redirect(url_for('auth.signup'))
+        
         # Username validation
         # Allowed: single word (alphanumeric), email, or 10-digit phone number
         username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
@@ -45,7 +50,7 @@ def signup():
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
             return redirect(url_for('auth.signup'))
-
+       
         # Email validation
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
