@@ -256,8 +256,13 @@ def login():
             if not college:
                 return render_template('login.html', error='College details not found.')
             return redirect(url_for('college.college_dashboard'))
+    resp = make_response(render_template('login.html'))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+    
 
-    return render_template('login.html')
 
 
 # ith login function, ithil when logged in it checks the login table , and if present, it takes the role and goes to corresponding page,
