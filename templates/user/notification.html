@@ -93,6 +93,17 @@
             <div class="flex items-start">
               <i class="notification-icon fas fa-info-circle"></i>
               <div class="ml-4 flex-1">
+                <!-- Company Name Display -->
+                <div class="notification-company-name mb-1">
+                  <i class="fas fa-building text-blue-500 mr-1"></i>
+                  <span class="text-sm font-semibold text-blue-600">
+                    {% if notification.company %}
+                      {{ notification.company.company_name }}
+                    {% else %}
+                      System Notification
+                    {% endif %}
+                  </span>
+                </div>
                 <p class="notification-message">{{ notification.message }}</p>
                 <p class="notification-timestamp">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
               </div>
@@ -101,14 +112,11 @@
                 <form action="{{ url_for('user.mark_single_notification_read', notification_id=notification.id) }}" method="POST">
                   <button type="submit" class="mark-read"><i class="fas fa-check"></i></button>
                 </form>
+                {% endif %}
                 
-                
-              {% endif %}
-              
-              <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
-                <button type="submit" class="delete"><i class="fas fa-trash-alt"></i></button>
-              </form>
-              
+                <form action="{{ url_for('user.delete_notification', notification_id=notification.id) }}" method="POST">
+                  <button type="submit" class="delete"><i class="fas fa-trash-alt"></i></button>
+                </form>
               </div>
             </div>
           </div>
@@ -141,14 +149,15 @@
       filterAndSearchNotifications();
     }
     
-    // Combine search and filter criteria
+    // Combine search and filter criteria - Updated to include company name in search
     function filterAndSearchNotifications() {
       const searchInput = document.getElementById("search").value.toLowerCase();
       const notifications = document.querySelectorAll("#notifications-list .notification-item");
       
       notifications.forEach(notification => {
         const message = notification.querySelector(".notification-message").innerText.toLowerCase();
-        const matchesSearch = message.includes(searchInput);
+        const companyName = notification.querySelector(".notification-company-name span").innerText.toLowerCase();
+        const matchesSearch = message.includes(searchInput) || companyName.includes(searchInput);
         
         let matchesFilter = true;
         if (currentFilter === 'read') {

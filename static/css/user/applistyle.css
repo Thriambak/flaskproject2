@@ -1,5 +1,4 @@
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
       background: #f1f3f6;
@@ -614,4 +613,3 @@
       .modal-body { padding: 15px; }
       .navigation { width: 250px; }
     }
-  

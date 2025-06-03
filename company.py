@@ -203,15 +203,15 @@ def company_post_new_job():
         elif not deadline_str:
             message = "Application deadline is required!"
             message_type = "error"
-        elif form_url and not is_valid_url(form_url):
-            message = "Please enter a valid URL for the questionnaire form!"
-            message_type = "error"
+        #elif form_url and not is_valid_url(form_url):
+        #    message = "Please enter a valid URL for the questionnaire form!"
+        #    message_type = "error"
         else:
             try:
                 # Convert string values to appropriate types
                 exp = int(exp_str)
                 total_vacancy = int(vacancy_str)
-                salary = int(salary_str) if salary_str else None
+                # salary = int(salary_str) if salary_str else None
                 
                 # Additional validations
                 if exp < 0 or exp > 50:
@@ -325,19 +325,6 @@ def company_post_new_job():
         JobApplication.status == 'Rejected'
     ).scalar() or 0
 
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id)).filter(
-        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
-        JobApplication.status == 'Pending'
-    ).scalar() or 0
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id)).filter(
-        JobApplication.job_id.in_([j.job_id for j in jobs]) if jobs else False, 
-        JobApplication.status == 'Interviewed'
-    ).scalar() or 0
-
-    # You'd need to define live_feed_notifications based on your app's requirements
-    live_feed_notifications = []  # Replace with appropriate query
-
     # Get today's date in 'YYYY-MM-DD' format
     current_date = date.today().strftime('%Y-%m-%d')
     profile = Company.query.filter_by(login_id=user_id).first()
@@ -349,9 +336,6 @@ def company_post_new_job():
                            form_data=form_data,  # Pass form data for populating fields
                            total_successful=total_successful, 
                            total_unsuccessful=total_unsuccessful,
-                           pending_applications_count=pending_applications_count, 
-                           live_feed_notifications=live_feed_notifications,
-                           interviewed_applications_count=interviewed_applications_count,
                            message=message,
                            message_type=message_type)
 

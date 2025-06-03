@@ -93,30 +93,51 @@
             <div class="job-posting job-item" data-visible="true">
               <div class="job-header">
                 <h3>{{ job.title }}</h3>
-                <div class="job-type">
-                <i class="fas fa-building"></i> 
-                {% if job.user and job.user.company %}
-                  {% if job.user.company.website %}
-                    <a href="{{ job.user.company.website }}" style="color: #007bff;">{{ job.user.company.company_name }}</a>
+
+                <div class="job-type mt-2 flex items-center gap-2">
+                  <strong class="text-gray-700">Company:</strong>
+                  {% if job.user and job.user.company %}
+                    {% if job.user.company.website %}
+                      <a href="{{ job.user.company.website }}" 
+                        class="text-blue-600 hover:underline font-semibold transition duration-200 ease-in-out">
+                        {{ job.user.company.company_name }}
+                      </a>
+                    {% else %}
+                      <span class="font-semibold text-gray-800">{{ job.user.company.company_name }}</span>
+                    {% endif %}
                   {% else %}
-                    {{ job.user.company.company_name }}
+                    <span class="text-red-500 font-semibold">Unknown</span>
                   {% endif %}
-                {% else %}
-                  Unknown
-                {% endif %}
                 </div>
+
               </div>
               <p>{{ job.description }}</p>
-              <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ job.location }}</p>
-              <p><i class="fas fa-wallet"></i> <strong>Salary:</strong> ₹{{ job.salary }}</p>
-              <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
-              <p><i class="fas fa-cogs"></i> <strong>Skills Required:</strong> {{ job.skills }}</p>
-              <p><i class="fas fa-briefcase"></i> <strong>Years of Experience:</strong> {{ job.years_of_exp }}</p>
-              <p>
-                 <i class="fas fa-briefcase"></i> <strong>type:</strong> {{ job.job_type }}
-                
-              </p>
-              <!-- Job buttons container for better alignment -->
+              
+              {% if job.location %}
+                <p><i class="fas fa-map-marker-alt" style="padding-left: 0.4%;"></i> <strong style="padding-left: 0.6%;">Location:</strong> {{ job.location }}</p>
+              {% endif %}
+
+              {% if job.salary %}
+                <p><i class="fas fa-wallet" style="padding-left: 0.25%;"></i> <strong style="padding-left: 0.2%;">Salary:</strong> ₹{{ job.salary }}</p>
+              {% endif %}
+              
+              {% if job.skills %}
+                <p><i class="fas fa-cogs"></i> <strong>Skills Required:</strong> {{ job.skills }}</p>
+              {% endif %}
+              
+              {% if job.years_of_exp %}
+                <p><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <strong style="padding-left: 0.4%;">Years of Experience:</strong> {{ job.years_of_exp }}</p>
+              {% endif %}
+              
+              {% if job.job_type %}
+                <p><i class="fas fa-briefcase" style="padding-left: 0.25%;"></i> <strong style="padding-left: 0.3%;">Job Type:</strong> {{ job.job_type }}</p>
+              {% endif %}
+
+              {% if job.deadline %}
+                <p><i class="fas fa-calendar-alt" style="padding-left: 0.3%;"></i> <strong style="padding-left: 0.5%;">Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+              {% endif %}
+              
+                <!-- Job buttons container for better alignment -->
               <div class="job-buttons">
                 <!-- Apply Now Button -->
                 <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
