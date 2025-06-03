@@ -529,7 +529,7 @@ def profile():
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)
                     db.session.add(new_mapping)
                 if coupon.college:
-                    user.college_name = f"Connected to {coupon.college.college_name}"
+                    user.college_name = f"{coupon.college.college_name}"
                 else:
                     user.college_name = manual_college or user.college_name
             else:
@@ -693,3 +693,94 @@ def remove_favorite(job_id):
     
     flash("Job removed from favorites", "success")
     return redirect(url_for('user.favorites'))
+@user_blueprint.route('/delete_resume/<int:resume_id>', methods=['POST'])
+def delete_resume(resume_id):
+    # Check if user is logged in
+    if 'username' not in session:
+        flash('Please log in to access this page.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    try:
+        username = session['username']
+        
+        # Get the login record first
+        login = Login.query.filter_by(username=username).first()
+        if not login:
+            flash('Login not found!', 'error')
+            return redirect(url_for('user.resume_certifications'))
+        
+        # Get the user record using the login_id
+        user = User.query.filter_by(login_id=login.id).first()
+        if not user:
+            flash('User not found!', 'error')
+            return redirect(url_for('user.resume_certifications'))
+        
+        # Find the resume for this specific user
+        resume = ResumeCertification.query.filter_by(
+            id=resume_id, 
+            user_id=user.id
+        ).first()
+        
+        if resume:
+            # Delete the file from filesystem
+            import os
+            if resume.resume_path and os.path.exists(resume.resume_path):
+                os.remove(resume.resume_path)
+            
+            # Delete the record from database
+            db.session.delete(resume)
+            db.session.commit()
+            
+            flash('Resume deleted successfully!', 'success')
+        else:
+            flash('Resume not found or you do not have permission to delete it!', 'error')
+            
+    except Exception as e:
+        print(f"Error deleting resume: {str(e)}")
+        flash('Error deleting resume!', 'error')
+        
+    return redirect(url_for('user.resume_certifications'))
+
+@user_blueprint.route('/delete_certification/<int:certification_id>', methods=['POST'])
+def delete_certification(certification_id):
+    # Check if user is logged in
+    if 'username' not in session:
+        flash('Please log in to access this page.', 'error')
+        return redirect(url_for('auth.login'))
+   
+    try:
+        username = session['username']
+       
+        # Get the login record first
+        login = Login.query.filter_by(username=username).first()
+        if not login:
+            flash('Login not found!', 'error')
+            return redirect(url_for('user.resume_certifications'))
+       
+        # Get the user record using the login_id
+        user = User.query.filter_by(login_id=login.id).first()
+        if not user:
+            flash('User not found!', 'error')
+            return redirect(url_for('user.resume_certifications'))
+       
+        # Find the certification for this specific user
+        # Assuming Certification model has user_id field
+        certification = Certification.query.filter_by(
+            id=certification_id,
+            user_id=user.id
+        ).first()
+       
+        if certification:
+            # Delete the certification record from database
+            db.session.delete(certification)
+            db.session.commit()
+           
+            flash('Skill/Certification deleted successfully!', 'success')
+        else:
+            flash('Skill/Certification not found or you do not have permission to delete it!', 'error')
+           
+    except Exception as e:
+        print(f"Error deleting certification: {str(e)}")
+        flash('Error deleting skill/certification!', 'error')
+       
+    return redirect(url_for('user.resume_certifications'))

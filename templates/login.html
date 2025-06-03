@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+<script>
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || (window.performance && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
+            // Remove flash/error messages when navigating back or forward
+            document.querySelectorAll('.flash-message').forEach(function(el) {
+                el.remove();
+            });
+        }
+    });
+    </script>
+    
 <body>
     <!-- Header with Navigation - Fixed vertical alignment -->
     <header>
