@@ -340,6 +340,7 @@ function fetchApplicationDetails(applicationId) {
       const jobTitle = application.querySelector('.job-title').textContent;
       const company = application.querySelector('.company-name').textContent.trim();
       const status = application.dataset.status;
+      const last_updated = application.dataset.status_updated_at;
       
       // Get the date from the application item
       const dateApplied = application.querySelector('.date-applied').textContent.replace('calendar-alt', '').trim();
@@ -348,7 +349,7 @@ function fetchApplicationDetails(applicationId) {
       document.getElementById('modalJobTitle').textContent = jobTitle;
       document.getElementById('modalCompany').textContent = company;
       document.getElementById('modalDateApplied').textContent = dateApplied;
-      document.getElementById('modalDateStatusChanged').textContent = simulateLastUpdated();
+      document.getElementById('modalDateStatusChanged').textContent = last_updated; //simulateLastUpdated()
       
       // Update status with correct styling
       const modalStatus = document.getElementById('modalStatus');

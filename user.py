@@ -93,6 +93,10 @@ def apply_for_job(job_id):
         flash("Job not found.", 'error')
         return redirect(url_for('user.user_dashboard'))
     
+    if job.status=='closed':
+        flash("Applications have been closed for this job.", 'error')
+        return redirect(url_for('user.user_dashboard'))
+
     # Fetch the user's resume from the ResumeCertification table
     resume_certification = ResumeCertification.query.filter_by(user_id=user.id).first()
     
@@ -429,8 +433,7 @@ def application_history():
     user_success_rate, applications_overview, recent_activities, live_feed = get_chart_data_for_user(user_id)
 
     # Render the template with the application data, chart data, recent activities, and live feed
-    return render_template(
-        '/user/applicationhistory.html',
+    return render_template('/user/applicationhistory.html',
         applications=applications,
         user_success_rate=user_success_rate,
         applications_overview=applications_overview,
