@@ -39,7 +39,7 @@ import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 
 // Import the auth provider
-import authProvider from './auth/authProvider';
+//import authProvider from './auth/authProvider';
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
