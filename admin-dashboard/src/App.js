@@ -39,7 +39,7 @@ import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 
 // Import the auth provider
-import authProvider from './auth/authProvider';
+// import authProvider from './auth/authProvider';
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
@@ -172,7 +172,7 @@ const customDataProvider = {
     
      deleteMany: async (resource, params) => {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/${resource}/bulk`, {
+            const response = await fetch(`${API_BASE_URL}/${resource}/bulk`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -434,7 +434,7 @@ const AddCompanyButton = () => {
     const theme = useTheme();
     
     const handleAddCompany = () => {
-        window.location.href = 'http://localhost:5000/company/company_profile';
+        window.location.href = `${API_BASE_URL}/company/company_profile`;
     };
     
     return (
