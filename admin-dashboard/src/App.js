@@ -13,9 +13,14 @@ import {
   BooleanField,
   BooleanInput,
   useUpdate,
-  useNotify
+  useNotify,
+  Login,
+  LoginForm,
+  Layout,
+  AppBar,
+  UserMenu
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel } from "@mui/material";
+import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper } from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -37,27 +42,185 @@ import CategoryIcon from '@mui/icons-material/Category';
 import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
-
-// Import the auth provider
-// import authProvider from './auth/authProvider';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
+
+// Authentication Provider
+const authProvider = {
+    login: ({ username, password }) => {
+        if (username === 'admin' && password === 'admin') {
+            // Store authentication status in memory (not localStorage due to artifact restrictions)
+            window.isAuthenticated = true;
+            return Promise.resolve();
+        }
+        return Promise.reject(new Error('Invalid credentials'));
+    },
+    logout: () => {
+        window.isAuthenticated = false;
+        return Promise.resolve();
+    },
+    checkError: ({ status }) => {
+        if (status === 401 || status === 403) {
+            window.isAuthenticated = false;
+            return Promise.reject();
+        }
+        return Promise.resolve();
+    },
+    checkAuth: () => {
+        return window.isAuthenticated ? Promise.resolve() : Promise.reject();
+    },
+    getPermissions: () => Promise.resolve(),
+};
+
+// Custom User Menu with proper positioning
+const CustomUserMenu = () => (
+    <UserMenu 
+        sx={{
+            '& .MuiPopover-paper': {
+                marginTop: '8px',
+                transform: 'translateX(-50%) !important',
+                left: '50% !important',
+                right: 'auto !important',
+                minWidth: '120px',
+                maxWidth: '200px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                borderRadius: '8px'
+            }
+        }}
+    />
+);
+
+// Custom AppBar with fixed positioning
+const CustomAppBar = () => (
+    <AppBar 
+        userMenu={<CustomUserMenu />}
+        sx={{
+            '& .RaAppBar-toolbar': {
+                paddingRight: '16px'
+            },
+            '& .RaAppBar-userMenu': {
+                '& .MuiButtonBase-root': {
+                    borderRadius: '50%',
+                    padding: '8px'
+                }
+            }
+        }}
+    />
+);
+
+// Custom Layout with fixed AppBar
+const CustomLayout = (props) => (
+    <Layout {...props} appBar={CustomAppBar} />
+);
+
+// Custom Login Page Component
+const CustomLoginPage = () => {
+    const theme = useTheme();
+    
+    return (
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 2
+            }}
+        >
+            <Paper
+                elevation={10}
+                sx={{
+                    padding: 4,
+                    borderRadius: 4,
+                    maxWidth: 400,
+                    width: '100%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)'
+                }}
+            >
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <AdminPanelSettingsIcon 
+                        sx={{ 
+                            fontSize: 60, 
+                            color: theme.palette.primary.main,
+                            mb: 2
+                        }} 
+                    />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                        Admin Portal
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Sign in to access your dashboard
+                    </Typography>
+                </Box>
+                
+                <LoginForm 
+                    sx={{ justifyItems: 'center', 
+                        '& .MuiTextField-root': {
+                            mb: 1,
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            }
+                        },
+                        '& .MuiButton-root': {
+                            borderRadius: 2,
+                            py: 1.5,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            fontWeight: 600
+                        }
+                    }}
+                />
+                
+                {/* <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Default credentials:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        Username: admin
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        Password: admin
+                    </Typography>
+                </Box> */}
+            </Paper>
+        </Box>
+    );
+};
 
 const customDataProvider = {
     getList: async (resource, params) => {
         try {
+            // Extract pagination parameters
+            const { page, perPage } = params.pagination;
+            const { field, order } = params.sort;
+            
+            // Build URL with pagination and sorting parameters
             let url = `${API_BASE_URL}/${resource}`;
+            const queryParams = new URLSearchParams();
+            
+            // Add pagination parameters
+            queryParams.append('page', page.toString());
+            queryParams.append('per_page', perPage.toString());
+            
+            // Add sorting parameters if available
+            if (field && order) {
+                queryParams.append('sort', field);
+                queryParams.append('order', order.toLowerCase());
+            }
+            
+            // Add filter parameters
             if (params.filter && Object.keys(params.filter).length > 0) {
-                const queryParams = new URLSearchParams();
                 Object.entries(params.filter).forEach(([key, value]) => {
                     if (value) {
                         queryParams.append(key, value);
                     }
                 });
-                if (queryParams.toString()) {
-                    url += `?${queryParams.toString()}`;
-                }
             }
+            
+            url += `?${queryParams.toString()}`;
             
             const response = await fetch(url, {
                 method: "GET",
@@ -72,12 +235,33 @@ const customDataProvider = {
             }
 
             const json = await response.json();
-            const formattedData = json.map(item => ({
+            
+            // Handle different response formats from your backend
+            let data, total;
+            
+            if (Array.isArray(json)) {
+                // If backend returns array directly (current format)
+                // Apply client-side pagination as fallback
+                const start = (page - 1) * perPage;
+                const end = start + perPage;
+                data = json.slice(start, end);
+                total = json.length;
+            } else if (json.data && json.total !== undefined) {
+                // If backend returns paginated format
+                data = json.data;
+                total = json.total;
+            } else {
+                // Default fallback
+                data = json;
+                total = Array.isArray(json) ? json.length : 1;
+            }
+            
+            const formattedData = data.map(item => ({
                 id: item.id || item.job_id || item.company_id,
                 ...item
             }));
 
-            return { data: formattedData, total: formattedData.length };
+            return { data: formattedData, total };
         } catch (error) {
             console.error("Error fetching data:", error);
             return { data: [], total: 0 };
@@ -606,6 +790,7 @@ const CompanyList = (props) => (
         </Datagrid>
     </List>
 );
+
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -619,7 +804,8 @@ const JobList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>  <TextField source="id" />
+        <StyledDatagrid>
+            <TextField source="id" />
             <TextField source="title" />
             <TextField source="description" />
             <TextField source="job_type" />
@@ -633,7 +819,14 @@ const JobList = (props) => (
 );
 
 const App = () => (
-    <Admin dataProvider={customDataProvider} dashboard={Dashboard}>
+    <Admin 
+        dataProvider={customDataProvider} 
+        authProvider={authProvider}
+        dashboard={Dashboard}
+        loginPage={CustomLoginPage}
+        layout={CustomLayout}
+        title="Admin Portal"
+    >
         <Resource name="users" list={UserList} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
