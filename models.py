@@ -1,5 +1,5 @@
 from datetime import datetime
-import pytz
+#import pytz
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -60,7 +60,7 @@ class User(db.Model):
     age = db.Column(db.Integer)
     about_me = db.Column(db.Text)
     profile_picture = db.Column(db.Text)
-    created_at = db.Column(db.DateTime,default=datetime.now(pytz.timezone('Asia/Kolkata'))) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
     is_banned = db.Column(db.Boolean, default = False)
     login = db.relationship('Login', backref=db.backref('user', uselist=False))
@@ -120,7 +120,7 @@ class Job(db.Model):
     status = db.Column(db.String(20), nullable=False)
     form_url = db.Column(db.Text)  # To store the Google Form link
     deadline = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata'))) # default=datetime.utcnow
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     created_by = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
 
     # Relationship with User (if needed)
@@ -155,8 +155,8 @@ class JobApplication(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # 'pending', 'accepted', 'rejected'
     resume_path = db.Column(db.Text, nullable=True)  # Store path to the resume file
-    date_applied = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')), nullable=False)  # Timestamp when application is submitted
-    status_updated_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')), onupdate=datetime.now(pytz.timezone('Asia/Kolkata')))  # Timestamp when status is changed
+    date_applied = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Timestamp when application is submitted
+    status_updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Timestamp when status is changed
 
     # Relationships
     user = db.relationship('User', backref='applications')
@@ -167,8 +167,8 @@ class JobApplication(db.Model):
         self.job_id = job_id
         self.status = status
         self.resume_path = resume_path
-        self.date_applied = datetime.now(pytz.timezone('Asia/Kolkata'))
-        self.status_updated_at = datetime.now(pytz.timezone('Asia/Kolkata'))
+        self.date_applied = datetime.utcnow()
+        self.status_updated_at = datetime.utcnow()
 
 # Communication Table
 class Communication(db.Model):
@@ -179,7 +179,7 @@ class Communication(db.Model):
     college_id = db.Column(db.Integer, db.ForeignKey('college.login_id'))
     company_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     read_status = db.Column(db.Boolean, nullable=False, default=False)
     hidden = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -203,7 +203,7 @@ class Notification(db.Model):
     message = db.Column(db.Text, nullable=False)
     read_status = db.Column(db.Boolean, nullable=False, default=False)
     hidden = db.Column(db.Boolean, nullable=False, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('Company', backref='notifications')
     
@@ -251,7 +251,7 @@ class Coupon(db.Model):
     faculty_id = db.Column(db.String(20), nullable=False)
     year = db.Column(db.String(20), nullable=False)
     college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     college = db.relationship('College', backref=db.backref('coupons', lazy=True))
 
@@ -265,7 +265,7 @@ class Couponuser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     college = db.relationship('Coupon', backref=db.backref('couponuser', lazy=True))
     user = db.relationship('User', backref=db.backref('couponuser', lazy=True))
@@ -278,7 +278,7 @@ class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
-    saved_at = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('favorites', lazy=True))
     job = db.relationship('Job', backref=db.backref('favorited_by', lazy=True))

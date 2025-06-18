@@ -5,7 +5,7 @@ import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
 from config import Config
-from models import db, User, Job, Company, JobApplication
+from models import Login, db, User, Job, Company, JobApplication
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
@@ -14,7 +14,6 @@ from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import SQLAlchemyError
 import os
 from sqlalchemy import or_
 from datetime import datetime
@@ -72,11 +71,15 @@ def get_users():
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
             query = query.filter(User.email.ilike(f"%{email_term}%"))
+        elif "phone:" in search_term:
+            phone_term = search_term.split("phone:")[1].strip()
+            query = query.filter(User.phone.ilike(f"%{phone_term}%"))    
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
             User.name.ilike(search_term),
-            User.email.ilike(search_term)
+            User.email.ilike(search_term),
+            User.phone.ilike(search_term)
         ))
     
     users = query.all()
@@ -85,6 +88,7 @@ def get_users():
             'id': user.id, 
             'name': user.name, 
             'email': user.email,
+            'phone': user.phone,
             'is_banned': user.is_banned # <-- ADD THIS LINE
         } 
         for user in users
@@ -150,8 +154,8 @@ def get_companies():
             query = query.filter(Company.company_name.ilike(f"%{name_term}%"))
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
-            query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
-        elif "industry:" in search_term:  # Add industry search support
+            query = query.filter(Company.email.ilike(f"%{email_term}%"))
+        elif "industry:" in search_term:
             industry_term = search_term.split("industry:")[1].strip()
             query = query.filter(Company.industry.ilike(f"%{industry_term}%"))
         else:
@@ -161,6 +165,7 @@ def get_companies():
                 Company.email.ilike(search_term),
                 Company.industry.ilike(search_term)
             ))
+    
     companies = query.all()
     companies_data = [
         {
@@ -168,7 +173,10 @@ def get_companies():
             'company_name': company.company_name,
             'email': company.email,
             'industry': company.industry,
-            'is_banned': company.is_banned # <-- ADD THIS LINE
+            'website': company.website,
+            'address': company.address,
+            'description': company.description,
+            'is_banned': company.is_banned
         } 
         for company in companies
     ]
@@ -177,47 +185,142 @@ def get_companies():
     response.headers['Content-Range'] = f'companies 0-{len(companies_data)-1}/{len(companies_data)}'
     response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
     return response
-
 @app.route('/companies', methods=['POST'])
 def create_company():
-    data = request.json
-    new_company = Company(
-        company_name=data['company_name'],
-        email=data['email']
-    )
-    db.session.add(new_company)
-    db.session.commit()
-    return jsonify({"message": "Company created successfully!", "id": new_company.id}), 201
+    try:
+        data = request.json
+        
+        # Get the highest existing company ID and increment by 1
+        max_id = db.session.query(db.func.max(Company.id)).scalar()
+        next_id = (max_id or 0) + 1
+        
+        # First create login entry
+        new_login = Login(
+            username=data['email'],  # Using email as username
+            role='company'
+        )
+        new_login.set_password(data['password'])  # This will hash the password
+        
+        db.session.add(new_login)
+        db.session.flush()  # This gives us the login_id without committing
+        
+        # Then create company entry with manual ID
+        new_company = Company(
+            id=next_id,  # Manually assign the ID
+            login_id=new_login.id,
+            company_name=data['company_name'],
+            email=data['email'],
+            address=data.get('address'),
+            website=data.get('website'),
+            description=data.get('description'),
+            industry=data.get('industry'),
+            is_banned=False
+        )
+        
+        db.session.add(new_company)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Company created successfully!",
+            "id": new_company.id,
+            "company_name": new_company.company_name,
+            "email": new_company.email,
+            "industry": new_company.industry,
+            "website": new_company.website,
+            "address": new_company.address,
+            "description": new_company.description,
+            "is_banned": new_company.is_banned
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error creating company: {str(e)}"}), 500
 
 @app.route('/companies/<int:company_id>', methods=['PUT'])
 def update_company(company_id):
-    company = Company.query.get(company_id)
-    if not company:
-        return jsonify({"message": "Company not found"}), 404
-    
-    data = request.json
-    for key, value in data.items():
-        setattr(company, key, value)
-    
-    db.session.commit()
-    return jsonify({"message": "Company updated successfully!"})
+    try:
+        company = Company.query.get(company_id)
+        if not company:
+            return jsonify({"message": "Company not found"}), 404
+        
+        data = request.json
+        
+        # Update company fields
+        if 'company_name' in data:
+            company.company_name = data['company_name']
+        if 'email' in data:
+            company.email = data['email']
+        if 'address' in data:
+            company.address = data['address']
+        if 'website' in data:
+            company.website = data['website']
+        if 'description' in data:
+            company.description = data['description']
+        if 'industry' in data:
+            company.industry = data['industry']
+        if 'is_banned' in data:
+            company.is_banned = data['is_banned']
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Company updated successfully!",
+            "id": company.id,
+            "company_name": company.company_name,
+            "email": company.email,
+            "industry": company.industry,
+            "website": company.website,
+            "address": company.address,
+            "description": company.description,
+            "is_banned": company.is_banned
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error updating company: {str(e)}"}), 500
 
 @app.route('/companies/<int:company_id>', methods=['DELETE'])
 def delete_company(company_id):
-    company = Company.query.get(company_id)
-    if not company:
-        return jsonify({"message": "Company not found"}), 404
-    
-    db.session.delete(company)
-    db.session.commit()
-    return jsonify({"message": "Company deleted successfully!"})
+    try:
+        company = Company.query.get(company_id)
+        if not company:
+            return jsonify({"message": "Company not found"}), 404
+        
+        # Also delete the associated login entry
+        login = Login.query.get(company.login_id)
+        
+        db.session.delete(company)
+        if login:
+            db.session.delete(login)
+        
+        db.session.commit()
+        return jsonify({"message": "Company deleted successfully!"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error deleting company: {str(e)}"}), 500
 
 @app.route('/companies/bulk', methods=['DELETE'])
 def delete_companies_bulk():
-    company_ids = request.json.get('ids', [])
-    Company.query.filter(Company.id.in_(company_ids)).delete(synchronize_session=False)
-    db.session.commit()
-    return jsonify({"message": f"Deleted {len(company_ids)} companies successfully"})
+    try:
+        company_ids = request.json.get('ids', [])
+        
+        # Get all companies to be deleted
+        companies = Company.query.filter(Company.id.in_(company_ids)).all()
+        login_ids = [company.login_id for company in companies]
+        
+        # Delete companies
+        Company.query.filter(Company.id.in_(company_ids)).delete(synchronize_session=False)
+        
+        # Delete associated logins
+        Login.query.filter(Login.id.in_(login_ids)).delete(synchronize_session=False)
+        
+        db.session.commit()
+        return jsonify({"message": f"Deleted {len(company_ids)} companies successfully"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error deleting companies: {str(e)}"}), 500
 
 # New route for company profile redirection
 @app.route('/company/company_profile', methods=['GET'])
@@ -241,7 +344,6 @@ def submit_company_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": f"Error creating company profile: {str(e)}"}), 500
-
 # ========== JOBS API ==========
 @app.route('/jobs', methods=['GET'])
 def get_jobs():

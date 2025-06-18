@@ -49,16 +49,16 @@ import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import RefreshIcon from '@mui/icons-material/Refresh'; // Import RefreshIcon
+import CloseIcon from '@mui/icons-material/Close';
 import { 
     Dialog, // MUI Dialog
     DialogActions, // MUI DialogActions
     DialogContent, // MUI DialogContent
     DialogContentText, // MUI DialogContentText
     DialogTitle, // MUI DialogTitle
+    IconButton,
+    CircularProgress,
 } from "@mui/material";
-
-
-
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
@@ -189,18 +189,6 @@ const CustomLoginPage = () => {
                         }
                     }}
                 />
-                
-                {/* <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        Default credentials:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        Username: admin
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        Password: admin
-                    </Typography>
-                </Box> */}
             </Paper>
         </Box>
     );
@@ -392,6 +380,305 @@ const customDataProvider = {
         }
     },
 };
+// Updated AddCompanyDialog Component
+const AddCompanyDialog = ({ open, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        company_name: '',
+        email: '',
+        password: '',
+        address: '',
+        website: '',
+        description: '',
+        industry: ''
+    });
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+    const notify = useNotify();
+    const theme = useTheme();
+
+    const handleInputChange = (field) => (event) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: event.target.value
+        }));
+        // Clear error when user starts typing
+        if (errors[field]) {
+            setErrors(prev => ({
+                ...prev,
+                [field]: ''
+            }));
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        
+        if (!formData.company_name.trim()) {
+            newErrors.company_name = 'Company name is required';
+        }
+        
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = 'Please enter a valid email';
+        }
+        
+        if (!formData.password.trim()) {
+            newErrors.password = 'Password is required';
+        } else if (formData.password.length < 6) {
+            newErrors.password = 'Password must be at least 6 characters';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Create company directly with all the data
+            const companyResponse = await fetch(`${API_BASE_URL}/companies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_name: formData.company_name,
+                    email: formData.email,
+                    password: formData.password, // Send password to backend
+                    address: formData.address || null,
+                    website: formData.website || null,
+                    description: formData.description || null,
+                    industry: formData.industry || null,
+                }),
+            });
+
+            if (!companyResponse.ok) {
+                const errorData = await companyResponse.json();
+                throw new Error(errorData.message || 'Failed to create company');
+            }
+
+            notify('Company created successfully!', { type: 'success' });
+            handleClose();
+            onSuccess(); // Refresh the list
+        } catch (error) {
+            console.error('Error creating company:', error);
+            notify(`Error: ${error.message}`, { type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleClose = () => {
+        setFormData({
+            company_name: '',
+            email: '',
+            password: '',
+            address: '',
+            website: '',
+            description: '',
+            industry: ''
+        });
+        setErrors({});
+        setLoading(false);
+        onClose();
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 3,
+                    maxHeight: '90vh'
+                }
+            }}
+        >
+            <DialogTitle sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                pb: 2
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <BusinessIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Add New Company
+                    </Typography>
+                </Box>
+                <IconButton
+                    onClick={handleClose}
+                    disabled={loading}
+                    size="small"
+                >
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ pt: 1 }}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Company Name"
+                            value={formData.company_name}
+                            onChange={handleInputChange('company_name')}
+                            error={!!errors.company_name}
+                            helperText={errors.company_name}
+                            disabled={loading}
+                            required
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange('email')}
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            disabled={loading}
+                            required
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleInputChange('password')}
+                            error={!!errors.password}
+                            helperText={errors.password}
+                            disabled={loading}
+                            required
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Industry"
+                            value={formData.industry}
+                            onChange={handleInputChange('industry')}
+                            disabled={loading}
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Website"
+                            value={formData.website}
+                            onChange={handleInputChange('website')}
+                            disabled={loading}
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Address"
+                            multiline
+                            rows={2}
+                            value={formData.address}
+                            onChange={handleInputChange('address')}
+                            disabled={loading}
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <MuiTextField
+                            fullWidth
+                            label="Description"
+                            multiline
+                            rows={3}
+                            value={formData.description}
+                            onChange={handleInputChange('description')}
+                            disabled={loading}
+                            variant="outlined"
+                        />
+                    </Grid>
+                </Grid>
+            </DialogContent>
+
+            <DialogActions sx={{ p: 3, pt: 2 }}>
+                <Button
+                    onClick={handleClose}
+                    disabled={loading}
+                    variant="outlined"
+                    sx={{ 
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3
+                    }}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    variant="contained"
+                    startIcon={loading ? <CircularProgress size={16} /> : <AddIcon />}
+                    sx={{ 
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3,
+                        ml: 2
+                    }}
+                >
+                    {loading ? 'Adding...' : 'Add Company'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+// Updated Company List Component
+const CompanyList = () => (
+    <List
+        filters={[<SearchInput key="q" source="q" alwaysOn />]}
+        actions={<CompanyListActions />}
+        bulkActionButtons={<CompanyBulkActionButtons />}
+        perPage={25}
+        sort={{ field: 'id', order: 'ASC' }}
+    >
+        <Datagrid rowClick="edit" bulkActionButtons={<CompanyBulkActionButtons />}>
+            <TextField source="id" label="ID" />
+            <TextField source="company_name" label="Company Name" />
+            <TextField source="email" label="Email" />
+            <TextField source="industry" label="Industry" />
+            <TextField source="website" label="Website" />
+            <BooleanField source="is_banned" label="Banned" />
+            <FunctionField
+                label="Actions"
+                render={() => <BanToggleButton />}
+            />
+        </Datagrid>
+    </List>
+);
 
 const UserBulkActionButtons = () => (
     <BulkDeleteWithConfirmButton
@@ -650,11 +937,8 @@ const FilterDropdown = () => {
                             {React.cloneElement(option.icon, { 
                                 sx: { color: theme.palette.text.secondary } 
                             })}
-                        </ListItemIcon>
-                        <ListItemText 
-                            primary={option.label} 
-                            primaryTypographyProps={{ variant: 'body2' }}
-                        />
+                            </ListItemIcon>
+                        <ListItemText primary={option.label} />
                     </MenuItem>
                 ))}
             </Menu>
@@ -662,269 +946,253 @@ const FilterDropdown = () => {
     );
 };
 
-const AddCompanyButton = () => {
-    const theme = useTheme();
-    
-    const handleAddCompany = () => {
-        window.location.href = `${API_BASE_URL}/company/company_profile`;
-    };
-    
-    return (
-        <Button
-            startIcon={<AddIcon />}
-            onClick={handleAddCompany}
-            variant="contained"
-            color="primary"
-            size="medium"
-            sx={{ 
-                ml: 2,
-                borderRadius: 20,
-                textTransform: 'none',
-                px: 3
-            }}
-        >
-            Add Company
-        </Button>
-    );
-};
-
-const CustomRefreshButton = () => {
+// Bulk Delete Component with Confirmation
+const BulkDeleteWithConfirmButton = ({ confirmTitle, confirmContent }) => {
+    const [open, setOpen] = useState(false);
+    const { selectedIds } = useListContext();
     const refresh = useRefresh();
-    const theme = useTheme();
+    const notify = useNotify();
+    const { resource } = useListContext();
 
-    const handleClick = () => {
-        refresh();
+    const handleClick = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    const handleConfirm = async () => {
+        try {
+            await customDataProvider.deleteMany(resource, { ids: selectedIds });
+            notify(`${selectedIds.length} items deleted successfully`, { type: 'success' });
+            refresh();
+            setOpen(false);
+        } catch (error) {
+            notify('Error deleting items', { type: 'error' });
+            console.error('Delete error:', error);
+        }
     };
 
     return (
-        <Button
-            onClick={handleClick}
-            startIcon={<RefreshIcon />}
-            variant="outlined"
-            size="medium"
-            sx={{ 
-                mr: 2,
-                borderRadius: 20,
-                textTransform: 'none',
-                px: 3,
-                bgcolor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                    bgcolor: theme.palette.action.hover,
-                    borderColor: theme.palette.primary.main
-                }
-            }}
-        >
-            Refresh
-        </Button>
+        <>
+            <Button
+                onClick={handleClick}
+                startIcon={<BlockIcon />}
+                disabled={selectedIds.length === 0}
+                variant="contained"
+                color="error"
+                sx={{ 
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    mr: 1
+                }}
+            >
+                Delete Selected ({selectedIds.length})
+            </Button>
+            
+            <Dialog open={open} onClose={handleClose}>
+                <DialogTitle>{confirmTitle}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {confirmContent}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleConfirm} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 };
 
-const ListActions = (props) => {
-    const { resource } = props;
-    
+// Custom List Actions with Add Company Button
+const CompanyListActions = () => {
+    const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const refresh = useRefresh();
+
+    const handleAddSuccess = () => {
+        refresh(); // Refresh the company list
+    };
+
     return (
-        <TopToolbar {...props} sx={{ p: 2, bgcolor: 'background.default' }}>
-            <CustomRefreshButton /> {/* Add the custom refresh button here */}
+        <TopToolbar>
             <FilterDropdown />
-            <ExportButton 
+            <Button
+                onClick={() => setAddDialogOpen(true)}
+                startIcon={<AddIcon />}
+                variant="contained"
                 sx={{ 
                     borderRadius: 20,
                     textTransform: 'none',
                     px: 3,
-                    '&:hover': { bgcolor: 'action.hover' }
+                    mr: 2
                 }}
+            >
+                Add Company
+            </Button>
+            <ExportButton />
+            
+            <AddCompanyDialog
+                open={addDialogOpen}
+                onClose={() => setAddDialogOpen(false)}
+                onSuccess={handleAddSuccess}
             />
-            {resource === 'companies' && <AddCompanyButton />}
         </TopToolbar>
     );
 };
 
-const StyledDatagrid = ({ children, ...props }) => (
-    <Datagrid
-        {...props}
-        sx={{
-            '& .RaDatagrid-headerCell': {
-                bgcolor: 'background.default',
-                fontWeight: 700,
-            },
-            '& .RaDatagrid-rowCell': {
-                py: 2,
-            },
-            '& .RaDatagrid-row:hover': {
-                bgcolor: 'action.hover'
-            }
-        }}
-        rowClick="edit"
-    >
-        {children}
-    </Datagrid>
-);
-
-const BanToggle = ({ record, resource }) => {
-    const [update, { isLoading }] = useUpdate();
+// Ban/Unban Company Component
+const BanToggleButton = () => {
+    const record = useRecordContext();
+    const [update] = useUpdate();
     const notify = useNotify();
-    const theme = useTheme();
     const refresh = useRefresh();
 
-    
-    const [isBanned, setIsBanned] = useState(!!record.is_banned); // !! converts to boolean
-
-    
-    useEffect(() => {
-        setIsBanned(!!record.is_banned);
-    }, [record.is_banned]); 
-
-    const handleToggle = (event) => {
-        const newValue = event.target.checked;
-        // Optimistically update the UI before the API call
-        setIsBanned(newValue);
-
-        update(
-            resource,
-            { id: record.id, data: { is_banned: newValue }, previousData: record },
-            {
-                onSuccess: () => {
-                    notify(
-                        newValue ? 'User has been banned' : 'User has been unbanned',
-                        { type: 'success' }
-                    );
-                    // Crucially, trigger a refresh of the list after a successful update.
-                    // This will cause the entire list to re-fetch, and thus
-                    // each BanToggle component will receive the latest `record` prop.
-                    refresh(); 
-                },
-                onError: (error) => {
-                    // Revert the UI state if the API call fails
-                    setIsBanned(!newValue); 
-                    notify(
-                        `Error: Couldn't update ban status - ${error.message}`,
-                        { type: 'error' }
-                    );
-                }
-            }
-        );
+    const handleToggle = async () => {
+        try {
+            await update('companies', {
+                id: record.id,
+                data: { is_banned: !record.is_banned }
+            });
+            notify(
+                `Company ${record.is_banned ? 'unbanned' : 'banned'} successfully`,
+                { type: 'success' }
+            );
+            refresh();
+        } catch (error) {
+            notify('Error updating company status', { type: 'error' });
+        }
     };
-    
+
     return (
-        <FormControlLabel
-            control={
-                <Switch
-                    checked={isBanned}
-                    onChange={handleToggle}
-                    disabled={isLoading}
-                    color="error"
-                    size="small"
-                />
-            }
-            label={
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {isBanned && (
-                        <BlockIcon 
-                            fontSize="small" 
-                            sx={{ mr: 0.5, color: theme.palette.error.main }}
-                        />
-                    )}
-                    <Typography variant="body2">
-                        {isBanned ? "Banned" : "Ban"}
-                    </Typography>
-                </Box>
-            }
-            sx={{ m: 0 }}
-        />
+        <Button
+            onClick={handleToggle}
+            variant="outlined"
+            color={record.is_banned ? "success" : "error"}
+            size="small"
+            sx={{ textTransform: 'none' }}
+        >
+            {record.is_banned ? 'Unban' : 'Ban'}
+        </Button>
     );
 };
 
-const UserList = (props) => (
-    <List 
-        actions={<ListActions />}
-        filters={[
-            <SearchInput 
-                source="q" 
-                alwaysOn 
-                placeholder="Search job seekers..." 
-                sx={{ maxWidth: 400 }}
-            />
-        ]} 
-        {...props}
+// Updated User Ban/Unban Toggle Component
+const UserBanToggleButton = () => {
+    const record = useRecordContext();
+    const [update] = useUpdate();
+    const notify = useNotify();
+    const refresh = useRefresh();
+
+    const handleToggle = async () => {
+        try {
+            await update('users', {
+                id: record.id,
+                data: { is_banned: !record.is_banned }
+            });
+            notify(
+                `User ${record.is_banned ? 'unbanned' : 'banned'} successfully`,
+                { type: 'success' }
+            );
+            refresh();
+        } catch (error) {
+            notify('Error updating user status', { type: 'error' });
+        }
+    };
+
+    return (
+        <Button
+            onClick={handleToggle}
+            variant="outlined"
+            color={record.is_banned ? "success" : "error"}
+            size="small"
+            sx={{ textTransform: 'none' }}
+        >
+            {record.is_banned ? 'Unban' : 'Ban'}
+        </Button>
+    );
+};
+
+// Updated User List Component with Ban Toggle
+const UserList = () => (
+    <List
+        filters={[<SearchInput key="q" source="q" alwaysOn />]}
+        actions={
+            <TopToolbar>
+                <FilterDropdown />
+                <ExportButton />
+            </TopToolbar>
+        }
+        bulkActionButtons={<UserBulkActionButtons />}
+        perPage={25}
+        sort={{ field: 'id', order: 'ASC' }}
     >
-        <Datagrid bulkActionButtons={<UserBulkActionButtons />}>
-            <TextField source="id" sortable={false} />
-            <TextField source="name" />
-            <TextField source="email" />
+        <Datagrid rowClick="edit" bulkActionButtons={<UserBulkActionButtons />}>
+            <TextField source="id" label="ID" />
+            <TextField source="name" label="Name" />
+            <TextField source="email" label="Email" />
+            <TextField source="phone" label="Phone" />
+            <BooleanField source="is_banned" label="Banned" />
             <FunctionField
-                label="Ban Status"
-                render={(record) => <BanToggle record={record} resource="users" />}
+                label="Actions"
+                render={() => <UserBanToggleButton />}
             />
         </Datagrid>
     </List>
 );
 
-const CompanyList = (props) => (
-    <List 
-        actions={<ListActions resource="companies" />}
-        filters={[
-            <SearchInput 
-                source="q" 
-                alwaysOn 
-                placeholder="Search companies..." 
-                sx={{ maxWidth: 400 }}
-            />
-        ]}
-        {...props}
+// Updated Job List Component with Status field
+const JobList = () => (
+    <List
+        filters={[<SearchInput key="q" source="q" alwaysOn />]}
+        actions={
+            <TopToolbar>
+                <FilterDropdown />
+                <ExportButton />
+            </TopToolbar>
+        }
+        bulkActionButtons={<JobBulkActionButtons />}
+        perPage={25}
+        sort={{ field: 'id', order: 'ASC' }}
     >
-        <Datagrid>
-            <TextField source="id" />
-            <TextField source="company_name" />
-            <TextField source="email" />
-            <FunctionField
-                label="Ban Status"
-                render={(record) => <BanToggle record={record} resource="companies" />}
-            />
+        <Datagrid rowClick="edit" bulkActionButtons={<JobBulkActionButtons />}>
+            <TextField source="id" label="ID" />
+            <TextField source="title" label="Title" />
+            <TextField source="created_by" label="Company" />
+            <TextField source="location" label="Location" />
+            <TextField source="salary" label="Salary" />
+            <TextField source="status" label="Status" />
+            <TextField source="job_type" label="Job Type" />
+            <TextField source="total_vacancy" label="Total Positions" />
+            <TextField source="filled_vacancy" label="Filled Positions" />
         </Datagrid>
     </List>
 );
-
-const JobList = (props) => (
-    <List 
-        actions={<ListActions />}
-        filters={[
-            <SearchInput 
-                source="q" 
-                alwaysOn 
-                placeholder="Search jobs..." 
-                sx={{ maxWidth: 400 }}
-            />
-        ]}
-        {...props}
-    >
-        <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            <TextField source="id" sortable={false} />
-            <TextField source="title" />
-            <TextField source="description" />
-            <TextField source="job_type" />
-            <TextField source="location" />
-            <TextField source="salary" />
-            <TextField source="total_vacancy" />
-            <TextField source="filled_vacancy" />
-            <TextField source="status" />
-        </StyledDatagrid>
-    </List>
-);
-
 const App = () => (
-    <Admin 
-        dataProvider={customDataProvider} 
+    <Admin
+        dataProvider={customDataProvider}
         authProvider={authProvider}
-        dashboard={Dashboard}
         loginPage={CustomLoginPage}
         layout={CustomLayout}
-        title="Admin Portal"
+        dashboard={Dashboard}
     >
-        <Resource name="users" list={UserList} options={{ label: 'Job Seekers' }} />
-        <Resource name="companies" list={CompanyList} />
-        <Resource name="jobs" list={JobList} />
+        <Resource
+            name="users"
+            list={UserList}
+            options={{ label: 'Job Seekers' }}
+            icon={PeopleAltIcon}
+        />
+        <Resource
+            name="companies"
+            list={CompanyList}
+            options={{ label: 'Companies' }}
+            icon={CorporateFareIcon}
+        />
+        <Resource
+            name="jobs"
+            list={JobList}
+            options={{ label: 'Jobs' }}
+            icon={WorkOutlineIcon}
+        />
     </Admin>
 );
 

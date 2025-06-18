@@ -24,9 +24,8 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
-        <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+        <div class="alert alert-{{ category }} flash-message fade show" role="alert">
           {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       {% endfor %}
     {% endif %}
@@ -344,10 +343,11 @@
   setTimeout(function() {
     const flashMessages = document.querySelectorAll('.flash-message');
     flashMessages.forEach(function(message) {
-      const closeBtn = message.querySelector('.btn-close');
-      if(closeBtn) {
-        closeBtn.click();
-      }
+      message.style.transition = 'opacity 0.5s ease-out';
+      message.style.opacity = '0';
+      setTimeout(function() {
+        message.remove();
+      }, 500);
     });
   }, 5000);
 </script>

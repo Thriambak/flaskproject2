@@ -14,7 +14,9 @@
             <i class="fas fa-bars"></i>
         </div>
         <div class="logo">
-            <img src="{{ profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <img src="{{ profile.logo if profile.logo else url_for('static', filename='images/company.jpg') }}"
+                height="35px" style="border-radius: 25%;"
+                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/company.jpg') }}';">
             <h4>{{ profile.company_name }}</h4>
         </div>
         <div class="profile-settings">
