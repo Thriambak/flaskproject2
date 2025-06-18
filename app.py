@@ -14,6 +14,7 @@ from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
 import os
 from sqlalchemy import or_
 from datetime import datetime
@@ -150,18 +151,23 @@ def get_companies():
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
             query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
+        elif "industry:" in search_term:  # Add industry search support
+            industry_term = search_term.split("industry:")[1].strip()
+            query = query.filter(Company.industry.ilike(f"%{industry_term}%"))
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-            Company.company_name.ilike(search_term),
-            Company.email.ilike(search_term)
-        ))
+                Company.company_name.ilike(search_term),
+                Company.email.ilike(search_term),
+                Company.industry.ilike(search_term)
+            ))
     companies = query.all()
     companies_data = [
         {
             'id': company.id,
             'company_name': company.company_name,
             'email': company.email,
+            'industry': company.industry,
             'is_banned': company.is_banned # <-- ADD THIS LINE
         } 
         for company in companies
