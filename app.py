@@ -1,5 +1,6 @@
 from flask import Flask, render_template, g, session, redirect
 from flask import jsonify, request, make_response, url_for
+from datetime import datetime, timedelta
 import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
@@ -16,7 +17,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from sqlalchemy import or_
 from datetime import datetime
-
+import pytz
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS
 
@@ -410,11 +411,43 @@ def get_dashboard_data():
     total_jobs = Job.query.count()
     total_applications = JobApplication.query.count()
     
-    trends = [
-        {"x": "2025-03-20", "applications": 0, "logins": 3},
-        {"x": "2025-03-25", "applications": 0, "logins": 16},
-        {"x": "2025-03-30", "applications": 1, "logins": 27}
-    ]
+    trends = []
+    
+    # Get the current time in Asia/Kolkata
+    kolkata_tz = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(kolkata_tz)
+
+    # Calculate data for the last 9 days
+    for i in range(9):
+        # Calculate the date for 'i' days ago
+        target_date = now - timedelta(days=i)
+        
+        # Define the start and end of the day for the target_date
+        start_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0))
+        end_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59))
+
+        # Count applications for the current day
+        applications_count = JobApplication.query.filter(
+            JobApplication.date_applied >= start_of_day,
+            JobApplication.date_applied <= end_of_day
+        ).count()
+
+        # You would need a similar mechanism for 'logins' if you have a User login timestamp.
+        # Example (if User had a 'last_login' field):
+        # logins_count = User.query.filter(
+        #     User.last_login >= start_of_day,
+        #     User.last_login <= end_of_day
+        # ).count()
+        logins_count = 0 # Placeholder, replace with actual login count if available
+
+        trends.append({
+            "x": target_date.strftime("%Y-%m-%d"),
+            "applications": applications_count,
+            "logins": logins_count
+        })
+
+    # Reverse the list to have the most recent day last
+    trends.reverse() 
     
     return jsonify({
         "metrics": {
