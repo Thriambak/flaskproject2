@@ -41,11 +41,12 @@ def signup():
             return redirect(url_for('auth.signup'))
 
         # Password validation
-        if ' ' in password:
+        password = password.strip()
+        '''if ' ' in password:
             flash('Password cannot contain spaces.', 'danger')
-            return redirect(url_for('auth.signup'))
-        if not re.match(r'^[a-zA-Z0-9@#$%^&+=]+$', password):
-            flash('Password can only contain letters, numbers, and special characters @#$%^&+=', 'danger')
+            return redirect(url_for('auth.signup'))'''
+        if not re.match(r'^[a-zA-Z0-9@#$%^&+= ]+$', password):
+            flash('Password can only contain letters, numbers, and special characters @ #$%^&+=', 'danger')
             return redirect(url_for('auth.signup'))
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')

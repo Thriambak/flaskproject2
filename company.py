@@ -212,6 +212,7 @@ def company_post_new_job():
                 exp = int(exp_str)
                 total_vacancy = int(vacancy_str)
                 # salary = int(salary_str) if salary_str else None
+                salary = salary_str
                 
                 # Additional validations
                 if exp < 0 or exp > 50:

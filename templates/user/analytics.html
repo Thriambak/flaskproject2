@@ -119,7 +119,7 @@
           {% for job in live_feed %}
           <tr>
             <td>{{ job.job_title }}</td>
-            <td>{{ job.posted_at.strftime('%Y-%m-%d %H:%M:%S') if job.posted_at else 'N/A' }}</td>
+            <td>{{ job.posted_at.strftime('%d-%m-%Y | %H:%M:%S') if job.posted_at else 'N/A' }}</td>
           </tr>
           {% else %}
           <tr>

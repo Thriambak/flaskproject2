@@ -1,5 +1,6 @@
 from flask import Flask, render_template, g, session, redirect
 from flask import jsonify, request, make_response, url_for
+from datetime import datetime, timedelta
 import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
@@ -16,7 +17,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from sqlalchemy import or_
 from datetime import datetime
-
+import pytz
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS
 
@@ -73,12 +74,20 @@ def get_users():
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-    		User.name.ilike(search_term),
-    		User.email.ilike(search_term)
-		))
+            User.name.ilike(search_term),
+            User.email.ilike(search_term)
+        ))
     
     users = query.all()
-    users_data = [{'id': user.id, 'name': user.name, 'email': user.email} for user in users]
+    users_data = [
+        {
+            'id': user.id, 
+            'name': user.name, 
+            'email': user.email,
+            'is_banned': user.is_banned # <-- ADD THIS LINE
+        } 
+        for user in users
+    ]
     
     response = make_response(jsonify(users_data))
     response.headers['Content-Range'] = f'users 0-{len(users_data)-1}/{len(users_data)}'
@@ -140,19 +149,23 @@ def get_companies():
             query = query.filter(Company.company_name.ilike(f"%{name_term}%"))
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
-            query = query.filter(Company.email.ilike(f"%{email_term}%"))
+            query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-    		Company.company_name.ilike(search_term),
-    		Company.email.ilike(search_term)
-		))
+            Company.company_name.ilike(search_term),
+            Company.email.ilike(search_term)
+        ))
     companies = query.all()
-    companies_data = [{
-        'id': company.id,
-        'company_name': company.company_name,
-        'email': company.email
-    } for company in companies]
+    companies_data = [
+        {
+            'id': company.id,
+            'company_name': company.company_name,
+            'email': company.email,
+            'is_banned': company.is_banned # <-- ADD THIS LINE
+        } 
+        for company in companies
+    ]
     
     response = make_response(jsonify(companies_data))
     response.headers['Content-Range'] = f'companies 0-{len(companies_data)-1}/{len(companies_data)}'
@@ -410,11 +423,43 @@ def get_dashboard_data():
     total_jobs = Job.query.count()
     total_applications = JobApplication.query.count()
     
-    trends = [
-        {"x": "2025-03-20", "applications": 0, "logins": 3},
-        {"x": "2025-03-25", "applications": 0, "logins": 16},
-        {"x": "2025-03-30", "applications": 1, "logins": 27}
-    ]
+    trends = []
+    
+    # Get the current time in Asia/Kolkata
+    kolkata_tz = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(kolkata_tz)
+
+    # Calculate data for the last 9 days
+    for i in range(9):
+        # Calculate the date for 'i' days ago
+        target_date = now - timedelta(days=i)
+        
+        # Define the start and end of the day for the target_date
+        start_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0))
+        end_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59))
+
+        # Count applications for the current day
+        applications_count = JobApplication.query.filter(
+            JobApplication.date_applied >= start_of_day,
+            JobApplication.date_applied <= end_of_day
+        ).count()
+
+        # You would need a similar mechanism for 'logins' if you have a User login timestamp.
+        # Example (if User had a 'last_login' field):
+        # logins_count = User.query.filter(
+        #     User.last_login >= start_of_day,
+        #     User.last_login <= end_of_day
+        # ).count()
+        logins_count = 0 # Placeholder, replace with actual login count if available
+
+        trends.append({
+            "x": target_date.strftime("%Y-%m-%d"),
+            "applications": applications_count,
+            "logins": logins_count
+        })
+
+    # Reverse the list to have the most recent day last
+    trends.reverse() 
     
     return jsonify({
         "metrics": {
