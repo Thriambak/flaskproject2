@@ -2,7 +2,9 @@ import * as React from "react";
 import { 
   Admin, 
   Resource, 
-  List, 
+  List,
+  Confirm,
+  useRecordContext, 
   Datagrid, 
   TextField,
   SearchInput,
@@ -18,7 +20,10 @@ import {
   LoginForm,
   Layout,
   AppBar,
-  UserMenu
+  UserMenu,
+  Button as RaButton, // Alias React-Admin's Button to avoid conflict
+  useRefresh, // Import useRefresh hook
+  useGetList, // Import useGetList to manually trigger a fetch
 } from "react-admin";
 import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -43,23 +48,34 @@ import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import RefreshIcon from '@mui/icons-material/Refresh'; // Import RefreshIcon
+import { 
+    Dialog, // MUI Dialog
+    DialogActions, // MUI DialogActions
+    DialogContent, // MUI DialogContent
+    DialogContentText, // MUI DialogContentText
+    DialogTitle, // MUI DialogTitle
+} from "@mui/material";
+
+
+
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 // Authentication Provider
 const authProvider = {
     login: ({ username, password }) => {
-        if (username === 'admin' && password === 'admin') {
-            // Store authentication status in memory (not localStorage due to artifact restrictions)
-            window.isAuthenticated = true;
-            return Promise.resolve();
-        }
-        return Promise.reject(new Error('Invalid credentials'));
-    },
-    logout: () => {
-        window.isAuthenticated = false;
+    if (username === 'admin' && password === 'admin') {
+        // Store a flag or token in localStorage
+        localStorage.setItem('isAuthenticated', 'true'); // Or store a token like 'myAuthToken'
         return Promise.resolve();
-    },
+    }
+    return Promise.reject(new Error('Invalid credentials'));
+},
+    logout: () => {
+    localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
+    return Promise.resolve();
+},
     checkError: ({ status }) => {
         if (status === 401 || status === 403) {
             window.isAuthenticated = false;
@@ -68,7 +84,7 @@ const authProvider = {
         return Promise.resolve();
     },
     checkAuth: () => {
-        return window.isAuthenticated ? Promise.resolve() : Promise.reject();
+    return localStorage.getItem('isAuthenticated') ? Promise.resolve() : Promise.reject();
     },
     getPermissions: () => Promise.resolve(),
 };
@@ -341,6 +357,7 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                body: JSON.stringify(params.data),
             });
 
             if (!response.ok) {
@@ -354,7 +371,7 @@ const customDataProvider = {
         }
     },
     
-     deleteMany: async (resource, params) => {
+    deleteMany: async (resource, params) => {
         try {
             const response = await fetch(`${API_BASE_URL}/${resource}/bulk`, {
                 method: "DELETE",
@@ -543,7 +560,7 @@ const FilterDropdown = () => {
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-		    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+            { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
@@ -640,11 +657,45 @@ const AddCompanyButton = () => {
     );
 };
 
+const CustomRefreshButton = () => {
+    const refresh = useRefresh();
+    const theme = useTheme();
+
+    const handleClick = () => {
+        refresh();
+    };
+
+    return (
+        <Button
+            onClick={handleClick}
+            startIcon={<RefreshIcon />}
+            variant="outlined"
+            size="medium"
+            sx={{ 
+                mr: 2,
+                borderRadius: 20,
+                textTransform: 'none',
+                px: 3,
+                bgcolor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.divider,
+                '&:hover': {
+                    bgcolor: theme.palette.action.hover,
+                    borderColor: theme.palette.primary.main
+                }
+            }}
+        >
+            Refresh
+        </Button>
+    );
+};
+
 const ListActions = (props) => {
     const { resource } = props;
     
     return (
         <TopToolbar {...props} sx={{ p: 2, bgcolor: 'background.default' }}>
+            <CustomRefreshButton /> {/* Add the custom refresh button here */}
             <FilterDropdown />
             <ExportButton 
                 sx={{ 
