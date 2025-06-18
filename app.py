@@ -13,6 +13,7 @@ from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
 import os
 from sqlalchemy import or_
 from datetime import datetime
