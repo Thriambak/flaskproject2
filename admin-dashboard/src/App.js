@@ -735,13 +735,21 @@ const BanToggle = ({ record, resource }) => {
     const [update, { isLoading }] = useUpdate();
     const notify = useNotify();
     const theme = useTheme();
+    const refresh = useRefresh();
+
     
-    const [isBanned, setIsBanned] = useState(record.is_banned || false);
+    const [isBanned, setIsBanned] = useState(!!record.is_banned); // !! converts to boolean
+
     
+    useEffect(() => {
+        setIsBanned(!!record.is_banned);
+    }, [record.is_banned]); 
+
     const handleToggle = (event) => {
         const newValue = event.target.checked;
+        // Optimistically update the UI before the API call
         setIsBanned(newValue);
-        
+
         update(
             resource,
             { id: record.id, data: { is_banned: newValue }, previousData: record },
@@ -751,9 +759,14 @@ const BanToggle = ({ record, resource }) => {
                         newValue ? 'User has been banned' : 'User has been unbanned',
                         { type: 'success' }
                     );
+                    // Crucially, trigger a refresh of the list after a successful update.
+                    // This will cause the entire list to re-fetch, and thus
+                    // each BanToggle component will receive the latest `record` prop.
+                    refresh(); 
                 },
                 onError: (error) => {
-                    setIsBanned(!newValue);
+                    // Revert the UI state if the API call fails
+                    setIsBanned(!newValue); 
                     notify(
                         `Error: Couldn't update ban status - ${error.message}`,
                         { type: 'error' }
