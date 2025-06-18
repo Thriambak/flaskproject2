@@ -24,6 +24,7 @@ import {
   Button as RaButton, // Alias React-Admin's Button to avoid conflict
   useRefresh, // Import useRefresh hook
   useGetList, // Import useGetList to manually trigger a fetch
+  BulkDeleteWithConfirmButton,
 } from "react-admin";
 import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -392,6 +393,27 @@ const customDataProvider = {
         }
     },
 };
+
+const UserBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Users"
+        confirmContent="Are you sure you want to delete the selected users? This action cannot be undone."
+    />
+);
+
+const CompanyBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Companies"
+        confirmContent="Are you sure you want to delete the selected companies? This action cannot be undone."
+    />
+);
+
+const JobBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Jobs"
+        confirmContent="Are you sure you want to delete the selected jobs? This action cannot be undone."
+    />
+);
 
 const metricIcons = {
     users: <PeopleAltIcon sx={{ fontSize: 40, color: 'white' }} />,
@@ -818,7 +840,7 @@ const UserList = (props) => (
         ]} 
         {...props}
     >
-        <Datagrid>
+        <Datagrid bulkActionButtons={<UserBulkActionButtons />}>
             <TextField source="id" />
             <TextField source="name" />
             <TextField source="email" />
@@ -843,10 +865,11 @@ const CompanyList = (props) => (
         ]}
         {...props}
     >
-        <Datagrid>
+        <Datagrid bulkActionButtons={<CompanyBulkActionButtons />}>
             <TextField source="id" />
             <TextField source="company_name" />
             <TextField source="email" />
+            <TextField source="industry" sortable={false} />
             <FunctionField
                 label="Ban Status"
                 render={(record) => <BanToggle record={record} resource="companies" />}
@@ -868,7 +891,7 @@ const JobList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>
+        <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
             <TextField source="id" />
             <TextField source="title" />
             <TextField source="description" />
