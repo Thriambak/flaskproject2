@@ -13,7 +13,9 @@
             <i class="fas fa-bars"></i>
         </div>
         <div class="logo">
-            <img src="{{ college_profile.logo }}" height="35px" style="border-radius: 25%;" onerror="this.src='https:/cdn.pixabay.com/photo/2023/02/01/00/54/company-7759278_1280.png';">
+            <img src="{{ college_profile.logo if college_profile.logo else url_for('static', filename='images/college.jpg') }}"
+                height="35px" style="border-radius: 25%;"
+                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/college.jpg') }}';">
             <h4>{{ college_profile.college_name }}</h4>
         </div>
         <div class="profile-settings">

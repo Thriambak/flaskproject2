@@ -9,6 +9,7 @@ from extensions import mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+from sqlalchemy import func
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -19,13 +20,14 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        confirm_password = request.form.get('confirm_password')
+        # confirm_password = request.form.get('confirm_password')
         role = request.form.get('role', 'user')  # Default to 'user'
         email = request.form['email']
+
         # Confirm password check
-        if password != confirm_password:
+        '''if password != confirm_password:
             flash('Passwords do not match. Please try again.', 'danger')
-            return redirect(url_for('auth.signup'))
+            return redirect(url_for('auth.signup'))'''
         
         # Username validation
         # Allowed: single word (alphanumeric), email, or 10-digit phone number
@@ -59,7 +61,7 @@ def signup():
             return redirect(url_for('auth.signup'))
 
         # Check for existing username or email
-        if Login.query.filter_by(username=username).first():
+        if Login.query.filter(func.lower(Login.username) == username.lower()).first():
             flash('Username already exists.', 'danger')
             return redirect(url_for('auth.signup'))
         if (User.query.filter_by(email=email).first() or 
