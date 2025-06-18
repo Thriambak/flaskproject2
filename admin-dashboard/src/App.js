@@ -396,8 +396,8 @@ const customDataProvider = {
 
 const UserBulkActionButtons = () => (
     <BulkDeleteWithConfirmButton
-        confirmTitle="Delete Users"
-        confirmContent="Are you sure you want to delete the selected users? This action cannot be undone."
+        confirmTitle="Delete Job Seekers"
+        confirmContent="Are you sure you want to delete the selected job seekers? This action cannot be undone."
     />
 );
 
@@ -416,7 +416,7 @@ const JobBulkActionButtons = () => (
 );
 
 const metricIcons = {
-    users: <PeopleAltIcon sx={{ fontSize: 40, color: 'white' }} />,
+    job_seekers: <PeopleAltIcon sx={{ fontSize: 40, color: 'white' }} />,
     companies: <CorporateFareIcon sx={{ fontSize: 40, color: 'white' }} />,
     jobs: <WorkOutlineIcon sx={{ fontSize: 40, color: 'white' }} />,
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
@@ -425,7 +425,7 @@ const metricIcons = {
 const Dashboard = () => {
     const theme = useTheme();
     const [metrics, setMetrics] = useState({
-        users: 0,
+        job_seekers: 0,
         companies: 0,
         jobs: 0,
         applications: 0
@@ -437,7 +437,13 @@ const Dashboard = () => {
         fetch(`${API_BASE_URL}/dashboard`)
             .then((res) => res.json())
             .then((data) => {
-                setMetrics(data.metrics);
+                const transformedMetrics = {
+                    job_seekers: data.metrics.users || data.metrics.job_seekers || 0,
+                    companies: data.metrics.companies || 0,
+                    jobs: data.metrics.jobs || 0,
+                    applications: data.metrics.applications || 0
+                };
+                setMetrics(transformedMetrics);
                 setChartData(data.trends.map(item => ({ 
                     x: item.x, 
                     applications: item.applications, 
@@ -453,6 +459,10 @@ const Dashboard = () => {
         '#4caf50',
         '#9c27b0'
     ];
+
+    const formatMetricName = (key) => {
+        return key === 'job_seekers' ? 'JOB SEEKERS' : key.replace("_", " ").toUpperCase();
+    };
 
     return (
         <Box p={3}>
@@ -470,7 +480,7 @@ const Dashboard = () => {
                                 <Box display="flex" justifyContent="space-between" alignItems="center">
                                     <div>
                                         <Typography variant="subtitle2" sx={{ opacity: 0.9, letterSpacing: 1 }}>
-                                            {key.replace("_", " ").toUpperCase()}
+                                            {formatMetricName(key)}
                                         </Typography>
                                         <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
                                             {value}
@@ -834,14 +844,14 @@ const UserList = (props) => (
             <SearchInput 
                 source="q" 
                 alwaysOn 
-                placeholder="Search users..." 
+                placeholder="Search job seekers..." 
                 sx={{ maxWidth: 400 }}
             />
         ]} 
         {...props}
     >
         <Datagrid bulkActionButtons={<UserBulkActionButtons />}>
-            <TextField source="id" />
+            <TextField source="id" sortable={false} />
             <TextField source="name" />
             <TextField source="email" />
             <FunctionField
@@ -892,7 +902,7 @@ const JobList = (props) => (
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            <TextField source="id" />
+            <TextField source="id" sortable={false} />
             <TextField source="title" />
             <TextField source="description" />
             <TextField source="job_type" />
@@ -914,7 +924,7 @@ const App = () => (
         layout={CustomLayout}
         title="Admin Portal"
     >
-        <Resource name="users" list={UserList} />
+        <Resource name="users" list={UserList} options={{ label: 'Job Seekers' }} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
     </Admin>
