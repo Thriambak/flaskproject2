@@ -2,7 +2,10 @@ import * as React from "react";
 import { 
   Admin, 
   Resource, 
-  List, 
+  List,
+  Confirm,
+  useRecordContext,
+  useCreate, 
   Datagrid, 
   TextField,
   SearchInput,
@@ -14,10 +17,17 @@ import {
   BooleanInput,
   useUpdate,
   useNotify,
-  AuthProvider,
-  Login
+  Login,
+  LoginForm,
+  Layout,
+  AppBar,
+  UserMenu,
+  Button as RaButton, // Alias React-Admin's Button to avoid conflict
+  useRefresh, // Import useRefresh hook
+  useGetList, // Import useGetList to manually trigger a fetch
+  BulkDeleteWithConfirmButton,
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper, Container, Avatar } from "@mui/material";
+import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper } from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -39,182 +49,237 @@ import CategoryIcon from '@mui/icons-material/Category';
 import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import RefreshIcon from '@mui/icons-material/Refresh'; // Import RefreshIcon
+import { 
+    Dialog, // MUI Dialog
+    DialogActions, // MUI DialogActions
+    DialogContent, // MUI DialogContent
+    DialogContentText, // MUI DialogContentText
+    DialogTitle, // MUI DialogTitle
+} from "@mui/material";
+
+
+
+
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
-// Custom Login Page Component
-const CustomLoginPage = (props) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const theme = useTheme();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    props.login({ username, password })
-      .catch(() => setError('Invalid username or password'));
-  };
-
-  return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          Admin Login
-        </Typography>
-        {error && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            {error}
-          </Typography>
-        )}
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-          <MuiTextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Username"
-            name="username"
-            autoComplete="username"
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <MuiTextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2, py: 1.5, borderRadius: 2 }}
-          >
-            Sign In
-          </Button>
-        </Box>
-      </Box>
-    </Container>
-  );
+// Authentication Provider
+const authProvider = {
+    login: ({ username, password }) => {
+    if (username === 'admin' && password === 'admin') {
+        // Store a flag or token in localStorage
+        localStorage.setItem('isAuthenticated', 'true'); // Or store a token like 'myAuthToken'
+        return Promise.resolve();
+    }
+    return Promise.reject(new Error('Invalid credentials'));
+},
+    logout: () => {
+    localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
+    return Promise.resolve();
+},
+    checkError: ({ status }) => {
+        if (status === 401 || status === 403) {
+            window.isAuthenticated = false;
+            return Promise.reject();
+        }
+        return Promise.resolve();
+    },
+    checkAuth: () => {
+    return localStorage.getItem('isAuthenticated') ? Promise.resolve() : Promise.reject();
+    },
+    getPermissions: () => Promise.resolve(),
 };
 
-// Auth Provider for handling authentication
-const authProvider = {
-  login: ({ username, password }) => {
-    // In a real application, you would make an API call to your backend
-    return fetch(`${API_BASE_URL}/admin/login`, {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(response => {
-        if (response.status < 200 || response.status >= 300) {
-          throw new Error('Invalid credentials');
-        }
-        return response.json();
-      })
-      .then(auth => {
-        // Store the token in localStorage
-        localStorage.setItem('auth', JSON.stringify(auth));
-      });
-      
-    // For demo purposes, you can use this hardcoded authentication:
-    /*
-    if (username === 'admin' && password === 'password') {
-      localStorage.setItem('auth', JSON.stringify({ username, token: 'demo-token' }));
-      return Promise.resolve();
-    }
-    return Promise.reject();
-    */
-  },
-  logout: () => {
-    localStorage.removeItem('auth');
-    return Promise.resolve();
-  },
-  checkError: (error) => {
-    const status = error.status;
-    if (status === 401 || status === 403) {
-      localStorage.removeItem('auth');
-      return Promise.reject();
-    }
-    return Promise.resolve();
-  },
-  checkAuth: () => {
-    return localStorage.getItem('auth') ? Promise.resolve() : Promise.reject();
-  },
-  getPermissions: () => {
-    // In a real app, you'd get permissions from your backend
-    return Promise.resolve();
-  },
-  getIdentity: () => {
-    const auth = JSON.parse(localStorage.getItem('auth'));
-    return Promise.resolve({
-      id: auth?.username || 'anonymous',
-      fullName: auth?.username || 'Anonymous',
-      avatar: null,
-    });
-  },
+// Custom User Menu with proper positioning
+const CustomUserMenu = () => (
+    <UserMenu 
+        sx={{
+            '& .MuiPopover-paper': {
+                marginTop: '8px',
+                transform: 'translateX(-50%) !important',
+                left: '50% !important',
+                right: 'auto !important',
+                minWidth: '120px',
+                maxWidth: '200px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                borderRadius: '8px'
+            }
+        }}
+    />
+);
+
+// Custom AppBar with fixed positioning
+const CustomAppBar = () => (
+    <AppBar 
+        userMenu={<CustomUserMenu />}
+        sx={{
+            '& .RaAppBar-toolbar': {
+                paddingRight: '16px'
+            },
+            '& .RaAppBar-userMenu': {
+                '& .MuiButtonBase-root': {
+                    borderRadius: '50%',
+                    padding: '8px'
+                }
+            }
+        }}
+    />
+);
+
+// Custom Layout with fixed AppBar
+const CustomLayout = (props) => (
+    <Layout {...props} appBar={CustomAppBar} />
+);
+
+// Custom Login Page Component
+const CustomLoginPage = () => {
+    const theme = useTheme();
+    
+    return (
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 2
+            }}
+        >
+            <Paper
+                elevation={10}
+                sx={{
+                    padding: 4,
+                    borderRadius: 4,
+                    maxWidth: 400,
+                    width: '100%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)'
+                }}
+            >
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <AdminPanelSettingsIcon 
+                        sx={{ 
+                            fontSize: 60, 
+                            color: theme.palette.primary.main,
+                            mb: 2
+                        }} 
+                    />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                        Admin Portal
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Sign in to access your dashboard
+                    </Typography>
+                </Box>
+                
+                <LoginForm 
+                    sx={{ justifyItems: 'center', 
+                        '& .MuiTextField-root': {
+                            mb: 1,
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            }
+                        },
+                        '& .MuiButton-root': {
+                            borderRadius: 2,
+                            py: 1.5,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            fontWeight: 600
+                        }
+                    }}
+                />
+                
+                {/* <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        Default credentials:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        Username: admin
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        Password: admin
+                    </Typography>
+                </Box> */}
+            </Paper>
+        </Box>
+    );
 };
 
 const customDataProvider = {
     getList: async (resource, params) => {
         try {
+            // Extract pagination parameters
+            const { page, perPage } = params.pagination;
+            const { field, order } = params.sort;
+            
+            // Build URL with pagination and sorting parameters
             let url = `${API_BASE_URL}/${resource}`;
+            const queryParams = new URLSearchParams();
+            
+            // Add pagination parameters
+            queryParams.append('page', page.toString());
+            queryParams.append('per_page', perPage.toString());
+            
+            // Add sorting parameters if available
+            if (field && order) {
+                queryParams.append('sort', field);
+                queryParams.append('order', order.toLowerCase());
+            }
+            
+            // Add filter parameters
             if (params.filter && Object.keys(params.filter).length > 0) {
-                const queryParams = new URLSearchParams();
                 Object.entries(params.filter).forEach(([key, value]) => {
                     if (value) {
                         queryParams.append(key, value);
                     }
                 });
-                if (queryParams.toString()) {
-                    url += `?${queryParams.toString()}`;
-                }
             }
             
-            const auth = JSON.parse(localStorage.getItem('auth'));
+            url += `?${queryParams.toString()}`;
+            
             const response = await fetch(url, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${auth?.token}` // Add token to requests
+                    "Accept": "application/json"
                 }
             });
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    // Handle unauthorized access
-                    localStorage.removeItem('auth');
-                    window.location.reload();
-                }
                 throw new Error(`Failed to fetch ${resource}`);
             }
 
             const json = await response.json();
-            const formattedData = json.map(item => ({
+            
+            // Handle different response formats from your backend
+            let data, total;
+            
+            if (Array.isArray(json)) {
+                // If backend returns array directly (current format)
+                // Apply client-side pagination as fallback
+                const start = (page - 1) * perPage;
+                const end = start + perPage;
+                data = json.slice(start, end);
+                total = json.length;
+            } else if (json.data && json.total !== undefined) {
+                // If backend returns paginated format
+                data = json.data;
+                total = json.total;
+            } else {
+                // Default fallback
+                data = json;
+                total = Array.isArray(json) ? json.length : 1;
+            }
+            
+            const formattedData = data.map(item => ({
                 id: item.id || item.job_id || item.company_id,
                 ...item
             }));
 
-            return { data: formattedData, total: formattedData.length };
+            return { data: formattedData, total };
         } catch (error) {
             console.error("Error fetching data:", error);
             return { data: [], total: 0 };
@@ -223,13 +288,11 @@ const customDataProvider = {
 
     getOne: async (resource, params) => {
         try {
-            const auth = JSON.parse(localStorage.getItem('auth'));
             const response = await fetch(`${API_BASE_URL}/${resource}/${params.id}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${auth?.token}`
+                    "Accept": "application/json"
                 }
             });
 
@@ -247,12 +310,10 @@ const customDataProvider = {
 
     create: async (resource, params) => {
         try {
-            const auth = JSON.parse(localStorage.getItem('auth'));
             const response = await fetch(`${API_BASE_URL}/${resource}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${auth?.token}`
                 },
                 body: JSON.stringify(params.data),
             });
@@ -271,12 +332,10 @@ const customDataProvider = {
 
     update: async (resource, params) => {
         try {
-            const auth = JSON.parse(localStorage.getItem('auth'));
             const response = await fetch(`${API_BASE_URL}/${resource}/${params.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${auth?.token}`
                 },
                 body: JSON.stringify(params.data),
             });
@@ -295,13 +354,12 @@ const customDataProvider = {
 
     delete: async (resource, params) => {
         try {
-            const auth = JSON.parse(localStorage.getItem('auth'));
             const response = await fetch(`${API_BASE_URL}/${resource}/${params.id}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${auth?.token}`
                 },
+                body: JSON.stringify(params.data),
             });
 
             if (!response.ok) {
@@ -315,14 +373,12 @@ const customDataProvider = {
         }
     },
     
-     deleteMany: async (resource, params) => {
+    deleteMany: async (resource, params) => {
         try {
-            const auth = JSON.parse(localStorage.getItem('auth'));
             const response = await fetch(`${API_BASE_URL}/${resource}/bulk`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${auth?.token}`
                 },
                 body: JSON.stringify({ ids: params.ids }),
             });
@@ -339,8 +395,29 @@ const customDataProvider = {
     },
 };
 
+const UserBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Job Seekers"
+        confirmContent="Are you sure you want to delete the selected job seekers? This action cannot be undone."
+    />
+);
+
+const CompanyBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Companies"
+        confirmContent="Are you sure you want to delete the selected companies? This action cannot be undone."
+    />
+);
+
+const JobBulkActionButtons = () => (
+    <BulkDeleteWithConfirmButton
+        confirmTitle="Delete Jobs"
+        confirmContent="Are you sure you want to delete the selected jobs? This action cannot be undone."
+    />
+);
+
 const metricIcons = {
-    users: <PeopleAltIcon sx={{ fontSize: 40, color: 'white' }} />,
+    job_seekers: <PeopleAltIcon sx={{ fontSize: 40, color: 'white' }} />,
     companies: <CorporateFareIcon sx={{ fontSize: 40, color: 'white' }} />,
     jobs: <WorkOutlineIcon sx={{ fontSize: 40, color: 'white' }} />,
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
@@ -349,7 +426,7 @@ const metricIcons = {
 const Dashboard = () => {
     const theme = useTheme();
     const [metrics, setMetrics] = useState({
-        users: 0,
+        job_seekers: 0,
         companies: 0,
         jobs: 0,
         applications: 0
@@ -358,15 +435,16 @@ const Dashboard = () => {
     const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
-        const auth = JSON.parse(localStorage.getItem('auth'));
-        fetch(`${API_BASE_URL}/dashboard`, {
-            headers: {
-                "Authorization": `Bearer ${auth?.token}`
-            }
-        })
+        fetch(`${API_BASE_URL}/dashboard`)
             .then((res) => res.json())
             .then((data) => {
-                setMetrics(data.metrics);
+                const transformedMetrics = {
+                    job_seekers: data.metrics.users || data.metrics.job_seekers || 0,
+                    companies: data.metrics.companies || 0,
+                    jobs: data.metrics.jobs || 0,
+                    applications: data.metrics.applications || 0
+                };
+                setMetrics(transformedMetrics);
                 setChartData(data.trends.map(item => ({ 
                     x: item.x, 
                     applications: item.applications, 
@@ -382,6 +460,10 @@ const Dashboard = () => {
         '#4caf50',
         '#9c27b0'
     ];
+
+    const formatMetricName = (key) => {
+        return key === 'job_seekers' ? 'JOB SEEKERS' : key.replace("_", " ").toUpperCase();
+    };
 
     return (
         <Box p={3}>
@@ -399,7 +481,7 @@ const Dashboard = () => {
                                 <Box display="flex" justifyContent="space-between" alignItems="center">
                                     <div>
                                         <Typography variant="subtitle2" sx={{ opacity: 0.9, letterSpacing: 1 }}>
-                                            {key.replace("_", " ").toUpperCase()}
+                                            {formatMetricName(key)}
                                         </Typography>
                                         <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
                                             {value}
@@ -511,7 +593,7 @@ const FilterDropdown = () => {
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-                    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+            { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
@@ -582,28 +664,312 @@ const FilterDropdown = () => {
     );
 };
 
+const AddCompanyDialog = ({ open, handleClose }) => {
+  const [create] = useCreate();
+  const notify = useNotify();
+  const refresh = useRefresh();
+
+  const [formData, setFormData] = useState({
+    company_name: '',
+    email: '',
+    address: '',
+    website: '',
+    logo: '',
+    description: '',
+    industry: '',
+    password: '',
+  });
+
+  const [passwordError, setPasswordError] = useState('');
+  const [emailError, setEmailError] = useState(''); // State for email validation error
+  const [companyNameError, setCompanyNameError] = useState(''); // State for company_name validation error
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear errors when user types
+    if (e.target.name === 'password') {
+      setPasswordError('');
+    } else if (e.target.name === 'email') {
+      setEmailError('');
+    } else if (e.target.name === 'company_name') {
+      setCompanyNameError('');
+    }
+  };
+
+  const validatePassword = (password) => {
+    if (password.includes(' ')) {
+      return 'Password cannot contain spaces.';
+    }
+    if (!/^[a-zA-Z0-9@#$%^&+=]+$/.test(password)) {
+      return 'Password can only contain letters, numbers, and special characters @#$%^&+=';
+    }
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long.';
+    }
+    return ''; // No error
+  };
+
+  const validateEmail = (email) => {
+    if (!email) {
+      return 'Email address is required.';
+    }
+    // Basic email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return 'Please enter a valid email address.';
+    }
+    return '';
+  };
+
+  const validateCompanyName = (companyName) => {
+    if (!companyName) {
+      return 'Company Name is required.';
+    }
+    return '';
+  };
+
+  const handleSubmit = async () => {
+    const passwordValidationMessage = validatePassword(formData.password);
+    const emailValidationMessage = validateEmail(formData.email);
+    const companyNameValidationMessage = validateCompanyName(formData.company_name);
+
+    if (passwordValidationMessage) {
+      setPasswordError(passwordValidationMessage);
+    }
+    if (emailValidationMessage) {
+      setEmailError(emailValidationMessage);
+    }
+    if (companyNameValidationMessage) {
+      setCompanyNameError(companyNameValidationMessage);
+    }
+
+    if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
+      return; // Stop submission if any validation fails
+    }
+
+    try {
+      const dataToCreate = {
+        ...formData,
+        is_banned: false, // Default to not banned
+      };
+
+      await create('companies', { data: dataToCreate });
+      notify('Company added successfully!', { type: 'success' });
+      refresh(); // Refresh the company list
+      handleClose();
+      setFormData({ // Reset form after successful submission
+        company_name: '',
+        email: '',
+        address: '',
+        website: '',
+        logo: '',
+        description: '',
+        industry: '',
+        password: '',
+      });
+      setPasswordError('');
+      setEmailError('');
+      setCompanyNameError('');
+    } catch (error) {
+      notify(`Error adding company: ${error.message}`, { type: 'error' });
+      console.error("Error adding company:", error);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>Add New Company</DialogTitle>
+      <DialogContent>
+        <DialogContentText sx={{ mb: 2 }}>
+          Please fill in the details for the new company.
+        </DialogContentText>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              autoFocus
+              margin="dense"
+              name="company_name"
+              label="Company Name"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={formData.company_name}
+              onChange={handleChange}
+              required
+              error={!!companyNameError}
+              helperText={companyNameError}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              margin="dense"
+              name="email"
+              label="Email Address"
+              type="email"
+              fullWidth
+              variant="outlined"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              error={!!emailError}
+              helperText={emailError}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              margin="dense"
+              name="password"
+              label="Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              value={formData.password}
+              onChange={handleChange}
+              error={!!passwordError}
+              helperText={passwordError || "Must be at least 8 characters and contain letters, numbers, or @#$%^&+="}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              margin="dense"
+              name="industry"
+              label="Industry"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={formData.industry}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <MuiTextField
+              margin="dense"
+              name="address"
+              label="Address"
+              type="text"
+              fullWidth
+              multiline
+              rows={2}
+              variant="outlined"
+              value={formData.address}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              margin="dense"
+              name="website"
+              label="Website"
+              type="url"
+              fullWidth
+              variant="outlined"
+              value={formData.website}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MuiTextField
+              margin="dense"
+              name="logo"
+              label="Logo URL"
+              type="url"
+              fullWidth
+              variant="outlined"
+              value={formData.logo}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <MuiTextField
+              margin="dense"
+              name="description"
+              label="Description"
+              type="text"
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              value={formData.description}
+              onChange={handleChange}
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} color="primary" variant="contained">
+          Add Company
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const AddCompanyButton = () => {
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <Button
+        startIcon={<AddIcon />}
+        onClick={handleClickOpen}
+        variant="contained"
+        color="primary"
+        size="medium"
+        sx={{
+          ml: 2,
+          borderRadius: 20,
+          textTransform: 'none',
+          px: 3
+        }}
+      >
+        Add Company
+      </Button>
+      <AddCompanyDialog open={open} handleClose={handleClose} />
+    </>
+  );
+};
+
+const CustomRefreshButton = () => {
+    const refresh = useRefresh();
     const theme = useTheme();
-    
-    const handleAddCompany = () => {
-        window.location.href = 'http://localhost:5000/company/company_profile';
+
+    const handleClick = () => {
+        refresh();
     };
-    
+
     return (
         <Button
-            startIcon={<AddIcon />}
-            onClick={handleAddCompany}
-            variant="contained"
-            color="primary"
+            onClick={handleClick}
+            startIcon={<RefreshIcon />}
+            variant="outlined"
             size="medium"
             sx={{ 
-                ml: 2,
+                mr: 2,
                 borderRadius: 20,
                 textTransform: 'none',
-                px: 3
+                px: 3,
+                bgcolor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.divider,
+                '&:hover': {
+                    bgcolor: theme.palette.action.hover,
+                    borderColor: theme.palette.primary.main
+                }
             }}
         >
-            Add Company
+            Refresh
         </Button>
     );
 };
@@ -613,6 +979,7 @@ const ListActions = (props) => {
     
     return (
         <TopToolbar {...props} sx={{ p: 2, bgcolor: 'background.default' }}>
+            <CustomRefreshButton /> {/* Add the custom refresh button here */}
             <FilterDropdown />
             <ExportButton 
                 sx={{ 
@@ -652,13 +1019,21 @@ const BanToggle = ({ record, resource }) => {
     const [update, { isLoading }] = useUpdate();
     const notify = useNotify();
     const theme = useTheme();
+    const refresh = useRefresh();
+
     
-    const [isBanned, setIsBanned] = useState(record.is_banned || false);
+    const [isBanned, setIsBanned] = useState(!!record.is_banned); // !! converts to boolean
+
     
+    useEffect(() => {
+        setIsBanned(!!record.is_banned);
+    }, [record.is_banned]); 
+
     const handleToggle = (event) => {
         const newValue = event.target.checked;
+        // Optimistically update the UI before the API call
         setIsBanned(newValue);
-        
+
         update(
             resource,
             { id: record.id, data: { is_banned: newValue }, previousData: record },
@@ -668,9 +1043,14 @@ const BanToggle = ({ record, resource }) => {
                         newValue ? 'User has been banned' : 'User has been unbanned',
                         { type: 'success' }
                     );
+                    // Crucially, trigger a refresh of the list after a successful update.
+                    // This will cause the entire list to re-fetch, and thus
+                    // each BanToggle component will receive the latest `record` prop.
+                    refresh(); 
                 },
                 onError: (error) => {
-                    setIsBanned(!newValue);
+                    // Revert the UI state if the API call fails
+                    setIsBanned(!newValue); 
                     notify(
                         `Error: Couldn't update ban status - ${error.message}`,
                         { type: 'error' }
@@ -716,14 +1096,14 @@ const UserList = (props) => (
             <SearchInput 
                 source="q" 
                 alwaysOn 
-                placeholder="Search users..." 
+                placeholder="Search job seekers..." 
                 sx={{ maxWidth: 400 }}
             />
         ]} 
         {...props}
     >
-        <Datagrid>
-            <TextField source="id" />
+        <Datagrid bulkActionButtons={<UserBulkActionButtons />}>
+            <TextField source="id" sortable={false} />
             <TextField source="name" />
             <TextField source="email" />
             <FunctionField
@@ -747,10 +1127,11 @@ const CompanyList = (props) => (
         ]}
         {...props}
     >
-        <Datagrid>
+        <Datagrid bulkActionButtons={<CompanyBulkActionButtons />}>
             <TextField source="id" />
             <TextField source="company_name" />
             <TextField source="email" />
+            <TextField source="industry" sortable={false} />
             <FunctionField
                 label="Ban Status"
                 render={(record) => <BanToggle record={record} resource="companies" />}
@@ -758,6 +1139,7 @@ const CompanyList = (props) => (
         </Datagrid>
     </List>
 );
+
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -771,8 +1153,8 @@ const JobList = (props) => (
         ]}
         {...props}
     >
-        <StyledDatagrid>
-            <TextField source="id" />
+        <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
+            <TextField source="id" sortable={false} />
             <TextField source="title" />
             <TextField source="description" />
             <TextField source="job_type" />
@@ -785,36 +1167,18 @@ const JobList = (props) => (
     </List>
 );
 
-const Reports = () => (
-    <Box sx={{ 
-        height: '60vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        flexDirection: 'column',
-        textAlign: 'center'
-    }}>
-        <AssignmentIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
-        <Typography variant="h4" color="textSecondary">
-            Reports Section Coming Soon!
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            We're working on creating meaningful analytics reports for you.
-        </Typography>
-    </Box>
-);
-
 const App = () => (
     <Admin 
         dataProvider={customDataProvider} 
         authProvider={authProvider}
-        loginPage={CustomLoginPage}
         dashboard={Dashboard}
+        loginPage={CustomLoginPage}
+        layout={CustomLayout}
+        title="Admin Portal"
     >
-        <Resource name="users" list={UserList} />
+        <Resource name="users" list={UserList} options={{ label: 'Job Seekers' }} />
         <Resource name="companies" list={CompanyList} />
         <Resource name="jobs" list={JobList} />
-        <Resource name="reports" list={Reports} />
     </Admin>
 );
 
