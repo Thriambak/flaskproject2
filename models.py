@@ -1,6 +1,8 @@
+import uuid
 from datetime import datetime
 #import pytz
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
@@ -16,10 +18,11 @@ class RoleEnum(Enum):
 # Login Table
 class Login(db.Model):
     __tablename__ = 'logins'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(50), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum('user', 'company', 'admin', 'college', name='role_enum'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -34,8 +37,8 @@ class Login(db.Model):
 # College Table
 class College(db.Model):
     __tablename__ = 'college'
-    id = db.Column(db.Integer, primary_key=True) #, autoincrement=True
-    login_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False, unique=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    login_id = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False, unique=True)
     college_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     address = db.Column(db.Text)
@@ -43,7 +46,7 @@ class College(db.Model):
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
     is_banned = db.Column(db.Boolean, default = False)
-    login = db.relationship('Login', backref=db.backref('college', uselist=False))
+    login = db.relationship('Login', backref=db.backref('college', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
         return f'<College {self.college_name}>'
@@ -52,8 +55,8 @@ class College(db.Model):
 # User Table
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    login_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False, unique=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    login_id = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False, unique=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     phone = db.Column(db.String(15))
@@ -63,7 +66,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
     is_banned = db.Column(db.Boolean, default = False)
-    login = db.relationship('Login', backref=db.backref('user', uselist=False))
+    login = db.relationship('Login', backref=db.backref('user', uselist=False, cascade='all, delete'))
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -72,8 +75,8 @@ class User(db.Model):
 # Company Table
 class Company(db.Model):
     __tablename__ = 'companies'
-    id = db.Column(db.Integer, primary_key=True) #, autoincrement=True
-    login_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False, unique=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    login_id = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False, unique=True)
     company_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     address = db.Column(db.Text)
@@ -82,7 +85,7 @@ class Company(db.Model):
     description = db.Column(db.Text)
     industry = db.Column(db.Text)
     is_banned = db.Column(db.Boolean, default = False)
-    login = db.relationship('Login', backref=db.backref('company', uselist=False))
+    login = db.relationship('Login', backref=db.backref('company', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
         return f'<Company {self.company_name}>'
@@ -91,12 +94,12 @@ class Company(db.Model):
 # Admin Table
 class Admin(db.Model):
     __tablename__ = 'admins'
-    id = db.Column(db.Integer, primary_key=True)
-    login_id = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False, unique=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    login_id = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False, unique=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
 
-    login = db.relationship('Login', backref=db.backref('admin', uselist=False))
+    login = db.relationship('Login', backref=db.backref('admin', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
         return f'<Admin {self.name}>'
@@ -106,7 +109,7 @@ class Admin(db.Model):
 class Job(db.Model):
     __tablename__ = 'jobs'
 
-    job_id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
+    job_id = db.Column(Uuid, primary_key=True, default=uuid.uuid4, unique=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract
@@ -121,7 +124,7 @@ class Job(db.Model):
     form_url = db.Column(db.Text)  # To store the Google Form link
     deadline = db.Column(db.Date)
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
-    created_by = db.Column(db.Integer, db.ForeignKey('logins.id'), nullable=False)
+    created_by = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False)
 
     # Relationship with User (if needed)
     user = db.relationship('Login', backref=db.backref('jobs', lazy=True))
@@ -150,9 +153,9 @@ class Job(db.Model):
 class JobApplication(db.Model):
     __tablename__ = 'job_applications'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.id'), nullable=False)
+    job_id = db.Column(Uuid, db.ForeignKey('jobs.job_id'), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # 'pending', 'accepted', 'rejected'
     resume_path = db.Column(db.Text, nullable=True)  # Store path to the resume file
     date_applied = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Timestamp when application is submitted
@@ -174,10 +177,10 @@ class JobApplication(db.Model):
 class Communication(db.Model):
     __tablename__ = 'communications'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.login_id'))
-    college_id = db.Column(db.Integer, db.ForeignKey('college.login_id'))
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.login_id'))
+    college_id = db.Column(Uuid, db.ForeignKey('college.login_id'))
+    company_id = db.Column(Uuid, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     read_status = db.Column(db.Boolean, nullable=False, default=False)
@@ -197,9 +200,9 @@ class Communication(db.Model):
 class Notification(db.Model):
     __tablename__ = 'notifications'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.login_id'), nullable=False)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.login_id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.login_id'), nullable=False)
+    company_id = db.Column(Uuid, db.ForeignKey('companies.login_id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     read_status = db.Column(db.Boolean, nullable=False, default=False)
     hidden = db.Column(db.Boolean, nullable=False, default=False)
@@ -217,8 +220,8 @@ class Notification(db.Model):
 class ResumeCertification(db.Model):
     __tablename__ = 'resume_certifications'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.id'), nullable=False)
     resume_path = db.Column(db.Text, nullable=True)
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
@@ -232,9 +235,9 @@ class ResumeCertification(db.Model):
 class Certification(db.Model):
     __tablename__ = 'certifications'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    resume_cert_id = db.Column(db.Integer, db.ForeignKey('resume_certifications.id'), nullable=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.id'), nullable=False)
+    resume_cert_id = db.Column(Uuid, db.ForeignKey('resume_certifications.id'), nullable=True)
     certification_name = db.Column(db.String(255), nullable=False)
     verification_status = db.Column(db.Boolean, default=False)
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -246,11 +249,11 @@ class Certification(db.Model):
 # Coupon Table
 class Coupon(db.Model):
     __tablename__ = 'coupons'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
     code = db.Column(db.String(10), unique=True, nullable=False)
     faculty_id = db.Column(db.String(20), nullable=False)
     year = db.Column(db.String(20), nullable=False)
-    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    college_id = db.Column(Uuid, db.ForeignKey('college.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     college = db.relationship('College', backref=db.backref('coupons', lazy=True))
@@ -262,9 +265,9 @@ class Coupon(db.Model):
 # Coupon User Table
 class Couponuser(db.Model):
     __tablename__ = 'couponuser'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.id'), nullable=False)
+    coupon_id = db.Column(Uuid, db.ForeignKey('coupons.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     college = db.relationship('Coupon', backref=db.backref('couponuser', lazy=True))
@@ -275,9 +278,9 @@ class Couponuser(db.Model):
 
 class Favorite(db.Model):
     __tablename__ = 'favorites'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('jobs.job_id'), nullable=False)
+    id = db.Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(Uuid, db.ForeignKey('users.id'), nullable=False)
+    job_id = db.Column(Uuid, db.ForeignKey('jobs.job_id'), nullable=False)
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('favorites', lazy=True))

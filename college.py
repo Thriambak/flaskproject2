@@ -4,7 +4,7 @@ import re
 import string
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from functools import wraps
-import os
+import os, uuid
 from werkzeug.utils import secure_filename
 from flask_login import login_required, current_user
 from models import Certification, Company, Coupon, Couponuser, Job
@@ -396,8 +396,12 @@ def college_endorsement():
     
     # Get college profile using login_id instead of college_id
     college_profile = College.query.filter_by(login_id=login_id).first()
+    
+    if not college_profile:
+        flash("College profile not found.", "error")
+        return redirect(url_for('auth.login'))
 
-    # Fetch the necessary data from the database
+    # Fetch the necessary data from the database - Fixed to use college_profile.id
     coupon_users = db.session.query(
         Coupon.code.label('coupon_code'),
         User.name.label('user_name'),
@@ -406,7 +410,7 @@ def college_endorsement():
         User.id.label('user_id')
     ).join(Couponuser, Couponuser.coupon_id == Coupon.id)\
      .join(User, Couponuser.user_id == User.id)\
-     .filter(Coupon.college_id == session.get('college_id'))\
+     .filter(Coupon.college_id == college_profile.id)\
      .all()
 
     return render_template('/college/endorse.html', 
@@ -414,14 +418,21 @@ def college_endorsement():
         college_profile=college_profile)
 
 # API endpoint to get user details for the modal
-@college_blueprint.route('/api/user_details/<int:user_id>')
+@college_blueprint.route('/api/user_details/<user_id>')
 @login_required
 def api_user_details(user_id):
     if session.get('role') != 'college':
         return jsonify({"error": "Unauthorized"}), 403
     
-    user = User.query.get_or_404(user_id)
-    certifications = Certification.query.filter_by(user_id=user_id).all()
+    # Convert string UUID to UUID object for querying
+    try:
+        import uuid
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        return jsonify({"error": "Invalid user ID format"}), 400
+    
+    user = User.query.get_or_404(user_uuid)
+    certifications = Certification.query.filter_by(user_id=user_uuid).all()
     
     # Format user data for JSON response
     user_data = {
@@ -435,7 +446,7 @@ def api_user_details(user_id):
     cert_data = []
     for cert in certifications:
         cert_data.append({
-            "id": cert.id,
+            "id": str(cert.id),  # Convert UUID to string for JSON
             "certification_name": cert.certification_name,
             "verification_status": cert.verification_status
         })
@@ -446,13 +457,20 @@ def api_user_details(user_id):
     })
 
 # Endpoint to verify certification
-@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
+@college_blueprint.route('/verify_certification/<cert_id>', methods=['POST'])
 @login_required
 def verify_certification(cert_id):
     if session.get('role') != 'college':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     
-    certification = Certification.query.get_or_404(cert_id)
+    # Convert string UUID to UUID object for querying
+    try:
+        import uuid
+        cert_uuid = uuid.UUID(cert_id)
+    except ValueError:
+        return jsonify({"success": False, "message": "Invalid certification ID format"}), 400
+    
+    certification = Certification.query.get_or_404(cert_uuid)
     
     try:
         certification.verification_status = True
@@ -465,14 +483,14 @@ def verify_certification(cert_id):
 
 
 '''
-@college_blueprint.route('/user_details/<int:user_id>')
+@college_blueprint.route('/user_details/<uuid:user_id>')
 @login_required
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     certifications = Certification.query.filter_by(user_id=user_id).all()
     return render_template('/college/user_details.html', user=user, certifications=certifications)
 
-@college_blueprint.route('/verify_certification/<int:cert_id>', methods=['POST'])
+@college_blueprint.route('/verify_certification/<uuid:cert_id>', methods=['POST'])
 @login_required
 def verify_certification(cert_id):
     certification = Certification.query.get_or_404(cert_id)

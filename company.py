@@ -10,7 +10,7 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy, assuming you
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification, ResumeCertification
-import re
+import re, uuid
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -363,10 +363,14 @@ def company_application_review():
         new_status = request.form.get('status')
  
         application = JobApplication.query.get(application_id)
+
         if application:
-            if new_status == 'Rejected' and application.status == 'Hired':
+            previous_status = application.status
+
+            if new_status != 'Hired' and previous_status == 'Hired':
                 job = application.job
-                job.filled_vacancy -= 1
+                if job.filled_vacancy > 0:
+                    job.filled_vacancy -= 1
                 db.session.commit()
 
             application.status = new_status
@@ -374,9 +378,9 @@ def company_application_review():
             flash('Application status updated successfully!', 'success')
 
             # If the application is hired, increment the filled_vacancy in Job table
-            if new_status == 'Hired':
+            if new_status == 'Hired' and previous_status != 'Hired':
                 job = application.job  # Get the related job
-                if job.filled_vacancy < job.total_vacancy:  # Ensure filled_vacancy does not exceed total_vacancy
+                if job.filled_vacancy < job.total_vacancy: # Ensure filled_vacancy does not exceed total_vacancy
                     job.filled_vacancy += 1
                     db.session.commit()
                 if job.filled_vacancy == job.total_vacancy:
@@ -431,7 +435,7 @@ def company_application_review():
             'status': application.status,
             'application_id': application.id,
             'resume_path': resume_path,
-            'user_id': application.user_id
+            'user_id': str(application.user_id)  # Convert UUID to string
         })
     
     # Fetch certifications for each candidate
@@ -439,14 +443,15 @@ def company_application_review():
     user_ids = [app['user_id'] for app in applications_data]
     
     # Using a single query to get all certifications for all relevant users
-    all_certifications = Certification.query.filter(Certification.user_id.in_(user_ids)).all()
+    all_certifications = Certification.query.filter(Certification.user_id.in_([uuid.UUID(uid) for uid in user_ids])).all()
     
     # Organize certifications by user_id
     for cert in all_certifications:
-        if cert.user_id not in user_certifications:
-            user_certifications[cert.user_id] = []
+        user_id_str = str(cert.user_id)  # Convert UUID to string
+        if user_id_str not in user_certifications:
+            user_certifications[user_id_str] = []
         
-        user_certifications[cert.user_id].append({
+        user_certifications[user_id_str].append({
             'certification_name': cert.certification_name,
             'verified': cert.verification_status
         })
@@ -604,8 +609,9 @@ def company_hiring_communication():
     message_history = {"candidates": {}}
     for msg, recipient_name, recipient_type, recipient_id in messages:
         if recipient_type == 'candidate':
-            if recipient_id not in message_history["candidates"]:
-                message_history["candidates"][recipient_id] = []
+            recipient_id_str = str(recipient_id)  # Convert UUID to string
+            if recipient_id_str not in message_history["candidates"]:
+                message_history["candidates"][recipient_id_str] = []
             
             # Format the message with necessary details
             message_entry = {
@@ -613,7 +619,7 @@ def company_hiring_communication():
                 "message": msg.message,
                 "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M")
             }
-            message_history["candidates"][recipient_id].append(message_entry)
+            message_history["candidates"][recipient_id_str].append(message_entry)
 
 
     profile = Company.query.filter_by(login_id=user_id).first()

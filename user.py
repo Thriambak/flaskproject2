@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from models import Certification, Coupon, Couponuser, Job, JobApplication, Login,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-import os
+import os, uuid
 from models import db  # Ensure 'db' is the instance of SQLAlchemy
   # Assuming your model is in 'models.py'
 from config import Config
@@ -76,7 +76,7 @@ from datetime import datetime
 
 from models import db, User, Job, JobApplication, ResumeCertification, Notification
 
-@user_blueprint.route('/apply_for_job/<int:job_id>', methods=['POST'])
+@user_blueprint.route('/apply_for_job/<uuid:job_id>', methods=['POST'])
 
 def apply_for_job(job_id):
     user_id = session.get('user_id')
@@ -138,7 +138,7 @@ def apply_for_job(job_id):
 
     return redirect(url_for('user.user_dashboard'))
 
-@user_blueprint.route('/apply1_for_job/<int:job_id>', methods=['POST'])
+@user_blueprint.route('/apply1_for_job/<uuid:job_id>', methods=['POST'])
 
 def apply1_for_job(job_id):
     user_id = session.get('user_id')
@@ -289,7 +289,7 @@ def notifications():
         notifications=notifications,
         unread_count=unread_count
     )
-@user_blueprint.route('/mark_notification_read/<int:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
+@user_blueprint.route('/mark_notification_read/<uuid:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
 def mark_notification_read(notification_id):
     # Your code for marking a single notification as read...
 
@@ -321,7 +321,7 @@ def mark_notification_read(notification_id):
     
     return redirect(url_for('user.notifications'))
 
-@user_blueprint.route('/delete_notification/<int:notification_id>', methods=['POST'])
+@user_blueprint.route('/delete_notification/<uuid:notification_id>', methods=['POST'])
 def delete_notification(notification_id):
     user_pk = session.get('user_id')
     if not user_pk:
@@ -562,7 +562,7 @@ def profile():
                            edit_mode=edit_mode)
 from flask import jsonify
 
-@user_blueprint.route('/get_application_details/<int:application_id>', methods=['GET'])
+@user_blueprint.route('/get_application_details/<uuid:application_id>', methods=['GET'])
 def get_application_details(application_id):
     application = JobApplication.query.get(application_id)
     
@@ -592,7 +592,7 @@ from datetime import datetime
 
 
 # Save Job Route
-@user_blueprint.route('/save_job1/<int:job_id>', methods=['POST'])
+@user_blueprint.route('/save_job1/<uuid:job_id>', methods=['POST'])
 
 def save_job1(job_id):
     login_id = session.get('login_id')
@@ -619,7 +619,7 @@ def save_job1(job_id):
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.job_search'))
 
-@user_blueprint.route('/save_job/<int:job_id>', methods=['POST'])
+@user_blueprint.route('/save_job/<uuid:job_id>', methods=['POST'])
 
 def save_job(job_id):
     login_id = session.get('login_id')
@@ -673,7 +673,7 @@ def favorites():
     favorites = [job for favorite, job in favorites_data]
     
     return render_template('/user/favorites.html', favorites=favorites)
-@user_blueprint.route('/remove_favorite/<int:job_id>', methods=['POST'])
+@user_blueprint.route('/remove_favorite/<uuid:job_id>', methods=['POST'])
 def remove_favorite(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -696,7 +696,7 @@ def remove_favorite(job_id):
     
     flash("Job removed from favorites", "success")
     return redirect(url_for('user.favorites'))
-@user_blueprint.route('/delete_resume/<int:resume_id>', methods=['POST'])
+@user_blueprint.route('/delete_resume/<uuid:resume_id>', methods=['POST'])
 def delete_resume(resume_id):
     # Check if user is logged in
     if 'username' not in session:
@@ -744,7 +744,7 @@ def delete_resume(resume_id):
         
     return redirect(url_for('user.resume_certifications'))
 
-@user_blueprint.route('/delete_certification/<int:certification_id>', methods=['POST'])
+@user_blueprint.route('/delete_certification/<uuid:certification_id>', methods=['POST'])
 def delete_certification(certification_id):
     # Check if user is logged in
     if 'username' not in session:

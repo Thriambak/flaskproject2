@@ -133,7 +133,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    showPopup("{{ message }}", "{{ category }}");
+                    showPopup({{ message|tojson }}, {{ category|tojson }});
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -288,7 +288,12 @@
         // Function to fetch user details
         function fetchUserDetails(userId) {
             fetch(`/college/api/user_details/${userId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     showUserDetails(data.user, data.certifications);
                     modal.style.display = "block";
@@ -335,16 +340,16 @@
                 certifications.forEach(cert => {
                     const isVerified = cert.verification_status;
                     certHtml += `
-                        <tr>
+                        <tr data-cert-id="${cert.id}">
                             <td>${cert.certification_name}</td>
-                            <td>
+                            <td class="status-cell">
                                 ${isVerified ? 
                                     '<span class="verified-text"><i class="fas fa-check-circle"></i> Verified</span>' : 
                                     '<span class="unverified-text"><i class="fas fa-clock"></i> Not Verified</span>'}
                             </td>
-                            <td>
+                            <td class="action-cell">
                                 ${!isVerified ? 
-                                    `<button onclick="verifyCertification(${cert.id})" class="verify-button">
+                                    `<button onclick="verifyCertification('${cert.id}')" class="verify-button">
                                         <i class="fas fa-certificate"></i> Verify
                                     </button>` : 
                                     '<span class="verified-badge"><i class="fas fa-shield-alt"></i> Endorsed</span>'}
@@ -370,8 +375,15 @@
             }
         }
 
-        // Function to verify certification
+        // Function to verify certification - FIXED VERSION
         function verifyCertification(certId) {
+            // Disable the button to prevent multiple clicks
+            const button = document.querySelector(`button[onclick="verifyCertification('${certId}')"]`);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            }
+
             fetch(`/college/verify_certification/${certId}`, {
                 method: 'POST',
                 headers: {
@@ -379,21 +391,43 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Update the UI to show the certification as verified
-                    const row = document.querySelector(`button[onclick="verifyCertification(${certId})"]`).closest('tr');
-                    row.querySelector('td:nth-child(2)').innerHTML = '<span class="verified-text"><i class="fas fa-check-circle"></i> Verified</span>';
-                    row.querySelector('td:nth-child(3)').innerHTML = '<span class="verified-badge"><i class="fas fa-shield-alt"></i> Endorsed</span>';
+                    // Find the row by cert-id
+                    const row = document.querySelector(`tr[data-cert-id="${certId}"]`);
+                    if (row) {
+                        // Update the status cell
+                        const statusCell = row.querySelector('.status-cell');
+                        statusCell.innerHTML = '<span class="verified-text"><i class="fas fa-check-circle"></i> Verified</span>';
+                        
+                        // Update the action cell
+                        const actionCell = row.querySelector('.action-cell');
+                        actionCell.innerHTML = '<span class="verified-badge"><i class="fas fa-shield-alt"></i> Endorsed</span>';
+                    }
                     
                     showPopup("Skill verified successfully!", "success");
                 } else {
-                    showPopup("Failed to verify skill", "error");
+                    // Re-enable button on failure
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-certificate"></i> Verify';
+                    }
+                    showPopup(data.message || "Failed to verify skill", "error");
                 }
             })
             .catch(error => {
                 console.error('Error verifying skill:', error);
+                // Re-enable button on error
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-certificate"></i> Verify';
+                }
                 showPopup("Error processing your request", "error");
             });
         }
