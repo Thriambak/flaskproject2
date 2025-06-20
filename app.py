@@ -5,7 +5,7 @@ import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
 from config import Config
-from models import db, User, Job, Company, JobApplication, Login
+from models import db, User, Job, Company, JobApplication
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
@@ -14,9 +14,7 @@ from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import SQLAlchemyError
 import os
-import uuid
 from sqlalchemy import or_
 from datetime import datetime
 import pytz
@@ -60,6 +58,25 @@ def index():
 
 
 # ========== USERS API ==========
+
+
+@app.route('/users/<int:id>', methods=['GET'])
+def get_user_details(id):
+    user = User.query.get_or_404(id)
+    user_data = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+        'age': user.age,
+        'about_me': user.about_me,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'college_name': user.college_name,
+        'is_banned': user.is_banned
+    }
+    return jsonify(user_data)
+
+
 @app.route('/users', methods=['GET'])
 def get_users():
     query = User.query
@@ -81,12 +98,13 @@ def get_users():
         ))
     
     users = query.all()
+    # This is for the list view, so it only needs a few fields
     users_data = [
         {
             'id': user.id, 
             'name': user.name, 
             'email': user.email,
-            'is_banned': user.is_banned # <-- ADD THIS LINE
+            'is_banned': user.is_banned
         } 
         for user in users
     ]
@@ -108,7 +126,7 @@ def create_user():
     db.session.commit()
     return jsonify({"message": "User created successfully!", "id": new_user.id}), 201
 
-@app.route('/users/<uuid:user_id>', methods=['PUT'])
+@app.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     user = User.query.get(user_id)
     if not user:
@@ -121,7 +139,7 @@ def update_user(user_id):
     db.session.commit()
     return jsonify({"message": "User updated successfully!"})
 
-@app.route('/users/<uuid:user_id>', methods=['DELETE'])
+@app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
@@ -139,6 +157,24 @@ def delete_users_bulk():
     return jsonify({"message": f"Deleted {len(user_ids)} users successfully"})
 
 # ========== COMPANIES API ==========
+
+@app.route('/companies/<int:id>', methods=['GET'])
+def get_company_details(id):
+    company = Company.query.get_or_404(id)
+    company_data = {
+        'id': company.id,
+        'company_name': company.company_name,
+        'email': company.email,
+        'address': company.address,
+        'website': company.website,
+        'logo': company.logo,
+        'description': company.description,
+        'industry': company.industry,
+        'is_banned': company.is_banned
+    }
+    return jsonify(company_data)
+
+
 @app.route('/companies', methods=['GET'])
 def get_companies():
     query = Company.query
@@ -152,15 +188,11 @@ def get_companies():
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
             query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
-        elif "industry:" in search_term:  # Add industry search support
-            industry_term = search_term.split("industry:")[1].strip()
-            query = query.filter(Company.industry.ilike(f"%{industry_term}%"))
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
             Company.company_name.ilike(search_term),
-            Company.email.ilike(search_term),
-            Company.industry.ilike(search_term)
+            Company.email.ilike(search_term)
         ))
     companies = query.all()
     companies_data = [
@@ -168,7 +200,6 @@ def get_companies():
             'id': company.id,
             'company_name': company.company_name,
             'email': company.email,
-            'industry': company.industry,
             'is_banned': company.is_banned # <-- ADD THIS LINE
         } 
         for company in companies
@@ -190,7 +221,7 @@ def create_company():
     db.session.commit()
     return jsonify({"message": "Company created successfully!", "id": new_company.id}), 201
 
-@app.route('/companies/<uuid:company_id>', methods=['PUT'])
+@app.route('/companies/<int:company_id>', methods=['PUT'])
 def update_company(company_id):
     company = Company.query.get(company_id)
     if not company:
@@ -203,55 +234,22 @@ def update_company(company_id):
     db.session.commit()
     return jsonify({"message": "Company updated successfully!"})
 
-@app.route('/companies/<uuid:company_id>', methods=['DELETE'])
+@app.route('/companies/<int:company_id>', methods=['DELETE'])
 def delete_company(company_id):
     company = Company.query.get(company_id)
     if not company:
         return jsonify({"message": "Company not found"}), 404
     
-    # Get the associated login object before deleting the company
-    # login_to_delete = company.login
     db.session.delete(company)
-
-    # Also delete the associated login object
-    # if login_to_delete:
-    #     db.session.delete(login_to_delete)
-
     db.session.commit()
-    return jsonify({ "id": company_id })
+    return jsonify({"message": "Company deleted successfully!"})
 
 @app.route('/companies/bulk', methods=['DELETE'])
 def delete_companies_bulk():
-    company_ids_to_delete = request.json.get('ids', [])
-    print(f"Company IDs to delete: {company_ids_to_delete}")
-
-    if not company_ids_to_delete:
-        return jsonify({"message": "No company IDs provided"}), 400
-    
-    try:
-        # Fetch companies to delete
-        companies = Company.query.filter(Company.id.in_(company_ids_to_delete)).all()
-        print(f"Found companies: {[c.company_name for c in companies]}")
-        
-        if not companies:
-            return jsonify({"message": "No matching companies found for the provided IDs"}), 404
-
-        num_deleted = len(companies)
-
-        # Delete companies - associated logins will be deleted automatically due to cascade
-        for company in companies:
-            print(f"Deleting company: {company.company_name} (login_id: {company.login_id})")
-            db.session.delete(company)
-
-        db.session.commit()
-        return jsonify({
-            "message": f"Deleted {num_deleted} companies and their associated logins successfully"
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error during bulk delete: {str(e)}")
-        return jsonify({"message": f"Error deleting companies: {str(e)}"}), 500
+    company_ids = request.json.get('ids', [])
+    Company.query.filter(Company.id.in_(company_ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"message": f"Deleted {len(company_ids)} companies successfully"})
 
 # New route for company profile redirection
 @app.route('/company/company_profile', methods=['GET'])
@@ -298,19 +296,20 @@ def get_jobs():
             query = query.filter(Job.status.ilike(f"%{status_term}%"))
         else:
             search_term = f"%{search_term}%"
+            # Removed Job.description from the search filter
             query = query.filter(or_(
-    		Job.title.ilike(search_term),
-    		Job.job_type.ilike(search_term),
-    		Job.location.ilike(search_term),
-    		Job.status.ilike(search_term)
-		))
+    		    Job.title.ilike(search_term),
+    		    Job.job_type.ilike(search_term),
+    		    Job.location.ilike(search_term),
+    		    Job.status.ilike(search_term)
+		    ))
     
     jobs = query.all()
+    # Removed 'description' from the data dictionary
     jobs_data = [{
         'id': job.job_id,
         'job_id': job.job_id,
         'title': job.title,
-        'description': job.description,
         'job_type': job.job_type,
         'skills': job.skills,
         'years_of_exp': job.years_of_exp,
@@ -343,9 +342,9 @@ def create_job():
         except ValueError:
             return jsonify({"error": "Invalid deadline format. Use YYYY-MM-DD"}), 400
     
+    # Removed 'description' from the new Job object
     new_job = Job(
         title=data['title'],
-        description=data['description'],
         job_type=data['job_type'],
         skills=data.get('skills', ''),
         years_of_exp=data['years_of_exp'],
@@ -364,7 +363,8 @@ def create_job():
     db.session.commit()
     return jsonify({"message": "Job created successfully!", "id": new_job.job_id}), 201
 
-@app.route('/jobs/<uuid:job_id>', methods=['PUT'])
+
+@app.route('/jobs/<int:job_id>', methods=['PUT'])
 def update_job(job_id):
     job = Job.query.get(job_id)
     if not job:
@@ -390,7 +390,7 @@ def update_job(job_id):
     db.session.commit()
     return jsonify({"message": "Job updated successfully!"})
 
-@app.route('/jobs/<uuid:job_id>', methods=['DELETE'])
+@app.route('/jobs/<int:job_id>', methods=['DELETE'])
 def delete_job(job_id):
     job = Job.query.get(job_id)
     if not job:
@@ -418,7 +418,7 @@ def delete_jobs_bulk():
 
 
 # =========== BAN / UNBAN ROUTE ===========
-@app.route('/users/<uuid:id>', methods=['PUT'])
+@app.route('/users/<int:id>', methods=['PUT'])
 def update_user_ban_status(id):
     try:
         user = User.query.get(id)
@@ -437,7 +437,7 @@ def update_user_ban_status(id):
         return jsonify({'message': f'Error updating user: {str(e)}'}), 500
 
 # Route to update is_banned status for Companies
-@app.route('/companies/<uuid:id>', methods=['PUT'])
+@app.route('/companies/<int:id>', methods=['PUT'])
 def update_company_ban_status(id):
     try:
         company = Company.query.get(id)
