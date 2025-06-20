@@ -1,54 +1,82 @@
-from flask import Flask, jsonify, request, make_response, redirect, url_for
+from flask import Flask, render_template, g, session, redirect
+from flask import jsonify, request, make_response, url_for
+from datetime import datetime, timedelta
+import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
 from config import Config
-from models import db, User, Company, Job, JobApplication
+from models import db, User, Job, Company, JobApplication
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
+from college import college_blueprint
 from admin_routes import admin_blueprint
 from flask_migrate import Migrate
 from flask_mail import Mail
+from flask_sqlalchemy import SQLAlchemy
 import os
 from sqlalchemy import or_
 from datetime import datetime
-
+import pytz
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS
 
-app.secret_key = 'your_secret_key'
+app.secret_key = 'your_secret_key'  # Required for session pip install mysql-connector-python
+
 
 # Ensure upload folder exists
 if not os.path.exists(Config.UPLOAD_FOLDER):
     os.makedirs(Config.UPLOAD_FOLDER)
 
+# Load configuration from Config object          
 app.config.from_object(Config)
 
-# Email Configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use your mail server
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@example.com'
-app.config['MAIL_PASSWORD'] = 'your_email_password'
-app.config['MAIL_DEFAULT_SENDER'] = 'your_email@example.com'
+app.config['MAIL_USERNAME'] = 'employeerecruitment123@gmail.com'  # Sender email address
+app.config['MAIL_PASSWORD'] = 'gbpanjpyqscfqykr'  # Sender email password
+app.config['MAIL_DEFAULT_SENDER'] = 'employeerecruitment123@gmail.com'
 
+# Initialize Flask-Mail
 mail = Mail(app)
 
-# Register Blueprints
+# Register blueprints with URL prefixes
 app.register_blueprint(auth_blueprint, url_prefix='/auth')
 app.register_blueprint(user_blueprint, url_prefix='/user')
 app.register_blueprint(company_blueprint, url_prefix='/company')
 app.register_blueprint(admin_blueprint, url_prefix='/admin')
-# Removed college blueprint registration
+app.register_blueprint(college_blueprint, url_prefix='/college')
 
 db.init_app(app)
 migrate = Migrate(app, db)
 
+# Initialize Flask-Home
 @app.route('/')
 def index():
-    return jsonify({"message": "Flask API Running"}), 200
+    return render_template('home.html')
+
 
 # ========== USERS API ==========
+
+
+@app.route('/users/<int:id>', methods=['GET'])
+def get_user_details(id):
+    user = User.query.get_or_404(id)
+    user_data = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+        'age': user.age,
+        'about_me': user.about_me,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'college_name': user.college_name,
+        'is_banned': user.is_banned
+    }
+    return jsonify(user_data)
+
+
 @app.route('/users', methods=['GET'])
 def get_users():
     query = User.query
@@ -65,12 +93,21 @@ def get_users():
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-    		User.name.ilike(search_term),
-    		User.email.ilike(search_term)
-		))
+            User.name.ilike(search_term),
+            User.email.ilike(search_term)
+        ))
     
     users = query.all()
-    users_data = [{'id': user.id, 'name': user.name, 'email': user.email} for user in users]
+    # This is for the list view, so it only needs a few fields
+    users_data = [
+        {
+            'id': user.id, 
+            'name': user.name, 
+            'email': user.email,
+            'is_banned': user.is_banned
+        } 
+        for user in users
+    ]
     
     response = make_response(jsonify(users_data))
     response.headers['Content-Range'] = f'users 0-{len(users_data)-1}/{len(users_data)}'
@@ -120,6 +157,24 @@ def delete_users_bulk():
     return jsonify({"message": f"Deleted {len(user_ids)} users successfully"})
 
 # ========== COMPANIES API ==========
+
+@app.route('/companies/<int:id>', methods=['GET'])
+def get_company_details(id):
+    company = Company.query.get_or_404(id)
+    company_data = {
+        'id': company.id,
+        'company_name': company.company_name,
+        'email': company.email,
+        'address': company.address,
+        'website': company.website,
+        'logo': company.logo,
+        'description': company.description,
+        'industry': company.industry,
+        'is_banned': company.is_banned
+    }
+    return jsonify(company_data)
+
+
 @app.route('/companies', methods=['GET'])
 def get_companies():
     query = Company.query
@@ -132,19 +187,23 @@ def get_companies():
             query = query.filter(Company.company_name.ilike(f"%{name_term}%"))
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
-            query = query.filter(Company.email.ilike(f"%{email_term}%"))
+            query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-    		Company.company_name.ilike(search_term),
-    		Company.email.ilike(search_term)
-		))
+            Company.company_name.ilike(search_term),
+            Company.email.ilike(search_term)
+        ))
     companies = query.all()
-    companies_data = [{
-        'id': company.id,
-        'company_name': company.company_name,
-        'email': company.email
-    } for company in companies]
+    companies_data = [
+        {
+            'id': company.id,
+            'company_name': company.company_name,
+            'email': company.email,
+            'is_banned': company.is_banned # <-- ADD THIS LINE
+        } 
+        for company in companies
+    ]
     
     response = make_response(jsonify(companies_data))
     response.headers['Content-Range'] = f'companies 0-{len(companies_data)-1}/{len(companies_data)}'
@@ -237,19 +296,20 @@ def get_jobs():
             query = query.filter(Job.status.ilike(f"%{status_term}%"))
         else:
             search_term = f"%{search_term}%"
+            # Removed Job.description from the search filter
             query = query.filter(or_(
-    		Job.title.ilike(search_term),
-    		Job.job_type.ilike(search_term),
-    		Job.location.ilike(search_term),
-    		Job.status.ilike(search_term)
-		))
+    		    Job.title.ilike(search_term),
+    		    Job.job_type.ilike(search_term),
+    		    Job.location.ilike(search_term),
+    		    Job.status.ilike(search_term)
+		    ))
     
     jobs = query.all()
+    # Removed 'description' from the data dictionary
     jobs_data = [{
         'id': job.job_id,
         'job_id': job.job_id,
         'title': job.title,
-        'description': job.description,
         'job_type': job.job_type,
         'skills': job.skills,
         'years_of_exp': job.years_of_exp,
@@ -282,9 +342,9 @@ def create_job():
         except ValueError:
             return jsonify({"error": "Invalid deadline format. Use YYYY-MM-DD"}), 400
     
+    # Removed 'description' from the new Job object
     new_job = Job(
         title=data['title'],
-        description=data['description'],
         job_type=data['job_type'],
         skills=data.get('skills', ''),
         years_of_exp=data['years_of_exp'],
@@ -302,6 +362,7 @@ def create_job():
     db.session.add(new_job)
     db.session.commit()
     return jsonify({"message": "Job created successfully!", "id": new_job.job_id}), 201
+
 
 @app.route('/jobs/<int:job_id>', methods=['PUT'])
 def update_job(job_id):
@@ -402,11 +463,43 @@ def get_dashboard_data():
     total_jobs = Job.query.count()
     total_applications = JobApplication.query.count()
     
-    trends = [
-        {"x": "2025-03-20", "applications": 0, "logins": 3},
-        {"x": "2025-03-25", "applications": 0, "logins": 16},
-        {"x": "2025-03-30", "applications": 1, "logins": 27}
-    ]
+    trends = []
+    
+    # Get the current time in Asia/Kolkata
+    kolkata_tz = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(kolkata_tz)
+
+    # Calculate data for the last 9 days
+    for i in range(9):
+        # Calculate the date for 'i' days ago
+        target_date = now - timedelta(days=i)
+        
+        # Define the start and end of the day for the target_date
+        start_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0))
+        end_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59))
+
+        # Count applications for the current day
+        applications_count = JobApplication.query.filter(
+            JobApplication.date_applied >= start_of_day,
+            JobApplication.date_applied <= end_of_day
+        ).count()
+
+        # You would need a similar mechanism for 'logins' if you have a User login timestamp.
+        # Example (if User had a 'last_login' field):
+        # logins_count = User.query.filter(
+        #     User.last_login >= start_of_day,
+        #     User.last_login <= end_of_day
+        # ).count()
+        logins_count = 0 # Placeholder, replace with actual login count if available
+
+        trends.append({
+            "x": target_date.strftime("%Y-%m-%d"),
+            "applications": applications_count,
+            "logins": logins_count
+        })
+
+    # Reverse the list to have the most recent day last
+    trends.reverse() 
     
     return jsonify({
         "metrics": {
@@ -422,5 +515,5 @@ def get_dashboard_data():
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all() 
     app.run(debug=True)
