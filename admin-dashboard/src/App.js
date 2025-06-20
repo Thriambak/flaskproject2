@@ -4,8 +4,7 @@ import {
   Resource, 
   List,
   Confirm,
-  useRecordContext,
-  useCreate, 
+  useRecordContext, 
   Datagrid, 
   TextField,
   SearchInput,
@@ -25,9 +24,11 @@ import {
   Button as RaButton, // Alias React-Admin's Button to avoid conflict
   useRefresh, // Import useRefresh hook
   useGetList, // Import useGetList to manually trigger a fetch
+  useCreate,
+  useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper } from "@mui/material";
+import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper, Link, CircularProgress } from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -56,7 +57,7 @@ import {
     DialogActions, // MUI DialogActions
     DialogContent, // MUI DialogContent
     DialogContentText, // MUI DialogContentText
-    DialogTitle, // MUI DialogTitle
+    DialogTitle,// MUI DialogTitle
 } from "@mui/material";
 
 
@@ -191,18 +192,6 @@ const CustomLoginPage = () => {
                         }
                     }}
                 />
-                
-                {/* <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        Default credentials:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        Username: admin
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        Password: admin
-                    </Typography>
-                </Box> */}
             </Paper>
         </Box>
     );
@@ -297,7 +286,8 @@ const customDataProvider = {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch ${resource}/${params.id}`);
+                const error = await response.json();
+                throw new Error(error.message || `Failed to fetch ${resource}/${params.id}`);
             }
 
             const data = await response.json();
@@ -567,6 +557,130 @@ const Dashboard = () => {
         </Box>
     );
 };
+
+
+// This component displays details in a popup.
+
+const DetailsDialog = ({ open, onClose, title, data, loading }) => {
+    // Helper to format keys (e.g., 'company_name' -> 'Company Name')
+    const formatLabel = (key) => {
+        if (key === 'is_banned') return 'Ban Status';
+        return key
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
+
+    // Helper to format values
+    const formatValue = (key, value) => {
+        if (typeof value === 'boolean') {
+            return value ? 'Yes' : 'No';
+        }
+        if (value === null || value === undefined || value === '') {
+            return 'N/A';
+        }
+        return String(value);
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="paper">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogContent dividers>
+                {loading && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                )}
+                {!loading && data && (
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        {Object.entries(data).map(([key, value]) => {
+                            if (key === 'id' || key === 'login_id' || key.endsWith('_picture') || key === 'logo') return null; // Skip non-display fields
+                            return (
+                                <React.Fragment key={key}>
+                                    <Grid item xs={12} sm={4}>
+                                        <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                                            {formatLabel(key)}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={8}>
+                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                            {formatValue(key, value)}
+                                        </Typography>
+                                    </Grid>
+                                </React.Fragment>
+                            );
+                        })}
+                    </Grid>
+                )}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>Close</Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+
+
+
+// This component renders a name as a link that opens the details dialog.
+const ClickableNameField = ({ source, resource }) => {
+    const record = useRecordContext();
+    const dataProvider = useDataProvider();
+    const [open, setOpen] = useState(false);
+    const [details, setDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const notify = useNotify();
+
+    if (!record) return null;
+
+    const handleClick = (event) => {
+        event.stopPropagation(); // Stop row click event
+        event.preventDefault();
+        setOpen(true);
+        setLoading(true);
+
+        // Fetch the full details of the record
+        dataProvider.getOne(resource, { id: record.id })
+            .then(({ data }) => {
+                setDetails(data);
+                setLoading(false);
+            })
+            .catch(error => {
+                setLoading(false);
+                setOpen(false);
+                notify(`Error fetching details: ${error.message}`, { type: 'error' });
+            });
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        setDetails(null); // Reset details for next open
+    };
+    
+    const dialogTitle = resource === 'users' ? 'Job Seeker Details' : 'Company Details';
+
+    return (
+        <>
+            <Link
+                component="button"
+                variant="body2"
+                onClick={handleClick}
+                sx={{ textAlign: 'left', textTransform: 'none', textDecoration: 'underline' }}
+            >
+                {record[source]}
+            </Link>
+            <DetailsDialog
+                open={open}
+                onClose={handleClose}
+                title={dialogTitle}
+                data={details}
+                loading={loading}
+            />
+        </>
+    );
+};
+
 
 const FilterDropdown = () => {
     const { resource, filterValues, setFilters } = useListContext();
@@ -1009,7 +1123,7 @@ const StyledDatagrid = ({ children, ...props }) => (
                 bgcolor: 'action.hover'
             }
         }}
-        rowClick="edit"
+        rowClick="edit" // NOTE: This can be removed if you only want click interaction on the name field
     >
         {children}
     </Datagrid>
@@ -1031,7 +1145,6 @@ const BanToggle = ({ record, resource }) => {
 
     const handleToggle = (event) => {
         const newValue = event.target.checked;
-        // Optimistically update the UI before the API call
         setIsBanned(newValue);
 
         update(
@@ -1043,13 +1156,9 @@ const BanToggle = ({ record, resource }) => {
                         newValue ? 'User has been banned' : 'User has been unbanned',
                         { type: 'success' }
                     );
-                    // Crucially, trigger a refresh of the list after a successful update.
-                    // This will cause the entire list to re-fetch, and thus
-                    // each BanToggle component will receive the latest `record` prop.
                     refresh(); 
                 },
                 onError: (error) => {
-                    // Revert the UI state if the API call fails
                     setIsBanned(!newValue); 
                     notify(
                         `Error: Couldn't update ban status - ${error.message}`,
@@ -1089,6 +1198,9 @@ const BanToggle = ({ record, resource }) => {
     );
 };
 
+// =============================================================================
+// == UPDATED UserList COMPONENT ==
+// =============================================================================
 const UserList = (props) => (
     <List 
         actions={<ListActions />}
@@ -1102,18 +1214,26 @@ const UserList = (props) => (
         ]} 
         {...props}
     >
-        <Datagrid bulkActionButtons={<UserBulkActionButtons />}>
+        <StyledDatagrid bulkActionButtons={<UserBulkActionButtons />} rowClick={false}>
             <TextField source="id" sortable={false} />
-            <TextField source="name" />
+            {/* MODIFIED: Replaced TextField with our new ClickableNameField */}
+            <FunctionField
+                label="Name"
+                sortBy="name"
+                render={() => <ClickableNameField source="name" resource="users" />}
+            />
             <TextField source="email" />
             <FunctionField
                 label="Ban Status"
                 render={(record) => <BanToggle record={record} resource="users" />}
             />
-        </Datagrid>
+        </StyledDatagrid>
     </List>
 );
 
+// =============================================================================
+// == UPDATED CompanyList COMPONENT ==
+// =============================================================================
 const CompanyList = (props) => (
     <List 
         actions={<ListActions resource="companies" />}
@@ -1127,18 +1247,24 @@ const CompanyList = (props) => (
         ]}
         {...props}
     >
-        <Datagrid bulkActionButtons={<CompanyBulkActionButtons />}>
+        <StyledDatagrid bulkActionButtons={<CompanyBulkActionButtons />} rowClick={false}>
             <TextField source="id" />
-            <TextField source="company_name" />
+            {/* MODIFIED: Replaced TextField with our new ClickableNameField */}
+             <FunctionField
+                label="Company Name"
+                sortBy="company_name"
+                render={() => <ClickableNameField source="company_name" resource="companies" />}
+            />
             <TextField source="email" />
             <TextField source="industry" sortable={false} />
             <FunctionField
                 label="Ban Status"
                 render={(record) => <BanToggle record={record} resource="companies" />}
             />
-        </Datagrid>
+        </StyledDatagrid>
     </List>
 );
+
 
 const JobList = (props) => (
     <List 
@@ -1150,20 +1276,26 @@ const JobList = (props) => (
                 placeholder="Search jobs..." 
                 sx={{ maxWidth: 400 }}
             />
-        ]}
+        ]} 
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            <TextField source="id" sortable={false} />
-            <TextField source="title" />
-            <TextField source="description" />
-            <TextField source="job_type" />
-            <TextField source="location" />
-            <TextField source="salary" />
-            <TextField source="total_vacancy" />
-            <TextField source="filled_vacancy" />
-            <TextField source="status" />
-        </StyledDatagrid>
+    	<TextField source="id" sortable={false} />
+    	<TextField
+        source="title"
+        render={(params) => (
+            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                {params.record.title}
+            </Typography>
+        )}
+    />
+    <TextField source="job_type" />
+    <TextField source="location" />
+    <TextField source="salary" />
+    <TextField source="total_vacancy" />
+    <TextField source="filled_vacancy" />
+    <TextField source="status" />
+</StyledDatagrid>
     </List>
 );
 
