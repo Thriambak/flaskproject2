@@ -561,7 +561,7 @@ const Dashboard = () => {
 
 // This component displays details in a popup.
 
-const DetailsDialog = ({ open, onClose, title, data, loading }) => {
+const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => {
     // Helper to format keys (e.g., 'company_name' -> 'Company Name')
     const formatLabel = (key) => {
         if (key === 'is_banned') return 'Ban Status';
@@ -579,8 +579,30 @@ const DetailsDialog = ({ open, onClose, title, data, loading }) => {
         if (value === null || value === undefined || value === '') {
             return 'N/A';
         }
+        // Special formatting for created_at if it's a date string
+        if (key === 'created_at' && typeof value === 'string' && !isNaN(new Date(value))) {
+            return new Date(value).toLocaleDateString() + ' ' + new Date(value).toLocaleTimeString();
+        }
         return String(value);
     };
+
+    const displayData = {};
+    if (data && fieldsOrder) {
+        fieldsOrder.forEach(key => {
+            if (data.hasOwnProperty(key)) {
+                displayData[key] = data[key];
+            }
+        });
+    } else if (data) {
+        // Fallback if no fieldsOrder is provided, but still filter out some
+        Object.entries(data).forEach(([key, value]) => {
+            if (key === 'id' || key === 'login_id' || key.endsWith('_picture') || key === 'logo' || key === 'description' || key === 'about_me') {
+                return; // Skip non-display fields and specific removals
+            }
+            displayData[key] = value;
+        });
+    }
+
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="paper">
@@ -593,24 +615,26 @@ const DetailsDialog = ({ open, onClose, title, data, loading }) => {
                 )}
                 {!loading && data && (
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        {Object.entries(data).map(([key, value]) => {
-                            if (key === 'id' || key === 'login_id' || key.endsWith('_picture') || key === 'logo') return null; // Skip non-display fields
-                            return (
-                                <React.Fragment key={key}>
-                                    <Grid item xs={12} sm={4}>
-                                        <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                                            {formatLabel(key)}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={8}>
-                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                                            {formatValue(key, value)}
-                                        </Typography>
-                                    </Grid>
-                                </React.Fragment>
-                            );
-                        })}
+                        {Object.entries(displayData).map(([key, value]) => (
+                            <React.Fragment key={key}>
+                                <Grid item xs={12} sm={4}>
+                                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                                        {formatLabel(key)}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={8}>
+                                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                        {formatValue(key, value)}
+                                    </Typography>
+                                </Grid>
+                            </React.Fragment>
+                        ))}
                     </Grid>
+                )}
+                {!loading && !data && (
+                    <Typography variant="body1" sx={{ p: 4, textAlign: 'center' }}>
+                        No details available.
+                    </Typography>
                 )}
             </DialogContent>
             <DialogActions>
@@ -620,10 +644,7 @@ const DetailsDialog = ({ open, onClose, title, data, loading }) => {
     );
 };
 
-
-
-
-// This component renders a name as a link that opens the details dialog.
+// ClickableNameField Component
 const ClickableNameField = ({ source, resource }) => {
     const record = useRecordContext();
     const dataProvider = useDataProvider();
@@ -657,8 +678,16 @@ const ClickableNameField = ({ source, resource }) => {
         setOpen(false);
         setDetails(null); // Reset details for next open
     };
-    
+
     const dialogTitle = resource === 'users' ? 'Job Seeker Details' : 'Company Details';
+
+    // Define the specific display order and filter for each resource
+    let fieldsOrder = [];
+    if (resource === 'users') {
+        fieldsOrder = ['name', 'age', 'email', 'phone', 'college_name', 'is_banned', 'created_at'];
+    } else if (resource === 'companies') {
+        fieldsOrder = ['company_name', 'email', 'address', 'industry', 'website', 'is_banned'];
+    }
 
     return (
         <>
@@ -676,6 +705,7 @@ const ClickableNameField = ({ source, resource }) => {
                 title={dialogTitle}
                 data={details}
                 loading={loading}
+                fieldsOrder={fieldsOrder} // Pass the specific order
             />
         </>
     );
