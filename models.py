@@ -46,6 +46,9 @@ class College(db.Model):
     logo = db.Column(db.Text)
     description = db.Column(db.Text)
     is_banned = db.Column(db.Boolean, default = False)
+    created_at = db.Column(db.DateTime,default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     login = db.relationship('Login', backref=db.backref('college', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
@@ -63,9 +66,11 @@ class User(db.Model):
     age = db.Column(db.Integer)
     about_me = db.Column(db.Text)
     profile_picture = db.Column(db.Text)
-    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_banned = db.Column(db.Boolean, default = False)
+
     login = db.relationship('Login', backref=db.backref('user', uselist=False, cascade='all, delete'))
     
     def __repr__(self):
@@ -85,6 +90,9 @@ class Company(db.Model):
     description = db.Column(db.Text)
     industry = db.Column(db.Text)
     is_banned = db.Column(db.Boolean, default = False)
+    created_at = db.Column(db.DateTime,default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     login = db.relationship('Login', backref=db.backref('company', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
@@ -98,7 +106,9 @@ class Admin(db.Model):
     login_id = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False, unique=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
-
+    created_at = db.Column(db.DateTime,default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
     login = db.relationship('Login', backref=db.backref('admin', uselist=False, cascade='all, delete'))
 
     def __repr__(self):
@@ -125,6 +135,7 @@ class Job(db.Model):
     deadline = db.Column(db.Date)
     created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
     created_by = db.Column(Uuid, db.ForeignKey('logins.id'), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship with User (if needed)
     user = db.relationship('Login', backref=db.backref('jobs', lazy=True))

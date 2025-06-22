@@ -43,7 +43,10 @@
             <form action="{{ url_for('auth.signup') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required title="Username cannot contain spaces.
+                    <input type="text" id="username" name="username" minlength="3" maxlength="30"
+required title="Username must be between 3 and 30 characters long.
+Username cannot be 'admin' or 'administrator'.
+Username cannot contain spaces.
 Username cannot start or end with an underscore (_) or period (.)
 Username must be a single word (letters/numbers only) and a valid email.">
                 </div>

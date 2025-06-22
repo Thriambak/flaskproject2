@@ -60,6 +60,23 @@ def index():
 
 
 # ========== USERS API ==========
+
+@app.route('/users/<uuid:id>', methods=['GET'])
+def get_user_details(id):
+    user = User.query.get_or_404(id)
+    user_data = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+        'age': user.age,
+        'about_me': user.about_me,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'college_name': user.college_name,
+        'is_banned': user.is_banned
+    }
+    return jsonify(user_data)
+
 @app.route('/users', methods=['GET'])
 def get_users():
     query = User.query
@@ -80,13 +97,14 @@ def get_users():
             User.email.ilike(search_term)
         ))
     
-    users = query.all()
+    users = query.order_by(User.updated_at.desc()).all()
     users_data = [
         {
             'id': user.id, 
             'name': user.name, 
             'email': user.email,
-            'is_banned': user.is_banned # <-- ADD THIS LINE
+            'college_name': user.college_name,
+            'is_banned': user.is_banned 
         } 
         for user in users
     ]
@@ -139,6 +157,24 @@ def delete_users_bulk():
     return jsonify({"message": f"Deleted {len(user_ids)} users successfully"})
 
 # ========== COMPANIES API ==========
+
+@app.route('/companies/<uuid:id>', methods=['GET'])
+def get_company_details(id):
+    company = Company.query.get_or_404(id)
+    company_data = {
+        'id': company.id,
+        'company_name': company.company_name,
+        'email': company.email,
+        'address': company.address,
+        'website': company.website,
+        'logo': company.logo,
+        'description': company.description,
+        'industry': company.industry,
+        'is_banned': company.is_banned
+    }
+    return jsonify(company_data)
+
+
 @app.route('/companies', methods=['GET'])
 def get_companies():
     query = Company.query
@@ -162,7 +198,7 @@ def get_companies():
             Company.email.ilike(search_term),
             Company.industry.ilike(search_term)
         ))
-    companies = query.all()
+    companies = query.order_by(Company.updated_at.desc()).all()
     companies_data = [
         {
             'id': company.id,
@@ -179,16 +215,49 @@ def get_companies():
     response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
     return response
 
+# Updated route in app.py
+# Updated route in app.py
 @app.route('/companies', methods=['POST'])
 def create_company():
     data = request.json
-    new_company = Company(
-        company_name=data['company_name'],
-        email=data['email']
-    )
-    db.session.add(new_company)
-    db.session.commit()
-    return jsonify({"message": "Company created successfully!", "id": new_company.id}), 201
+    
+    try:
+        # First, create the login entry
+        new_login = Login(
+            username=data['company_name'],  # Using company name as username
+            role='company'
+        )
+        new_login.set_password(data['password'])  # This will hash the password
+        
+        # Add and flush to get the ID without committing
+        db.session.add(new_login)
+        db.session.flush()  # This assigns the ID to new_login without committing
+        
+        # Now create the company entry with the login_id
+        new_company = Company(
+            login_id=new_login.id,  # Reference the login ID
+            company_name=data['company_name'],
+            email=data['email'],
+            address=data.get('address', ''),
+            website=data.get('website', ''),
+            logo=data.get('logo', ''),
+            description=data.get('description', ''),
+            industry=data.get('industry', ''),
+            is_banned=data.get('is_banned', False)
+        )
+        
+        db.session.add(new_company)
+        db.session.commit()  # Commit both entries
+        
+        return jsonify({
+            "message": "Company created successfully!", 
+            "id": new_company.id,
+            "login_id": new_login.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        return jsonify({"error": f"Error creating company: {str(e)}"}), 500
 
 @app.route('/companies/<uuid:company_id>', methods=['PUT'])
 def update_company(company_id):
@@ -203,23 +272,34 @@ def update_company(company_id):
     db.session.commit()
     return jsonify({"message": "Company updated successfully!"})
 
+
+# Updated delete route in app.py
 @app.route('/companies/<uuid:company_id>', methods=['DELETE'])
 def delete_company(company_id):
     company = Company.query.get(company_id)
     if not company:
         return jsonify({"message": "Company not found"}), 404
     
-    # Get the associated login object before deleting the company
-    # login_to_delete = company.login
-    db.session.delete(company)
+    try:
+        # Get the associated login object before deleting the company
+        login_to_delete = company.login
+        
+        # Delete the company first
+        db.session.delete(company)
+        
+        # Delete the associated login object
+        if login_to_delete:
+            db.session.delete(login_to_delete)
+        
+        db.session.commit()
+        return jsonify({"id": company_id})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deleting company: {str(e)}"}), 500
 
-    # Also delete the associated login object
-    # if login_to_delete:
-    #     db.session.delete(login_to_delete)
 
-    db.session.commit()
-    return jsonify({ "id": company_id })
-
+# Updated bulk delete route in app.py
 @app.route('/companies/bulk', methods=['DELETE'])
 def delete_companies_bulk():
     company_ids_to_delete = request.json.get('ids', [])
@@ -238,10 +318,19 @@ def delete_companies_bulk():
 
         num_deleted = len(companies)
 
-        # Delete companies - associated logins will be deleted automatically due to cascade
+        # Delete companies and their associated logins
         for company in companies:
             print(f"Deleting company: {company.company_name} (login_id: {company.login_id})")
+            
+            # Get the associated login
+            login_to_delete = company.login
+            
+            # Delete company first
             db.session.delete(company)
+            
+            # Delete associated login
+            if login_to_delete:
+                db.session.delete(login_to_delete)
 
         db.session.commit()
         return jsonify({
@@ -305,7 +394,7 @@ def get_jobs():
     		Job.status.ilike(search_term)
 		))
     
-    jobs = query.all()
+    jobs = query.order_by(Job.updated_at.desc()).all()
     jobs_data = [{
         'id': job.job_id,
         'job_id': job.job_id,
@@ -462,45 +551,55 @@ def get_dashboard_data():
     total_companies = Company.query.count()
     total_jobs = Job.query.count()
     total_applications = JobApplication.query.count()
-    
+
     trends = []
-    
+
     # Get the current time in Asia/Kolkata
     kolkata_tz = pytz.timezone('Asia/Kolkata')
-    now = datetime.now(kolkata_tz)
+    # Get the current time, localized to Kolkata
+    now_kolkata = datetime.now(kolkata_tz)
 
     # Calculate data for the last 9 days
     for i in range(9):
-        # Calculate the date for 'i' days ago
-        target_date = now - timedelta(days=i)
-        
-        # Define the start and end of the day for the target_date
-        start_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0))
-        end_of_day = kolkata_tz.localize(datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59))
+        # Calculate the target date for 'i' days ago, maintaining Kolkata timezone awareness
+        target_datetime_kolkata = now_kolkata - timedelta(days=i)
+
+        # Extract the date part (year, month, day) from the Kolkata-aware datetime
+        # We then construct naive datetimes for the start/end of THIS specific day in Kolkata time.
+        # This assumes your DB stores naive datetimes that represent Kolkata time values.
+        start_of_day_kolkata_naive = datetime(
+            target_datetime_kolkata.year, target_datetime_kolkata.month, target_datetime_kolkata.day,
+            0, 0, 0, 0 # Start of day, set microseconds to 0
+        )
+        end_of_day_kolkata_naive = datetime(
+            target_datetime_kolkata.year, target_datetime_kolkata.month, target_datetime_kolkata.day,
+            23, 59, 59, 999999 # End of day, set microseconds to 999999
+        )
 
         # Count applications for the current day
+        # Querying directly with naive datetimes that represent Kolkata time
         applications_count = JobApplication.query.filter(
-            JobApplication.date_applied >= start_of_day,
-            JobApplication.date_applied <= end_of_day
+            JobApplication.date_applied >= start_of_day_kolkata_naive,
+            JobApplication.date_applied <= end_of_day_kolkata_naive
         ).count()
 
-        # You would need a similar mechanism for 'logins' if you have a User login timestamp.
-        # Example (if User had a 'last_login' field):
-        # logins_count = User.query.filter(
-        #     User.last_login >= start_of_day,
-        #     User.last_login <= end_of_day
-        # ).count()
-        logins_count = 0 # Placeholder, replace with actual login count if available
+        # Count new logins (registrations) for the current day
+        # Querying directly with naive datetimes that represent Kolkata time
+        logins_count = Login.query.filter(
+            Login.created_at >= start_of_day_kolkata_naive,
+            Login.created_at <= end_of_day_kolkata_naive
+        ).count()
 
         trends.append({
-            "x": target_date.strftime("%Y-%m-%d"),
+            # The 'x' value should still be the date in Kolkata time for consistent display on frontend.
+            "x": target_datetime_kolkata.strftime("%Y-%m-%d"),
             "applications": applications_count,
             "logins": logins_count
         })
 
     # Reverse the list to have the most recent day last
-    trends.reverse() 
-    
+    trends.reverse()
+
     return jsonify({
         "metrics": {
             "users": total_users,
