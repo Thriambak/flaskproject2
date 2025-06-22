@@ -20,8 +20,17 @@ def signup():
         role = request.form.get('role', 'user')  # Default to 'user'
         email = request.form['email']
 
-        # Username validation
-        # Allowed: single word (alphanumeric), email, or 10-digit phone number
+        # Forbidden Username Validation
+        username_lower = username.lower()
+        if username_lower == 'admin' or username_lower == 'administrator':
+            flash('The entered username is not allowed. Please choose a different username.', 'danger')
+            return redirect(url_for('auth.signup'))
+        
+        # Username length validation
+        if not (4 <= len(username) <= 30):
+            flash('Username must be between 4 and 30 characters long.', 'danger')
+            return redirect(url_for('auth.signup'))
+
         username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
         if not re.match(username_pattern, username):
             flash('Username must be a single word (letters/numbers only) and a valid email.', 'danger')
@@ -33,6 +42,7 @@ def signup():
             flash('Username cannot contain spaces.', 'danger')
             return redirect(url_for('auth.signup'))
 
+        
         # Password validation
         if ' ' in password:
             flash('Password cannot contain spaces.', 'danger')
