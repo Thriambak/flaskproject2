@@ -185,7 +185,7 @@
                       
                       <form action="{{ url_for('user.delete_certification', certification_id=cert.id) }}" 
                             method="POST" style="display: inline;" 
-                            onsubmit="return confirm('Are you sure you want to delete this skill/certification?')">
+                            onsubmit="return confirmDeleteCertification('{{ cert.certification_name }}')">
                         <button type="submit" class="action-btn delete-btn">
                           <i class="fas fa-trash mr-1"></i> Delete
                         </button>
@@ -209,10 +209,16 @@
   
   <!-- JavaScript -->
   <script>
+    // Function to confirm certification deletion with name
+    function confirmDeleteCertification(certificationName) {
+      return confirm(`Are you sure you want to delete the certification "${certificationName}"?`);
+    }
+    
     // Toggle certification form
     const addCertificationBtn = document.getElementById('add-certification-btn');
     const certificationFormContainer = document.getElementById('certification-form-container');
     const cancelBtn = document.getElementById('cancel-btn');
+    const certificationNameInput = document.getElementById('certification_name');
     
     addCertificationBtn.addEventListener('click', () => {
       certificationFormContainer.classList.remove('hidden');
@@ -222,6 +228,8 @@
     cancelBtn.addEventListener('click', () => {
       certificationFormContainer.classList.add('hidden');
       addCertificationBtn.classList.remove('hidden');
+      // Clear the input field when cancel is clicked
+      certificationNameInput.value = '';
     });
     
     // Profile dropdown

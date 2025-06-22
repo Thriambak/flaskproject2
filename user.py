@@ -195,6 +195,8 @@ def apply1_for_job(job_id):
     flash(f"Application for {job.title} submitted successfully!", 'success')
 
     return redirect(url_for('user.job_search'))
+from datetime import datetime, timedelta
+import pytz
 
 def get_chart_data_for_user(user_id):
     """
@@ -205,29 +207,44 @@ def get_chart_data_for_user(user_id):
       - recent_activities: list of user's recent job applications
       - live_feed: list of recent job postings
     """
+    # Define IST timezone
+    ist_timezone = pytz.timezone('Asia/Kolkata')
+    
     # Chart data: User success rate
     hired = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
     rejected = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
-    
+   
     pending = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
     interviewed = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Interviewed').scalar() or 0
-    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending,"Interviewed":interviewed}
-
-    # Chart data: Application trends (daily count)
+    user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending, "interviewed": interviewed}
+    
+    # Chart data: Application trends (daily count) - Convert to IST
     trend_data = db.session.query(
         db.func.date(JobApplication.date_applied).label('date'),
         db.func.count(JobApplication.id).label('count')
     ).filter(JobApplication.user_id == user_id)\
      .group_by(db.func.date(JobApplication.date_applied))\
      .order_by(db.func.date(JobApplication.date_applied)).all()
-    trend_labels = [row.date.strftime('%Y-%m-%d') for row in trend_data]
+    
+    # Convert dates to IST before formatting
+    trend_labels = []
+    for row in trend_data:
+        if row.date:
+            # Assume the date from DB is in UTC, convert to IST
+            utc_datetime = datetime.combine(row.date, datetime.min.time())
+            utc_datetime = pytz.utc.localize(utc_datetime)
+            ist_datetime = utc_datetime.astimezone(ist_timezone)
+            trend_labels.append(ist_datetime.strftime('%Y-%m-%d'))
+        else:
+            trend_labels.append('')
+    
     trend_counts = [row.count for row in trend_data]
     application_trends = {"labels": trend_labels, "counts": trend_counts}
-
+    
     # Recent activities: Last 5 job applications by the user
     recent_activities = db.session.query(JobApplication, Job.title)\
         .join(Job, Job.job_id == JobApplication.job_id)\
@@ -238,18 +255,35 @@ def get_chart_data_for_user(user_id):
         {'job_title': job_title, 'status': app.status}
         for app, job_title in recent_activities
     ]
-
-    # Live feed: Last 5 job postings
+    
+    # Live feed: Last 5 job postings - Convert timestamps to IST
     live_feed = db.session.query(Job)\
         .order_by(Job.created_at.desc())\
         .limit(5).all()
-    live_feed_list = [
-        {'job_title': job.title, 'posted_at': job.created_at}
-        for job in live_feed
-    ]
-
+    
+    live_feed_list = []
+    for job in live_feed:
+        if job.created_at:
+            # Convert created_at to IST
+            if job.created_at.tzinfo is None:
+                # If datetime is naive, assume it's UTC
+                utc_datetime = pytz.utc.localize(job.created_at)
+            else:
+                # If datetime is aware, convert to UTC first
+                utc_datetime = job.created_at.astimezone(pytz.utc)
+            
+            ist_datetime = utc_datetime.astimezone(ist_timezone)
+            live_feed_list.append({
+                'job_title': job.title, 
+                'posted_at': ist_datetime
+            })
+        else:
+            live_feed_list.append({
+                'job_title': job.title, 
+                'posted_at': None
+            })
+    
     return user_success_rate, application_trends, recent_activities_list, live_feed_list
-
 @user_blueprint.route('/analytics')
 @login_required
 def analytics():
