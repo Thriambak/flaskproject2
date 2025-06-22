@@ -29,6 +29,17 @@ def signup():
             flash('Passwords do not match. Please try again.', 'danger')
             return redirect(url_for('auth.signup'))'''
         
+        # Forbidden Username Validation
+        username_lower = username.lower()
+        if username_lower == 'admin' or username_lower == 'administrator':
+            flash('The entered username is not allowed. Please choose a different username.', 'danger')
+            return redirect(url_for('auth.signup'))
+        
+        # Username length validation
+        if not (3 <= len(username) <= 30):
+            flash('Username must be between 3 and 30 characters long.', 'danger')
+            return redirect(url_for('auth.signup'))
+        
         # Username validation
         # Allowed: single word (alphanumeric), email, or 10-digit phone number
         username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
