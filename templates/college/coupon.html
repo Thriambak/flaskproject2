@@ -87,7 +87,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="3">No coupon codes found</td>
+                                    <td colspan="3" style="text-align: center; padding: 15px; font-family: monospace; font-size: 16px; color: #666;">No coupon codes found</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -100,7 +100,7 @@
                 <!-- Pagination -->
                 <div class="pagination">
                     <button id="prev-page" disabled>&laquo; Previous</button>
-                    <span id="page-info">Page 1 of 1</span>
+                    <span id="page-info">Page 1 of 0</span>
                     <button id="next-page" disabled>Next &raquo;</button>
                 </div>
             </div>
@@ -223,10 +223,17 @@
 
         // Update pagination controls
         function updatePagination() {
-            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            // Count only the actual data rows, ignoring the "No applications found" row
+            const dataRowsCount = filteredRows.filter(row => row.classList.contains('application-row')).length;
+            const totalPages = Math.ceil(dataRowsCount / rowsPerPage);
+
+            // If there are no data rows, the current page should be displayed as 1
+            const displayPage = dataRowsCount === 0 ? 1 : currentPage;
             
-            document.getElementById('prev-page').disabled = currentPage === 1;
+            // This will correctly display "Page 1 of 0" when no data rows are present
+            document.getElementById('page-info').textContent = `Page ${displayPage} of ${totalPages}`;
+            
+            document.getElementById('prev-page').disabled = currentPage === 1 || dataRowsCount === 0;
             document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
         }
 

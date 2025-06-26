@@ -5,7 +5,7 @@ import sqlite3
 from flask_cors import CORS
 from flask_login import LoginManager
 from config import Config
-from models import db, User, Job, Company, JobApplication, Login
+from models import db, User, Job, Company, JobApplication, Login, Favorite, Communication, Notification, Couponuser, ResumeCertification, Certification
 from auth import auth_blueprint
 from user import user_blueprint
 from company import company_blueprint
@@ -139,22 +139,79 @@ def update_user(user_id):
     db.session.commit()
     return jsonify({"message": "User updated successfully!"})
 
+# == UPDATED USER DELETE ROUTE ==
 @app.route('/users/<uuid:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
     
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({"message": "User deleted successfully!"})
+    try:
+        login_id_to_delete = user.login_id
 
+        # Dependencies on User.id
+        JobApplication.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        Favorite.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        Couponuser.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        ResumeCertification.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        Certification.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+        
+        # Dependencies on User.login_id
+        if login_id_to_delete:
+            Communication.query.filter_by(user_id=login_id_to_delete).delete(synchronize_session=False)
+            Notification.query.filter_by(user_id=login_id_to_delete).delete(synchronize_session=False)
+        
+        # Now delete the user itself
+        db.session.delete(user)
+        
+        # And finally, delete the associated login record if it exists
+        if login_id_to_delete:
+            Login.query.filter_by(id=login_id_to_delete).delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({"message": "User and all related data deleted successfully!", "id": user_id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deleting user: {str(e)}"}), 500
+
+# == UPDATED USER BULK DELETE ROUTE ==
 @app.route('/users/bulk', methods=['DELETE'])
 def delete_users_bulk():
     user_ids = request.json.get('ids', [])
-    User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
-    db.session.commit()
-    return jsonify({"message": f"Deleted {len(user_ids)} users successfully"})
+    if not user_ids:
+        return jsonify({"message": "No user IDs provided"}), 400
+        
+    try:
+        # Fetch the users to get their corresponding login_ids
+        users = User.query.filter(User.id.in_(user_ids)).all()
+        login_ids = [user.login_id for user in users if user.login_id]
+
+        # Bulk delete dependencies on User.id
+        JobApplication.query.filter(JobApplication.user_id.in_(user_ids)).delete(synchronize_session=False)
+        Favorite.query.filter(Favorite.user_id.in_(user_ids)).delete(synchronize_session=False)
+        Couponuser.query.filter(Couponuser.user_id.in_(user_ids)).delete(synchronize_session=False)
+        ResumeCertification.query.filter(ResumeCertification.user_id.in_(user_ids)).delete(synchronize_session=False)
+        Certification.query.filter(Certification.user_id.in_(user_ids)).delete(synchronize_session=False)
+        
+        # Bulk delete dependencies on User.login_id
+        if login_ids:
+            Communication.query.filter(Communication.user_id.in_(login_ids)).delete(synchronize_session=False)
+            Notification.query.filter(Notification.user_id.in_(login_ids)).delete(synchronize_session=False)
+        
+        # Bulk delete the users themselves.
+        num_deleted = User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
+        
+        # ## NEWLY ADDED LOGIC ##
+        # Now, explicitly bulk delete the associated Login records, which the cascade bypasses.
+        if login_ids:
+            Login.query.filter(Login.id.in_(login_ids)).delete(synchronize_session=False)
+        
+        db.session.commit()
+        return jsonify({"message": f"Deleted {num_deleted} users and their related data successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error during bulk user deletion: {str(e)}"}), 500
+
 
 # ========== COMPANIES API ==========
 
@@ -274,7 +331,7 @@ def update_company(company_id):
     return jsonify({"message": "Company updated successfully!"})
 
 
-# Updated delete route in app.py
+# == UPDATED COMPANY DELETE ROUTE ==
 @app.route('/companies/<uuid:company_id>', methods=['DELETE'])
 def delete_company(company_id):
     company = Company.query.get(company_id)
@@ -282,15 +339,25 @@ def delete_company(company_id):
         return jsonify({"message": "Company not found"}), 404
     
     try:
-        # Get the associated login object before deleting the company
-        login_to_delete = company.login
+        login_id = company.login_id
+
+        # Find all jobs created by this company's login
+        jobs_to_delete = Job.query.filter_by(created_by=login_id).all()
+        job_ids = [job.job_id for job in jobs_to_delete]
+
+        # If there are jobs, delete their dependent records first
+        if job_ids:
+            JobApplication.query.filter(JobApplication.job_id.in_(job_ids)).delete(synchronize_session=False)
+            Favorite.query.filter(Favorite.job_id.in_(job_ids)).delete(synchronize_session=False)
+            # Now delete the jobs themselves
+            Job.query.filter(Job.job_id.in_(job_ids)).delete(synchronize_session=False)
         
-        # Delete the company first
+        # Delete other dependencies linked to the company's login_id
+        Notification.query.filter_by(company_id=login_id).delete(synchronize_session=False)
+        Communication.query.filter_by(company_id=login_id).delete(synchronize_session=False)
+        
+        # Now delete the company, which will cascade to delete the login
         db.session.delete(company)
-        
-        # Delete the associated login object
-        if login_to_delete:
-            db.session.delete(login_to_delete)
         
         db.session.commit()
         return jsonify({"id": company_id})
@@ -300,7 +367,7 @@ def delete_company(company_id):
         return jsonify({"error": f"Error deleting company: {str(e)}"}), 500
 
 
-# Updated bulk delete route in app.py
+# == UPDATED COMPANY BULK DELETE ROUTE ==
 @app.route('/companies/bulk', methods=['DELETE'])
 def delete_companies_bulk():
     company_ids_to_delete = request.json.get('ids', [])
@@ -310,32 +377,38 @@ def delete_companies_bulk():
         return jsonify({"message": "No company IDs provided"}), 400
     
     try:
-        # Fetch companies to delete
+        # Fetch companies and their login_ids
         companies = Company.query.filter(Company.id.in_(company_ids_to_delete)).all()
-        print(f"Found companies: {[c.company_name for c in companies]}")
+        login_ids = [c.login_id for c in companies if c.login_id]
         
-        if not companies:
-            return jsonify({"message": "No matching companies found for the provided IDs"}), 404
+        if not login_ids:
+            # If no companies found or they have no logins, just try deleting companies
+            num_deleted = Company.query.filter(Company.id.in_(company_ids_to_delete)).delete(synchronize_session=False)
+            db.session.commit()
+            return jsonify({"message": f"Deleted {num_deleted} companies successfully"})
 
-        num_deleted = len(companies)
+        # Find all jobs created by these companies
+        jobs_to_delete = Job.query.filter(Job.created_by.in_(login_ids)).all()
+        job_ids = [job.job_id for job in jobs_to_delete]
 
-        # Delete companies and their associated logins
-        for company in companies:
-            print(f"Deleting company: {company.company_name} (login_id: {company.login_id})")
-            
-            # Get the associated login
-            login_to_delete = company.login
-            
-            # Delete company first
-            db.session.delete(company)
-            
-            # Delete associated login
-            if login_to_delete:
-                db.session.delete(login_to_delete)
+        # Bulk delete dependencies of jobs
+        if job_ids:
+            JobApplication.query.filter(JobApplication.job_id.in_(job_ids)).delete(synchronize_session=False)
+            Favorite.query.filter(Favorite.job_id.in_(job_ids)).delete(synchronize_session=False)
+            # Bulk delete jobs
+            Job.query.filter(Job.job_id.in_(job_ids)).delete(synchronize_session=False)
+
+        # Bulk delete other company dependencies
+        Notification.query.filter(Notification.company_id.in_(login_ids)).delete(synchronize_session=False)
+        Communication.query.filter(Communication.company_id.in_(login_ids)).delete(synchronize_session=False)
+
+        # Now, it's safe to delete the companies and their associated logins
+        num_deleted = Company.query.filter(Company.id.in_(company_ids_to_delete)).delete(synchronize_session=False)
+        Login.query.filter(Login.id.in_(login_ids)).delete(synchronize_session=False)
 
         db.session.commit()
         return jsonify({
-            "message": f"Deleted {num_deleted} companies and their associated logins successfully"
+            "message": f"Deleted {num_deleted} companies and their associated data successfully"
         })
 
     except Exception as e:
@@ -492,16 +565,28 @@ def update_job(job_id):
     db.session.commit()
     return jsonify({"message": "Job updated successfully!"})
 
-@app.route('/jobs/<uuid:job_id>', methods=['DELETE'])
+# == UPDATED JOB DELETE ROUTE (SINGLE) ==
 def delete_job(job_id):
     job = Job.query.get(job_id)
     if not job:
         return jsonify({"message": "Job not found"}), 404
     
-    db.session.delete(job)
-    db.session.commit()
-    return jsonify({"message": "Job deleted successfully!"})
+    try:
+        # Before deleting the job, delete all records from child tables that reference it.
+        # This prevents ForeignKeyViolation errors.
+        JobApplication.query.filter_by(job_id=job_id).delete(synchronize_session=False)
+        Favorite.query.filter_by(job_id=job_id).delete(synchronize_session=False)
+        
+        # Now it's safe to delete the job itself.
+        db.session.delete(job)
+        db.session.commit()
+        return jsonify({"message": "Job and all related data deleted successfully!", "id": job_id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deleting job: {str(e)}"}), 500
 
+
+# == UPDATED JOB DELETE ROUTE (BULK) ==
 @app.route('/jobs/bulk', methods=['DELETE'])
 def delete_jobs_bulk():
     job_ids = request.json.get('ids', [])
@@ -509,13 +594,17 @@ def delete_jobs_bulk():
         return jsonify({"message": "No IDs provided"}), 400
     
     try:
-        # Delete all jobs with matching IDs
-        Job.query.filter(Job.job_id.in_(job_ids)).delete(synchronize_session=False)
+        # Before bulk deleting jobs, bulk delete all records from child tables.
+        JobApplication.query.filter(JobApplication.job_id.in_(job_ids)).delete(synchronize_session=False)
+        Favorite.query.filter(Favorite.job_id.in_(job_ids)).delete(synchronize_session=False)
+        
+        # Now it's safe to bulk delete the jobs.
+        num_deleted = Job.query.filter(Job.job_id.in_(job_ids)).delete(synchronize_session=False)
         db.session.commit()
-        return jsonify({"message": f"Deleted {len(job_ids)} jobs successfully"})
+        return jsonify({"message": f"Deleted {num_deleted} jobs and their related data successfully"})
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": str(e)}), 500
+        return jsonify({"error": f"Error during bulk job deletion: {str(e)}"}), 500
 
 
 
