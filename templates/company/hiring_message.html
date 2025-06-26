@@ -78,7 +78,7 @@
     
                 <!-- Search Bar -->
                 <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Search..." style="font-family: monospace;font-size: 14.5px;">
+                    <input type="text" id="search-input" placeholder="Search candidates..." style="font-family: monospace;font-size: 14.5px;">
                     <i class="fas fa-search search-icon"></i>
                 </div>
             </div>
@@ -106,7 +106,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="3">No candidates found</td>
+                                    <td colspan="3" style="text-align: center; padding: 15px; font-family: monospace; font-size: 16px; color: #666;">No candidates found</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -119,7 +119,7 @@
                 <!-- Pagination for Candidates -->
                 <div class="pagination" id="candidates-pagination">
                     <button id="candidates-prev-page" disabled>&laquo; Previous</button>
-                    <span id="candidates-page-info">Page 1 of 1</span>
+                    <span id="page-info">Page 1 of 0</span>
                     <button id="candidates-next-page" disabled>Next &raquo;</button>
                 </div>
             </div>
@@ -265,67 +265,79 @@
 
         // Filter candidates table by search text
         function filterCandidateTableBySearch(searchText) {
-            const rows = document.querySelectorAll('#candidates-table tbody tr');
+            // Correctly select only the data rows
+            const rows = document.querySelectorAll('#candidates-table tbody tr.application-row');
             candidatesFilteredRows = [];
             
             rows.forEach(row => {
-                if (row.querySelector('td:first-child')) { // Check if this is a real data row
-                    const name = row.querySelector('td:first-child').textContent.toLowerCase();
-                    const job = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const status = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                    
-                    if (name.includes(searchText) || job.includes(searchText) || status.includes(searchText)) {
-                        row.dataset.visible = "true";
-                        candidatesFilteredRows.push(row);
-                    } else {
-                        row.dataset.visible = "false";
-                    }
+                const name = row.querySelector('td:first-child').textContent.toLowerCase();
+                const job = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const status = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (name.includes(searchText) || job.includes(searchText) || status.includes(searchText)) {
+                    row.dataset.visible = "true";
+                    candidatesFilteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
                 }
             });
             
             // Show/hide no results message
             document.getElementById('candidates-no-results-message').style.display = candidatesFilteredRows.length === 0 ? 'block' : 'none';
             
-            updateCandidatePagination();
+            // Hide the initial "no candidates" row if a search is active
+            const initialNoCandidatesRow = document.querySelector('#candidates-table tbody tr:not(.application-row)');
+            if(initialNoCandidatesRow) {
+                initialNoCandidatesRow.style.display = 'none';
+            }
+
             showCandidatePage(1);
         }
 
         // Filter candidate table with checkboxes
         function filterCandidateTable(statusFilters, jobFilters) {
-            const rows = document.querySelectorAll('#candidates-table tbody tr');
+            // Correctly select only the data rows
+            const rows = document.querySelectorAll('#candidates-table tbody tr.application-row');
             candidatesFilteredRows = [];
             
             rows.forEach(row => {
-                // Only process rows that have the data attributes
-                if (row.hasAttribute('data-status') && row.hasAttribute('data-job')) {
-                    const status = row.getAttribute('data-status');
-                    const job = row.getAttribute('data-job');
-                    
-                    const statusMatch = statusFilters.length === 0 || statusFilters.includes(status);
-                    const jobMatch = jobFilters.length === 0 || jobFilters.includes(job);
-                    
-                    if (statusMatch && jobMatch) {
-                        row.dataset.visible = "true";
-                        candidatesFilteredRows.push(row);
-                    } else {
-                        row.dataset.visible = "false";
-                    }
+                const status = row.getAttribute('data-status');
+                const job = row.getAttribute('data-job');
+                
+                const statusMatch = statusFilters.length === 0 || statusFilters.includes(status);
+                const jobMatch = jobFilters.length === 0 || jobFilters.includes(job);
+                
+                if (statusMatch && jobMatch) {
+                    row.dataset.visible = "true";
+                    candidatesFilteredRows.push(row);
+                } else {
+                    row.dataset.visible = "false";
                 }
             });
             
             // Show/hide no results message
             document.getElementById('candidates-no-results-message').style.display = candidatesFilteredRows.length === 0 ? 'block' : 'none';
-            
-            updateCandidatePagination();
+
+            // Hide the initial "no candidates" row if a filter is active
+            const initialNoCandidatesRow = document.querySelector('#candidates-table tbody tr:not(.application-row)');
+            if(initialNoCandidatesRow) {
+                initialNoCandidatesRow.style.display = 'none';
+            }
+
             showCandidatePage(1);
         }
 
         // Update candidate pagination controls
         function updateCandidatePagination() {
-            const totalPages = Math.ceil(candidatesFilteredRows.length / rowsPerPage);
-            document.getElementById('candidates-page-info').textContent = `Page ${candidatesCurrentPage} of ${totalPages || 1}`;
+            const dataRowsCount = candidatesFilteredRows.length;
+            const totalPages = Math.ceil(dataRowsCount / rowsPerPage);
+
+            // If there are no rows, display "Page 1 of 0"
+            const displayPage = dataRowsCount === 0 ? 1 : candidatesCurrentPage;
+
+            document.getElementById('page-info').textContent = `Page ${displayPage} of ${totalPages}`;
             
-            document.getElementById('candidates-prev-page').disabled = candidatesCurrentPage === 1;
+            document.getElementById('candidates-prev-page').disabled = candidatesCurrentPage === 1 || dataRowsCount === 0;
             document.getElementById('candidates-next-page').disabled = candidatesCurrentPage === totalPages || totalPages === 0;
         }
 
@@ -335,9 +347,9 @@
             const start = (pageNum - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             
-            // Hide all rows first
-            const allRows = document.querySelectorAll('#candidates-table tbody tr');
-            allRows.forEach(row => row.style.display = 'none');
+            // Hide all DATA rows first
+            const allDataRows = document.querySelectorAll('#candidates-table tbody tr.application-row');
+            allDataRows.forEach(row => row.style.display = 'none');
             
             // Show only the rows for the current page
             for (let i = start; i < end && i < candidatesFilteredRows.length; i++) {

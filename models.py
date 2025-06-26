@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-#import pytz
+# import pytz
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -67,7 +67,7 @@ class User(db.Model):
     about_me = db.Column(db.Text)
     profile_picture = db.Column(db.Text)
     college_name = db.Column(db.String(255))  # To store connected college name or manual value.
-    created_at = db.Column(db.DateTime,default=datetime.utcnow) #default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime,default=datetime.utcnow) # default=datetime.now(pytz.timezone('Asia/Kolkata'))
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_banned = db.Column(db.Boolean, default = False)
 
@@ -122,7 +122,7 @@ class Job(db.Model):
     job_id = db.Column(Uuid, primary_key=True, default=uuid.uuid4, unique=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract
+    job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract, internship
     skills = db.Column(db.Text)
     years_of_exp = db.Column(db.Integer, nullable=False)
     certifications = db.Column(db.Text)
