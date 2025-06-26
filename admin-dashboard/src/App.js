@@ -558,7 +558,7 @@ const Dashboard = () => {
 
 
 // This component displays details in a popup.
-
+// Fixed DetailsDialog component with better alignment
 const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => {
     // Helper to format keys (e.g., 'company_name' -> 'Company Name')
     const formatLabel = (key) => {
@@ -601,7 +601,6 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
         });
     }
 
-
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="paper">
             <DialogTitle>{title}</DialogTitle>
@@ -612,22 +611,51 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
                     </Box>
                 )}
                 {!loading && data && (
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Box sx={{ mt: 1 }}>
                         {Object.entries(displayData).map(([key, value]) => (
-                            <React.Fragment key={key}>
-                                <Grid item xs={12} sm={4}>
-                                    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                            <Box 
+                                key={key} 
+                                sx={{ 
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    mb: 2,
+                                    minHeight: 'auto'
+                                }}
+                            >
+                                <Box sx={{ 
+                                    minWidth: { xs: 'auto', sm: 120 },
+                                    maxWidth: { xs: 'none', sm: 120 },
+                                    mr: { xs: 0, sm: 2 },
+                                    mb: { xs: 0.5, sm: 0 },
+                                    flexShrink: 0
+                                }}>
+                                    <Typography 
+                                        variant="subtitle2" 
+                                        color="text.secondary" 
+                                        fontWeight="bold"
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            lineHeight: 1.2
+                                        }}
+                                    >
                                         {formatLabel(key)}
                                     </Typography>
-                                </Grid>
-                                <Grid item xs={12} sm={8}>
-                                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                </Box>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            wordBreak: 'break-word',
+                                            fontSize: '0.875rem',
+                                            lineHeight: 1.4
+                                        }}
+                                    >
                                         {formatValue(key, value)}
                                     </Typography>
-                                </Grid>
-                            </React.Fragment>
+                                </Box>
+                            </Box>
                         ))}
-                    </Grid>
+                    </Box>
                 )}
                 {!loading && !data && (
                     <Typography variant="body1" sx={{ p: 4, textAlign: 'center' }}>
@@ -682,9 +710,9 @@ const ClickableNameField = ({ source, resource }) => {
     // Define the specific display order and filter for each resource
     let fieldsOrder = [];
     if (resource === 'users') {
-        fieldsOrder = ['name', 'age', 'email', 'phone', 'college_name', 'about_me', 'is_banned', 'created_at'];
+        fieldsOrder = ['age', 'email', 'phone', 'college_name', 'about_me', 'is_banned', 'created_at'];
     } else if (resource === 'companies') {
-        fieldsOrder = ['company_name', 'email', 'address', 'industry', 'description', 'website', 'is_banned'];
+        fieldsOrder = ['email', 'address', 'industry', 'description', 'website', 'is_banned', 'created_at'];
     }
 
     return (
@@ -1308,29 +1336,39 @@ const JobList = (props) => (
             <SearchInput 
                 source="q" 
                 alwaysOn 
-                placeholder="Search jobs..." 
-                sx={{ maxWidth: 400 }}
+                placeholder="Search jobs (try: title:, company:, location:, job_type:, status:)..." 
+                sx={{ maxWidth: 500 }}
             />
         ]} 
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-    	{/* <TextField source="id" sortable={false} /> */}
-    	<TextField
-        source="title"
-        render={(params) => (
-            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                {params.record.title}
-            </Typography>
-        )}
-    />
-    <TextField source="job_type" />
-    <TextField source="location" />
-    <TextField source="salary" />
-    <TextField source="total_vacancy" />
-    <TextField source="filled_vacancy" />
-    <TextField source="status" />
-</StyledDatagrid>
+            {/* <TextField source="id" sortable={false} /> */}
+            <TextField
+                source="title"
+                render={(params) => (
+                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                        {params.record.title}
+                    </Typography>
+                )}
+            />
+            <TextField 
+                source="company_name" 
+                label="Company"
+                sortable={false}
+                render={(params) => (
+                    <Typography variant="body2" sx={{ color: 'primary.main' }}>
+                        {params.record.company_name}
+                    </Typography>
+                )}
+            />
+            <TextField source="job_type" />
+            <TextField source="location" />
+            <TextField source="salary" />
+            <TextField source="total_vacancy" />
+            <TextField source="filled_vacancy" />
+            <TextField source="status" />
+        </StyledDatagrid>
     </List>
 );
 

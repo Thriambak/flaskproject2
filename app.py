@@ -170,6 +170,7 @@ def get_company_details(id):
         'logo': company.logo,
         'description': company.description,
         'industry': company.industry,
+        'created_at': company.created_at,
         'is_banned': company.is_banned
     }
     return jsonify(company_data)
@@ -368,7 +369,12 @@ def submit_company_profile():
 # ========== JOBS API ==========
 @app.route('/jobs', methods=['GET'])
 def get_jobs():
-    query = Job.query
+    # Join Job with Login and Company tables to get company name
+    query = db.session.query(Job, Company.company_name).join(
+        Login, Job.created_by == Login.id
+    ).join(
+        Company, Login.id == Company.login_id
+    )
     
     if 'q' in request.args and request.args['q']:
         search_term = request.args['q']
@@ -385,16 +391,22 @@ def get_jobs():
         elif "status:" in search_term:
             status_term = search_term.split("status:")[1].strip()
             query = query.filter(Job.status.ilike(f"%{status_term}%"))
+        elif "company:" in search_term:
+            company_term = search_term.split("company:")[1].strip()
+            query = query.filter(Company.company_name.ilike(f"%{company_term}%"))
         else:
             search_term = f"%{search_term}%"
             query = query.filter(or_(
-    		Job.title.ilike(search_term),
-    		Job.job_type.ilike(search_term),
-    		Job.location.ilike(search_term),
-    		Job.status.ilike(search_term)
-		))
+                Job.title.ilike(search_term),
+                Job.job_type.ilike(search_term),
+                Job.location.ilike(search_term),
+                Job.status.ilike(search_term),
+                Company.company_name.ilike(search_term)
+            ))
     
-    jobs = query.order_by(Job.updated_at.desc()).all()
+    # Execute query and get results
+    results = query.order_by(Job.updated_at.desc()).all()
+    
     jobs_data = [{
         'id': job.job_id,
         'job_id': job.job_id,
@@ -412,8 +424,9 @@ def get_jobs():
         'form_url': job.form_url,
         'created_at': job.created_at,
         'deadline': job.deadline.strftime('%Y-%m-%d') if job.deadline else None,
-        'created_by': job.created_by
-    } for job in jobs]
+        'created_by': job.created_by,
+        'company_name': company_name  # Add company name to response
+    } for job, company_name in results]
     
     response = make_response(jsonify(jobs_data))
     response.headers['Content-Range'] = f'jobs 0-{len(jobs_data)-1}/{len(jobs_data)}'
@@ -471,9 +484,9 @@ def update_job(job_id):
         else:
             job.deadline = None
     
-    # Update other fields
+    # Update other fields (exclude company_name as it's read-only)
     for key, value in data.items():
-        if key != 'deadline':  # already handled
+        if key not in ['deadline', 'company_name']:  # Don't update company_name directly
             setattr(job, key, value)
     
     db.session.commit()
