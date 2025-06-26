@@ -36,26 +36,26 @@
   </header>
   
   <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <button onclick="window.location.href='/user/application_history'">
-        <i class="fas fa-history"></i> Application History
-      </button>
-      <a href="{{ url_for('user.notifications') }}">
-        <button><i class="fas fa-bell"></i> Notifications</button>
-      </a>
-      <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
-    
+out -->
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     <!-- Main Content -->
     <div class="activity" id="activityContent">
       <h2 class="mb-4">Find Your Dream Job</h2>

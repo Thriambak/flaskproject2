@@ -5,7 +5,7 @@ from config import Config
 from functools import wraps
 import os
 from werkzeug.utils import secure_filename
-from models import Certification, Coupon, Couponuser, Job, JobApplication, Login,User,ResumeCertification, Notification #, JobApplication
+from models import Certification, Company, Coupon, Couponuser, Job, JobApplication, Login,User,ResumeCertification, Notification #, JobApplication
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os, uuid
@@ -35,28 +35,56 @@ def user_dashboard():
     if not login_id:
         flash("User not logged in", "error")
         return redirect(url_for('auth.login'))
-    
+   
     # Ensure that only regular users access this page
     if session.get('role') != 'user':
         return redirect(url_for('auth.login'))
-    
+   
     # Get the User object using login_id from the Login table
     user = User.query.filter_by(login_id=login_id).first()
     if not user:
         flash("User not found", "error")
         return redirect(url_for('auth.login'))
     user_id = user.id  # This is the User table's id, used for job application queries
-    
+   
     db.session.commit()
     db.session.expire_all()  # Forces fresh query results
-
-    # Paginate the jobs query
+    
+    # Paginate the jobs query with filters
     page = request.args.get('page', 1, type=int)
     per_page = 10  # Adjust as needed
-    jobs_pagination = Job.query.order_by(Job.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Query jobs with filters:
+    # 1. Exclude jobs where vacancy is full (filled_vacancy >= total_vacancy)
+    # 2. Exclude jobs from banned companies
+    # 3. Only show active jobs
+    jobs_query = Job.query.join(Login, Job.created_by == Login.id)\
+        .join(Company, Login.id == Company.login_id)\
+        .filter(
+            Job.filled_vacancy < Job.total_vacancy,  # Not fully filled
+            Company.is_banned == False,  # Company not banned
+            Job.status == 'open'  # Job is active
+        )\
+        .order_by(Job.created_at.desc())
+    
+    jobs_pagination = jobs_query.paginate(page=page, per_page=per_page, error_out=False)
     jobs = jobs_pagination.items
     total_pages = jobs_pagination.pages
-
+    
+    # Get user's applied jobs
+    applied_jobs = db.session.query(JobApplication.job_id)\
+        .filter(JobApplication.user_id == user_id)\
+        .subquery()
+    
+    # Get user's saved jobs
+    saved_jobs = db.session.query(Favorite.job_id)\
+        .filter(Favorite.user_id == user_id)\
+        .subquery()
+    
+    # Create sets for easier lookup in template
+    applied_job_ids = {str(app.job_id) for app in JobApplication.query.filter_by(user_id=user_id).all()}
+    saved_job_ids = {str(saved.job_id) for saved in Favorite.query.filter_by(user_id=user_id).all()}
+    
     # Remove chart data; only upcoming events and notifications remain
     current_date = datetime.utcnow()
     upcoming_events = db.session.query(Job.title, Job.deadline)\
@@ -65,13 +93,15 @@ def user_dashboard():
         .order_by(Job.deadline.asc()).all()
     recent_notifications = Notification.query.filter_by(user_id=user_id, hidden=False)\
         .order_by(Notification.timestamp.desc()).limit(5).all()
-    
+   
     return render_template('/user/user_dashboard.html',
                            jobs=jobs,
                            upcoming_events=upcoming_events,
                            recent_notifications=recent_notifications,
                            page=page,
-                           total_pages=total_pages)
+                           total_pages=total_pages,
+                           applied_job_ids=applied_job_ids,
+                           saved_job_ids=saved_job_ids)
 from datetime import datetime
 
 from models import db, User, Job, JobApplication, ResumeCertification, Notification
@@ -482,7 +512,6 @@ from sqlalchemy import or_
 from sqlalchemy import or_
 
 from sqlalchemy import or_
-
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
 def job_search():
     if request.method == 'POST':
@@ -492,9 +521,9 @@ def job_search():
         years_of_exp = request.form.get('years_of_exp')
         salary = request.form.get('salary')
         deadline = request.form.get('deadline')
-        
+       
         query = Job.query
-        
+       
         if keyword:
             query = query.filter(
                 or_(
@@ -515,15 +544,27 @@ def job_search():
             query = query.filter(Job.salary <= salary)
         if deadline:
             query = query.filter(Job.deadline <= deadline)
-        
+       
         jobs = query.order_by(Job.created_at.desc()).all()
-        return render_template('/user/jobresults.html', jobs=jobs)
+        
+        # Get current user's ID from session
+        current_user_id = session.get('user_id')
+        
+        # Get jobs the user has already applied to
+        applied_applications = JobApplication.query.filter_by(user_id=current_user_id).all()
+        applied_jobs = {app.job_id for app in applied_applications}
+        
+        # Get jobs the user has already saved (assuming Favorite table exists)
+        # You'll need to import the Favorite model at the top of your file
+        saved_favorites = Favorite.query.filter_by(user_id=current_user_id).all()
+        saved_jobs = {fav.job_id for fav in saved_favorites}
+        
+        return render_template('/user/jobresults.html', 
+                             jobs=jobs, 
+                             applied_jobs=applied_jobs, 
+                             saved_jobs=saved_jobs)
     else:
         return render_template('/user/jobsearch.html')
-
-
-
-
 
 
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
@@ -542,6 +583,12 @@ def profile():
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
     
+    # Get user's coupon information if they have one
+    user_coupon_mapping = Couponuser.query.filter_by(user_id=user_id).first()
+    user_coupon = None
+    if user_coupon_mapping:
+        user_coupon = Coupon.query.filter_by(id=user_coupon_mapping.coupon_id).first()
+    
     # Other data for charts, etc.
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
@@ -556,26 +603,44 @@ def profile():
                 flash("Invalid age provided.", "error")
                 return redirect(url_for('user.profile', edit='true'))
         user.about_me = request.form.get('about_me', user.about_me)
+        
+        # Handle college name and coupon code
         manual_college = request.form.get('college_name', '').strip()
         coupon_code = request.form.get('coupon_code', "").strip()
-        if coupon_code:
+        
+        # Only process new coupon codes if user doesn't already have one
+        if coupon_code and not user_coupon:
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             if coupon:
+                # Check if this coupon is already used by this user
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)
                     db.session.add(new_mapping)
+                    
+                # Set college name from coupon if available
                 if coupon.college:
-                    user.college_name = f"{coupon.college.college_name}"
+                    user.college_name = coupon.college.college_name
                 else:
                     user.college_name = manual_college or user.college_name
+                    
+                flash("Coupon code applied successfully!", "success")
             else:
                 flash("Invalid coupon code provided.", "error")
                 user.college_name = manual_college or user.college_name
+        elif user_coupon:
+            # User already has a coupon, don't allow changes to coupon-controlled fields
+            if user_coupon.college:
+                # College is controlled by coupon, don't change it
+                user.college_name = user_coupon.college.college_name
+            else:
+                # College can still be manually set if coupon doesn't specify it
+                user.college_name = manual_college or user.college_name
         else:
+            # No coupon code provided and user doesn't have one, use manual college
             user.college_name = manual_college or user.college_name
         
-        # NEW: Get the profile picture URL from the form and update the field
+        # Profile picture URL update
         profile_pic_url = request.form.get('profile_pic_url')
         if profile_pic_url:
             user.profile_picture = profile_pic_url
@@ -593,6 +658,7 @@ def profile():
                            user=user,
                            resumes=resumes,
                            certifications=certifications,
+                           user_coupon=user_coupon,
                            edit_mode=edit_mode)
 from flask import jsonify
 
@@ -679,10 +745,10 @@ def save_job(job_id):
     
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.user_dashboard'))
+# Favorites Page Route with Pagination
+from flask import request
 
-# Favorites Page Route
 @user_blueprint.route('/favorites')
-
 def favorites():
     login_id = session.get('login_id')
     if not login_id:
@@ -694,19 +760,53 @@ def favorites():
         flash("User not found", "error")
         return redirect(url_for('auth.login'))
     
-    # Join Favorite with Job so that all job details are available.
-    favorites_data = (
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 5  # Number of favorites per page, adjust as needed
+    
+    # Join Favorite with Job so that all job details are available, with pagination
+    favorites_query = (
         db.session.query(Favorite, Job)
         .join(Job, Favorite.job_id == Job.job_id)
         .filter(Favorite.user_id == user.id)
         .order_by(Favorite.saved_at.desc())
-        .all()
     )
     
-    # Extract the Job objects from the tuple results.
-    favorites = [job for favorite, job in favorites_data]
+    # Apply pagination
+    favorites_pagination = favorites_query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
     
-    return render_template('/user/favorites.html', favorites=favorites)
+    # Extract the Job objects from the tuple results
+    favorites = [job for favorite, job in favorites_pagination.items]
+    
+    # Get list of job IDs that the user has already applied to
+    applied_job_ids = set()
+    if favorites:
+        job_ids = [job.job_id for job in favorites]
+        applied_jobs = (
+            db.session.query(JobApplication.job_id)
+            .filter(
+                JobApplication.user_id == user.id,
+                JobApplication.job_id.in_(job_ids)
+            )
+            .all()
+        )
+        applied_job_ids = {job_id for (job_id,) in applied_jobs}
+    
+    return render_template(
+        '/user/favorites.html',
+        favorites=favorites,
+        page=favorites_pagination.page,
+        total_pages=favorites_pagination.pages,
+        has_prev=favorites_pagination.has_prev,
+        has_next=favorites_pagination.has_next,
+        prev_num=favorites_pagination.prev_num,
+        next_num=favorites_pagination.next_num,
+        applied_job_ids=applied_job_ids
+    )
 @user_blueprint.route('/remove_favorite/<uuid:job_id>', methods=['POST'])
 def remove_favorite(job_id):
     login_id = session.get('login_id')

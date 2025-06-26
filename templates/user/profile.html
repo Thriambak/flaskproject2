@@ -17,6 +17,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/profilestyle.css') }}">
   
+  <style>
+    .frozen-field {
+      background-color: #f8f9fa !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+    }
+    
+    .frozen-field:focus {
+      box-shadow: none !important;
+      border-color: #dee2e6 !important;
+    }
+    
+    .field-frozen-label {
+      color: #6c757d;
+      font-size: 0.875rem;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body data-aos-duration="1000">
   <!-- Flash Messages Container -->
@@ -45,7 +63,7 @@
       <div class="profile-dropdown">
         <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
         <div class="dropdown-content">
-          <a href="{{ url_for('user.profile') }}">
+          <a href="{{ url_for('user.profile') }}" style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
             <i class="fas fa-user"></i> Profile
           </a>
           <a href="{{ url_for('auth.logout') }}">
@@ -56,27 +74,26 @@
     </div>
   </header>
   
-  <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <button onclick="window.location.href='/user/application_history'">
-        <i class="fas fa-history"></i> Application History
-      </button>
-      <a href="{{ url_for('user.notifications') }}">
-        <button><i class="fas fa-bell"></i> Notifications</button>
-      </a>
-      <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
-    
+
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/user/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     <!-- Activity Section -->
     <div class="activity" id="activityContent" data-aos="fade-up">
       <div class="profile-container">
@@ -123,16 +140,55 @@
               <label>Age</label>
               <input type="number" name="age" id="ageField" value="{{ user.age or '' }}">
             </div>
-            {% if not user.coupon_code %}
+            
+            <!-- Coupon Code Field - Show only if user doesn't have a coupon -->
+            {% if not user_coupon %}
               <div class="editable-field">
                 <label>Coupon Code</label>
                 <input type="text" name="coupon_code" placeholder="Enter coupon code">
               </div>
+            {% else %}
+              <!-- Show frozen coupon code field if user has a coupon -->
+              <div class="editable-field">
+                <label>Coupon Code 
+                  <span class="field-frozen-label">(Cannot be changed)</span>
+                </label>
+                <input type="text" 
+                       value="{{ user_coupon.code }}" 
+                       class="frozen-field" 
+                       readonly 
+                       title="Coupon code cannot be changed once applied">
+                <!-- Hidden field to maintain the coupon code -->
+                <input type="hidden" name="coupon_code" value="{{ user_coupon.code }}">
+              </div>
             {% endif %}
+            
+            <!-- College Name Field -->
             <div class="editable-field">
-              <label>College Name</label>
-              <input type="text" name="college_name" id="collegeField" value="{{ user.college_name or '' }}" placeholder="Enter college name">
+              <label>College Name
+                {% if user_coupon and user_coupon.college %}
+                  <span class="field-frozen-label">(Set by coupon code)</span>
+                {% endif %}
+              </label>
+              {% if user_coupon and user_coupon.college %}
+                <!-- Frozen college field if set by coupon -->
+                <input type="text" 
+                       value="{{ user_coupon.college.college_name }}" 
+                       class="frozen-field" 
+                       readonly 
+                       title="College name is set by your coupon code and cannot be changed">
+                <!-- Hidden field to maintain the college name -->
+                <input type="hidden" name="college_name" value="{{ user_coupon.college.college_name }}">
+              {% else %}
+                <!-- Editable college field if not set by coupon -->
+                <input type="text" 
+                       name="college_name" 
+                       id="collegeField" 
+                       value="{{ user.college_name or '' }}" 
+                       placeholder="Enter college name">
+              {% endif %}
             </div>
+            
             <div class="editable-field">
               <label>About Me</label>
               <textarea name="about_me" id="aboutMeField" rows="5">{{ user.about_me or '' }}</textarea>

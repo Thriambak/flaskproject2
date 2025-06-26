@@ -17,7 +17,63 @@
   <!-- Balloon.css -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/favorites.css') }}">
-
+  
+  <style>
+    .btn-applied {
+      background-color: #10b981;
+      color: white;
+      cursor: default;
+      opacity: 0.8;
+    }
+    
+    .btn-applied:hover {
+      background-color: #059669;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 30px;
+      gap: 10px;
+    }
+    
+    .pagination a {
+      text-decoration: none;
+    }
+    
+    .pagination button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .pagination button:hover {
+      background-color: #0056b3;
+    }
+    
+    .pagination button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+    
+    .pagination span {
+      padding: 10px 15px;
+      font-weight: bold;
+      color: #495057;
+    }
+    
+    .page-info {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #6c757d;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
   <!-- Flash Message Container -->
@@ -58,31 +114,39 @@
     </div>
   </header>
   
-  <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <button onclick="window.location.href='/user/application_history'">
-        <i class="fas fa-history"></i> Application History
-      </button>
-      <a href="{{ url_for('user.notifications') }}">
-        <button><i class="fas fa-bell"></i> Notifications</button>
-      </a>
-      <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
+  <!out -->
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/user/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     
     <!-- Activity Section (Favorites Page) -->
     <div class="activity" id="activityContent">
       <h2>Favorite Jobs</h2>
       <input type="text" id="search" onkeyup="searchFavorites()" placeholder="Search favorite jobs..." class="search-bar" />
+      
+      {% if favorites %}
+        <!-- Page Information -->
+        <div class="page-info">
+          Showing {{ ((page - 1) * 5 + 1) }} to {{ ((page - 1) * 5 + favorites|length) }} of your favorite jobs
+        </div>
+      {% endif %}
+      
       <div class="job-postings">
         {% if favorites %}
           {% for job in favorites %}
@@ -101,12 +165,22 @@
               <p><i class="fas fa-briefcase"></i> <strong>Years of Experience:</strong> {{ job.years_of_exp }}</p>
               
               <div class="action-buttons">
-                <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
-                  <button type="submit" class="btn">
-                    <i class="fas fa-paper-plane"></i>
-                    <span>Apply Now</span>
+                {% if job.job_id in applied_job_ids %}
+                  <!-- Already Applied Button -->
+                  <button type="button" class="btn btn-applied" disabled>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Applied</span>
                   </button>
-                </form>
+                {% else %}
+                  <!-- Apply Now Button -->
+                  <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
+                    <button type="submit" class="btn">
+                      <i class="fas fa-paper-plane"></i>
+                      <span>Apply Now</span>
+                    </button>
+                  </form>
+                {% endif %}
+                
                 <form action="{{ url_for('user.remove_favorite', job_id=job.job_id) }}" method="POST">
                   <button type="submit" class="btn-remove">
                     <i class="fas fa-trash-alt"></i>
@@ -117,15 +191,33 @@
             </div>
           {% endfor %}
           
-          <!-- Pagination Controls (if pagination variables are provided) -->
-          {% if page and total_pages %}
+          <!-- Pagination Controls -->
+          {% if total_pages > 1 %}
           <div class="pagination">
-            {% if page > 1 %}
-              <a href="?page={{ page - 1 }}"><button><i class="fas fa-chevron-left"></i> Previous</button></a>
+            {% if has_prev %}
+              <a href="?page={{ prev_num }}">
+                <button>
+                  <i class="fas fa-chevron-left"></i> Previous
+                </button>
+              </a>
+            {% else %}
+              <button disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+              </button>
             {% endif %}
+            
             <span>Page {{ page }} of {{ total_pages }}</span>
-            {% if page < total_pages %}
-              <a href="?page={{ page + 1 }}"><button>Next <i class="fas fa-chevron-right"></i></button></a>
+            
+            {% if has_next %}
+              <a href="?page={{ next_num }}">
+                <button>
+                  Next <i class="fas fa-chevron-right"></i>
+                </button>
+              </a>
+            {% else %}
+              <button disabled>
+                Next <i class="fas fa-chevron-right"></i>
+              </button>
             {% endif %}
           </div>
           {% endif %}

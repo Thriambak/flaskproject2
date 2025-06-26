@@ -18,6 +18,29 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/userstyles.css') }}">
 
+  <style>
+    /* Custom styles for button states */
+    .btn-applied {
+      background-color:rgb(49, 144, 112) !important;
+      color: white !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+    }
+    
+    .btn-saved {
+      background-color:rgb(137, 104, 45) !important;
+      color: white !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+    }
+    
+    .btn-applied:hover,
+    .btn-saved:hover {
+      transform: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+
 </head>
 <body class="bg-gray-100">
   <!-- Flash Messages -->
@@ -59,18 +82,26 @@
   </header>
   
   <!-- Main Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
-      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
-      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
-      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
-    
+
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'" style="background: linear-gradient(90deg, #c2cef5, #f9faff); transform: scale(1.05); font-weight: bold;">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/user/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     <!-- Activity Section - Dashboard Content -->
     <div class="activity" id="activityContent">
       
@@ -141,6 +172,9 @@
                 <p><i class="fas fa-calendar-alt" style="padding-left: 0.3%;"></i> <strong style="padding-left: 0.5%;">Deadline:</strong> {{ job.deadline.strftime('%d-%m-%Y') }}</p>
               {% endif %}
 
+              <!-- Vacancy Information -->
+              <p><i class="fas fa-users" style="padding-left: 0.2%;"></i> <strong style="padding-left: 0.3%;">Vacancies:</strong> {{ job.total_vacancy - job.filled_vacancy }} available out of {{ job.total_vacancy }}</p>
+
               {% if job.form_url %}
                 <p><i class="fas fa-link"></i> <strong>Questionnaire Link:</strong> <a href="{{ job.form_url }}" style="text-decoration: none; color: blue; overflow-wrap: break-word;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p>
               {% endif %}
@@ -148,32 +182,50 @@
                 <!-- Job buttons container for better alignment -->
               <div class="job-buttons">
                 <!-- Apply Now Button -->
-                <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
-                  <button type="submit" class="btn apply-btn">Apply Now</button>
-                </form>
+                {% if job.job_id|string in applied_job_ids %}
+                  <button type="button" class="btn btn-applied" disabled>
+                    <i class="fas fa-check"></i> Applied
+                  </button>
+                {% else %}
+                  <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
+                    <button type="submit" class="btn apply-btn">Apply Now</button>
+                  </form>
+                {% endif %}
                 
                 <!-- Save Job Button -->
-                <form action="{{ url_for('user.save_job', job_id=job.job_id) }}" method="POST">
-                  <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
-                </form>
+                {% if job.job_id|string in saved_job_ids %}
+                  <button type="button" class="btn-save btn-saved" disabled>
+                    <i class="fas fa-bookmark"></i> Saved
+                  </button>
+                {% else %}
+                  <form action="{{ url_for('user.save_job', job_id=job.job_id) }}" method="POST">
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
+                  </form>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
           
           <!-- No jobs message -->
-          <div id="no-jobs-message">
+          <div id="no-jobs-message" style="display: none;">
             <p>No matching job listings available.</p>
           </div>
           
           <!-- Pagination Controls -->
           <div class="pagination">
             <button id="prev-page" disabled>&laquo; Previous</button>
-            <span id="page-info">Page 1 of 1</span>
+            <span id="page-info">Page  {{ page if page > 0 else 0 }} of {{ total_pages if total_pages > 0 else 0 }}</span>
             <button id="next-page" disabled>Next &raquo;</button>
           </div>
         {% else %}
           <div class="alert alert-info" role="alert">
             No job listings available at the moment.
+          </div>
+          <!-- Pagination for empty state -->
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page 0 of 0</span>
+            <button id="next-page" disabled>Next &raquo;</button>
           </div>
         {% endif %}
       </div>
@@ -227,8 +279,8 @@
       });
     }, 3000);
     
-    // Pagination variables
-    let currentPage = 1;
+    // Pagination variables - Fix for empty state
+    let currentPage = {{ page if page > 0 else 1 }};
     const rowsPerPage = 5;
     let filteredJobs = [];
     
@@ -237,13 +289,15 @@
       const jobs = document.querySelectorAll('.job-item');
       filteredJobs = Array.from(jobs);
       updatePagination();
-      showPage(1);
+      showPage(currentPage);
     });
     
     // Update pagination controls
     function updatePagination() {
       const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
-      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+      const displayTotalPages = totalPages || 0;
+      const displayCurrentPage = totalPages === 0 ? 1 : currentPage;
+      document.getElementById('page-info').textContent = `Page ${displayCurrentPage} of ${displayTotalPages}`;
       
       document.getElementById('prev-page').disabled = currentPage === 1;
       document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
@@ -265,8 +319,10 @@
       }
       
       // Show/hide no jobs message
-      document.getElementById('no-jobs-message').style.display = 
-        filteredJobs.length === 0 ? 'block' : 'none';
+      const noJobsMessage = document.getElementById('no-jobs-message');
+      if (noJobsMessage) {
+        noJobsMessage.style.display = filteredJobs.length === 0 ? 'block' : 'none';
+      }
       
       updatePagination();
     }
@@ -274,14 +330,16 @@
     // Pagination controls
     document.getElementById('prev-page').addEventListener('click', function() {
       if (currentPage > 1) {
-        showPage(currentPage - 1);
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.user_dashboard") }}?page=' + (currentPage - 1);
       }
     });
     
     document.getElementById('next-page').addEventListener('click', function() {
-      const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
+      const totalPages = {{ total_pages }};
       if (currentPage < totalPages) {
-        showPage(currentPage + 1);
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.user_dashboard") }}?page=' + (currentPage + 1);
       }
     });
     

@@ -131,41 +131,50 @@
       display: flex;
       flex: 1;
     }
-    .navigation {
-      width: 280px;
-      background: linear-gradient(to bottom, #ffffff, #f0f4f9);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      border-right: 1px solid #ccc;
-      box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
-    }
     
-    .navigation button {
-      padding: 12px 20px;
-      border: none;
-      background: linear-gradient(90deg, #f0f4ff, #ffffff);
-      cursor: pointer;
-      font-size: 16px;
-      border-radius: 8px;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      transition: background 0.3s, transform 0.2s;
-    }
-    
-    .navigation button i {
-      font-size: 18px;
-      color: #005f73;
-    }
-    
-    .navigation button:hover {
-      background: linear-gradient(90deg, #dce4ff, #f9faff);
-      transform: scale(1.05);
-    }
+        .navigation {
+            width: 280px;
+            background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid #ccc;
+            box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        .navigation button {
+            padding: 12px 20px;
+            border: none;
+            background: linear-gradient(90deg, #f0f4ff, #ffffff);
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s, transform 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .navigation a {
+            text-decoration: none;
+            width: 100%;
+        }
+        
+        .navigation button i {
+            font-size: 18px;
+            color: #005f73;
+        }
+        
+        .navigation button:hover {
+            background: linear-gradient(90deg, #dce4ff, #f9faff);
+            transform: scale(1.05);
+        }
     .activity {
       flex: 1;
       padding: 20px;

@@ -40,19 +40,25 @@
     </div>
   </header>
   
-  <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'"><i class="fas fa-home"></i> Home</button>
-      <button onclick="window.location.href='/user/application_history'"><i class="fas fa-history"></i> Application History</button>
-      <a href="{{ url_for('user.notifications') }}"><button><i class="fas fa-bell"></i> Notifications</button></a>
-      <a href="{{ url_for('user.resume_certifications') }}"><button><i class="fas fa-file-alt"></i> Resume & Certifications</button></a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
-    
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'" style="background: linear-gradient(90deg, #c2cef5, #f9faff); transform: scale(1.05); font-weight: bold;">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/user/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     <!-- Main Content (Activity) -->
     <div class="activity">
       <div class="activity-header">
@@ -124,35 +130,33 @@
     </div>
   </main>
   
-  <!-- Modal for Application Details -->
-  <div id="detailsModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modalJobTitle">Software Engineer</h3>
-        <p class="modal-subtitle" id="modalCompany">Google Inc.</p>
-        <button class="modal-close" onclick="closeDetails()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="detail-grid">
-          <div class="detail-group">
-            <div class="detail-label">Status</div>
-            <div class="detail-value">
-              <span class="modal-status" id="modalStatus">Pending</span>
-            </div>
+  <<!-- Modal for Application Details -->
+<div id="detailsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalJobTitle">Software Engineer</h3>
+      <p class="modal-subtitle" id="modalCompany">Google Inc.</p>
+      <!-- Cross button removed from here -->
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="detail-group">
+          <div class="detail-label">Status</div>
+          <div class="detail-value">
+            <span class="modal-status" id="modalStatus">Pending</span>
           </div>
-          <div class="detail-group">
-            <div class="detail-label">Date Applied</div>
-            <div class="detail-value" id="modalDateApplied">12 Feb, 2025</div>
-          </div>
-        
-          
+        </div>
+        <div class="detail-group">
+          <div class="detail-label">Date Applied</div>
+          <div class="detail-value" id="modalDateApplied">12 Feb, 2025</div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="modal-btn" onclick="closeDetails()">Close</button>
-      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeDetails()">Close</button>
     </div>
   </div>
+</div>
   
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -265,33 +269,109 @@ function displayApplications() {
   }
 }
 
-// Update pagination controls and info
+/// Update pagination controls and info
 function updatePagination() {
   const totalPages = Math.ceil(filteredApplications.length / rowsPerPage);
   
-  document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+  // Show "Page 0 of 0" when there are no applications
+  if (filteredApplications.length === 0) {
+    document.getElementById('page-info').textContent = `Page 0 of 0`;
+    currentPage = 0;
+  } else {
+    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+  }
   
   // Enable/disable pagination buttons
-  document.getElementById('prev-page').disabled = currentPage <= 1;
-  document.getElementById('next-page').disabled = currentPage >= totalPages;
+  document.getElementById('prev-page').disabled = currentPage <= 1 || filteredApplications.length === 0;
+  document.getElementById('next-page').disabled = currentPage >= totalPages || filteredApplications.length === 0;
 }
 
-// Event listeners for filter buttons
-filterButtons.forEach(button => {
-  button.addEventListener('click', function() {
-    // Update active filter button style
-    filterButtons.forEach(btn => btn.classList.remove('active'));
-    this.classList.add('active');
+// Also update the filterAndSearchApplications function to handle the empty state properly
+function filterAndSearchApplications() {
+  // Get all applications
+  const applications = Array.from(applicationItems);
+  
+  // Apply filters and search
+  filteredApplications = applications.filter(app => {
+    const status = app.dataset.status;
+    const jobTitle = app.querySelector('.job-title').textContent.toLowerCase();
+    const companyName = app.querySelector('.company-name').textContent.toLowerCase();
     
-    // Update current filter and reset to page 1
-    currentFilter = this.dataset.filter;
-    currentPage = 1;
+    // Filter by status
+    const statusMatch = currentFilter === 'all' || status === currentFilter;
     
-    // Apply filters and update display
-    filterAndSearchApplications();
+    // Filter by search term
+    const searchMatch = searchTerm === '' || 
+                        jobTitle.includes(searchTerm) || 
+                        companyName.includes(searchTerm);
+    
+    return statusMatch && searchMatch;
   });
-});
+  
+  // Show/hide empty state
+  if (filteredApplications.length === 0) {
+    emptyState.style.display = 'block';
+    // Reset to page 0 when no applications
+    currentPage = 0;
+  } else {
+    emptyState.style.display = 'none';
+    // Ensure we're on a valid page
+    if (currentPage === 0) currentPage = 1;
+  }
+  
+  // Update pagination
+  updatePagination();
+  
+  // Display applications for current page
+  displayApplications();
+}
 
+// Update the displayApplications function to handle page 0
+function displayApplications() {
+  // Hide all applications first
+  applicationItems.forEach(app => {
+    app.style.display = 'none';
+  });
+  
+  // Don't display anything if we're on page 0 (no applications)
+  if (currentPage === 0 || filteredApplications.length === 0) {
+    return;
+  }
+  
+  // Calculate start and end indices for the current page
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredApplications.length);
+  
+  // Show only applications for the current page
+  for (let i = startIndex; i < endIndex; i++) {
+    filteredApplications[i].style.display = 'flex';
+    // Add animation with delay
+    filteredApplications[i].style.animation = `fadeIn 0.3s ease-out ${(i - startIndex) * 0.1}s forwards`;
+  }
+}
+
+// Update the initialization in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Set initial filter to "all"
+  currentFilter = 'all';
+  
+  // Check if there are any applications at all
+  if (applicationItems.length === 0) {
+    currentPage = 0;
+  } else {
+    currentPage = 1;
+  }
+  
+  // Apply initial filtering
+  filterAndSearchApplications();
+  
+  // Add animation to applications on page load (only if there are applications)
+  if (applicationItems.length > 0) {
+    applicationItems.forEach((app, index) => {
+      app.style.animation = `fadeIn 0.3s ease-out ${index * 0.1}s forwards`;
+    });
+  }
+});
 // Event listener for search input
 searchInput.addEventListener('input', function() {
   searchTerm = this.value.toLowerCase();

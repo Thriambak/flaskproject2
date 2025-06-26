@@ -1,4 +1,4 @@
- /* Global styles */
+/* Global styles */
  * { margin: 0; padding: 0; box-sizing: border-box; }
  body {
    font-family: 'Roboto', sans-serif;
@@ -127,42 +127,49 @@
    flex: 1;
  }
  
- .navigation {
-   width: 280px;
-   background: linear-gradient(to bottom, #ffffff, #f0f4f9);
-   padding: 20px;
-   display: flex;
-   flex-direction: column;
-   gap: 15px;
-   border-right: 1px solid #ccc;
-   box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
-   transition: transform 0.3s ease;
- }
- 
- .navigation button {
-   padding: 12px 20px;
-   border: none;
-   background: linear-gradient(90deg, #f0f4ff, #ffffff);
-   cursor: pointer;
-   font-size: 16px;
-   border-radius: 8px;
-   text-align: left;
-   display: flex;
-   align-items: center;
-   gap: 15px;
-   transition: background 0.3s, transform 0.2s;
- }
- 
- .navigation button i {
-   font-size: 18px;
-   color: #005f73;
- }
- 
- .navigation button:hover {
-   background: linear-gradient(90deg, #dce4ff, #f9faff);
-   transform: scale(1.05);
- }
- 
+        .navigation {
+            width: 280px;
+            background: linear-gradient(to bottom, #ffffff, #f0f4f9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid #ccc;
+            box-shadow: inset -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        .navigation button {
+            padding: 12px 20px;
+            border: none;
+            background: linear-gradient(90deg, #f0f4ff, #ffffff);
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s, transform 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .navigation a {
+            text-decoration: none;
+            width: 100%;
+        }
+        
+        .navigation button i {
+            font-size: 18px;
+            color: #005f73;
+        }
+        
+        .navigation button:hover {
+            background: linear-gradient(90deg, #dce4ff, #f9faff);
+            transform: scale(1.05);
+        }
  /* Activity Section */
  .activity {
    flex: 1;
@@ -273,6 +280,9 @@
    border: 1px solid #ddd;
    animation: fadeInUp 0.5s ease-out;
    display: none; /* Hide all job postings initially */
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   hyphens: auto;
  }
  .activity .job-posting:nth-child(even) {
    animation-delay: 0.2s;
@@ -294,12 +304,18 @@
    margin: 0;
    text-transform: uppercase;
    letter-spacing: 2px;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   hyphens: auto;
  }
  .activity .job-posting .job-type {
    font-size: 14px;
    color: #0a3d62;
    display: flex;
    align-items: center;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   hyphens: auto;
  }
  .activity .job-posting .job-type i {
    margin-right: 10px;
@@ -310,6 +326,9 @@
    color: #666;
    margin: 8px 0;
    line-height: 1.5;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   hyphens: auto;
  }
  .activity .job-posting i {
    font-size: 18px;
@@ -319,6 +338,9 @@
  .activity .job-posting .form-link {
    margin: 10px 0;
    display: inline-block;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   hyphens: auto;
  }
  
  /* Button container for desktop layout */

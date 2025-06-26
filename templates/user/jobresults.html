@@ -15,6 +15,73 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/jobresult.css') }}">
   
+  <style>
+    /* Button styles for different states */
+    .btn-custom {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      margin: 5px;
+      width: 120px;
+      font-size: 14px;
+    }
+    
+    .btn-custom:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-applied {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      margin: 5px;
+      width: 120px;
+      font-size: 14px;
+      cursor: not-allowed;
+    }
+    
+    .btn-save {
+      background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      margin: 5px;
+      width: 120px;
+      font-size: 14px;
+    }
+    
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+    
+    .btn-saved {
+      background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      margin: 5px;
+      width: 120px;
+      font-size: 14px;
+      cursor: not-allowed;
+    }
+    
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+  </style>
 </head>
 <body data-aos-duration="1000">
   <!-- Header -->
@@ -40,27 +107,26 @@
       </div>
     </div>
   </header>
-  
-  <!-- Layout -->
-  <main>
-    <!-- Navigation Sidebar -->
-    <div class="navigation" id="side-navigation">
-      <button onclick="window.location.href='/user/user_dashboard'">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <button onclick="window.location.href='/user/application_history'">
-        <i class="fas fa-history"></i> Application History
-      </button>
-      <a href="{{ url_for('user.notifications') }}">
-        <button><i class="fas fa-bell"></i> Notifications</button>
-      </a>
-      <a href="{{ url_for('user.resume_certifications') }}">
-        <button><i class="fas fa-file-alt"></i> Resume & Certifications</button>
-      </a>
-      <button onclick="window.location.href='/user/analytics'">
-        <i class="fas fa-chart-line"></i> Analytics
-      </button>
-    </div>
+  out -->
+<main>
+  <!-- Navigation Sidebar -->
+  <div class="navigation" id="side-navigation">
+    <button onclick="window.location.href='/user/user_dashboard'">
+      <i class="fas fa-home"></i> Home
+    </button>
+    <button onclick="window.location.href='/user/application_history'">
+      <i class="fas fa-history"></i> Application History
+    </button>
+    <button onclick="window.location.href='/user/notifications'">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button onclick="window.location.href='/user/resume_certifications'">
+      <i class="fas fa-file-alt"></i> Resume & Certifications
+    </button>
+    <button onclick="window.location.href='/user/analytics'" >
+      <i class="fas fa-chart-line"></i> Analytics
+    </button>
+  </div>
     
     <!-- Main Content -->
     <div class="activity" id="activityContent">
@@ -84,7 +150,6 @@
       
       <div class="results-header">
         <h2>Job Listings</h2>
-        
       </div>
       
       <div class="container-fluid job-listings">
@@ -108,15 +173,36 @@
                         <a href="{{ job.form_url }}" target="_blank" class="text-info">Application Form</a>
                       </p>
                     {% endif %}
-                    <form action="{{ url_for('user.apply1_for_job', job_id=job.job_id) }}" method="POST">
-                      <button type="submit" class="btn-custom">
-                        <i class="fas fa-paper-plane"></i> Apply Now
-                      </button>
-                    </form>
-                      <form action="{{ url_for('user.save_job1', job_id=job.job_id) }}" method="POST">
-                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
-                      </form>
                     
+                    <div class="button-container">
+                      <!-- Check if user has already applied -->
+                      {% set has_applied = job.job_id in applied_jobs %}
+                      {% set has_saved = job.job_id in saved_jobs %}
+                      
+                      {% if has_applied %}
+                        <button type="button" class="btn-applied" disabled>
+                          <i class="fas fa-check"></i> Applied
+                        </button>
+                      {% else %}
+                        <form action="{{ url_for('user.apply1_for_job', job_id=job.job_id) }}" method="POST" style="display: inline;">
+                          <button type="submit" class="btn-custom">
+                            <i class="fas fa-paper-plane"></i> Apply Now
+                          </button>
+                        </form>
+                      {% endif %}
+                      
+                      {% if has_saved %}
+                        <button type="button" class="btn-saved" disabled>
+                          <i class="fas fa-heart"></i> Saved
+                        </button>
+                      {% else %}
+                        <form action="{{ url_for('user.save_job1', job_id=job.job_id) }}" method="POST" style="display: inline;">
+                          <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Save
+                          </button>
+                        </form>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -219,17 +305,6 @@
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.08)';
       });
-    });
-    
-    // Filter button functionality (placeholder)
-    document.querySelector('.filter-btn').addEventListener('click', function() {
-      alert('Filter functionality would open a modal or sidebar with additional filtering options');
-    });
-    
-    // Sort dropdown functionality (placeholder)
-    document.querySelector('.sort-dropdown').addEventListener('change', function() {
-      const value = this.value;
-      alert(`Sorting by: ${value} (This would trigger a resort of job listings)`);
     });
   </script>
 </body>
