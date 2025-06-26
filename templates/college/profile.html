@@ -25,7 +25,8 @@
             <div class="profile-dropdown">
                 <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
                 <div class="dropdown-content">
-                    <a href="{{ url_for('college.college_profile') }}">
+                    <a href="{{ url_for('college.college_profile') }}"
+                        style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
                         <i class="fas fa-user"></i> Profile
                     </a>
                     <a href="{{ url_for('auth.logout') }}">
