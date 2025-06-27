@@ -28,7 +28,25 @@ import {
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper, Link, CircularProgress } from "@mui/material";
+import { Card, 
+    CardContent, 
+    Typography, 
+    Grid, 
+    Box, 
+    Menu, 
+    MenuItem, 
+    ListItemIcon, 
+    ListItemText, 
+    Button, 
+    Divider, 
+    useTheme, 
+    Switch, 
+    FormControlLabel, 
+    TextField as MuiTextField, 
+    Paper, 
+    Link, 
+    CircularProgress 
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -774,8 +792,8 @@ const FilterDropdown = () => {
             case 'jobs':
                 return [
                     { label: "Title", value: "title:", icon: <WorkIcon /> },
-                    { label: "Company", value: "created_by:", icon: <FactoryIcon /> },
-                    { label: "Date Posted", value: "created_at:", icon: <EventIcon /> },
+                    { label: "Company", value: "company:", icon: <FactoryIcon /> },
+                    { label: "Job Type", value: "job_type:", icon: <CategoryIcon /> },
                     { label: "Status", value: "status:", icon: <LockIcon /> }
                 ];
             default:
