@@ -275,7 +275,7 @@ function updatePagination() {
   
   // Show "Page 0 of 0" when there are no applications
   if (filteredApplications.length === 0) {
-    document.getElementById('page-info').textContent = `Page 0 of 0`;
+    document.getElementById('page-info').textContent = `Page 1 of 0`;
     currentPage = 0;
   } else {
     document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;

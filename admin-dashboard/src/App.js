@@ -28,7 +28,29 @@ import {
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
 } from "react-admin";
-import { Card, CardContent, Typography, Grid, Box, Menu, MenuItem, ListItemIcon, ListItemText, Button, Divider, useTheme, Switch, FormControlLabel, TextField as MuiTextField, Paper, Link, CircularProgress } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Box,
+  Menu,
+  MenuItem, 
+  ListItemIcon,
+  ListItemText,
+  Button,
+  Divider,
+  useTheme,
+  Switch,
+  FormControlLabel,
+  TextField as MuiTextField,
+  Paper,
+  Link,
+  CircularProgress,
+  Select, 
+  InputLabel, 
+  FormControl, 
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -436,7 +458,7 @@ const Dashboard = () => {
                 setChartData(data.trends.map(item => ({ 
                     x: item.x, 
                     applications: item.applications, 
-                    logins: item.logins 
+                    registrations: item.logins 
                 })));
             })
             .catch((error) => console.error("Error fetching dashboard data:", error));
@@ -544,7 +566,7 @@ const Dashboard = () => {
                         />
                         <Line 
                             type="monotone" 
-                            dataKey="logins" 
+                            dataKey="registrations" 
                             stroke={theme.palette.secondary.main} 
                             strokeWidth={2}
                             dot={{ fill: theme.palette.secondary.main }}
@@ -774,8 +796,8 @@ const FilterDropdown = () => {
             case 'jobs':
                 return [
                     { label: "Title", value: "title:", icon: <WorkIcon /> },
-                    { label: "Company", value: "created_by:", icon: <FactoryIcon /> },
-                    { label: "Date Posted", value: "created_at:", icon: <EventIcon /> },
+                    { label: "Company", value: "company:", icon: <FactoryIcon /> },
+                    { label: "Job Type", value: "job_type:", icon: <CategoryIcon /> },
                     { label: "Status", value: "status:", icon: <LockIcon /> }
                 ];
             default:
@@ -840,6 +862,30 @@ const FilterDropdown = () => {
     );
 };
 
+const industryOptions = [
+  "Agriculture, Forestry, and Fishing",
+  "Mining and Quarrying",
+  "Manufacturing",
+  "Electricity, Gas, Steam, and Air Conditioning Supply",
+  "Water Supply; Sewerage, Waste Management, and Remediation Activities",
+  "Construction",
+  "Wholesale and Retail Trade; Repair of Motor Vehicles and Motorcycles",
+  "Transportation and Storage",
+  "Accommodation and Food Service Activities",
+  "Information and Communication",
+  "Financial and Insurance Activities",
+  "Real Estate Activities",
+  "Professional, Scientific, and Technical Activities",
+  "Administrative and Support Service Activities",
+  "Public Administration and Defence; Compulsory Social Security",
+  "Education",
+  "Human Health and Social Work Activities",
+  "Arts, Entertainment, and Recreation",
+  "Other Service Activities",
+  "Activities of Households as Employers",
+  "Activities of Extraterritorial Organizations and Bodies"
+];
+
 const AddCompanyDialog = ({ open, handleClose }) => {
   const [create] = useCreate();
   const notify = useNotify();
@@ -852,17 +898,16 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     website: '',
     logo: '',
     description: '',
-    industry: '',
+    industry: '', // Default to empty string for initial selection
     password: '',
   });
 
   const [passwordError, setPasswordError] = useState('');
-  const [emailError, setEmailError] = useState(''); // State for email validation error
-  const [companyNameError, setCompanyNameError] = useState(''); // State for company_name validation error
+  const [emailError, setEmailError] = useState('');
+  const [companyNameError, setCompanyNameError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear errors when user types
     if (e.target.name === 'password') {
       setPasswordError('');
     } else if (e.target.name === 'email') {
@@ -882,14 +927,13 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     if (password.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
-    return ''; // No error
+    return '';
   };
 
   const validateEmail = (email) => {
     if (!email) {
       return 'Email address is required.';
     }
-    // Basic email format validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return 'Please enter a valid email address.';
     }
@@ -919,20 +963,20 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     }
 
     if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
-      return; // Stop submission if any validation fails
+      return;
     }
 
     try {
       const dataToCreate = {
         ...formData,
-        is_banned: false, // Default to not banned
+        is_banned: false,
       };
 
       await create('companies', { data: dataToCreate });
       notify('Company added successfully!', { type: 'success' });
-      refresh(); // Refresh the company list
+      refresh();
       handleClose();
-      setFormData({ // Reset form after successful submission
+      setFormData({
         company_name: '',
         email: '',
         address: '',
@@ -1006,16 +1050,26 @@ const AddCompanyDialog = ({ open, handleClose }) => {
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <MuiTextField
-              margin="dense"
-              name="industry"
-              label="Industry"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={formData.industry}
-              onChange={handleChange}
-            />
+            <FormControl fullWidth margin="dense" variant="outlined">
+              <InputLabel id="industry-label">Industry</InputLabel>
+              <Select
+                labelId="industry-label"
+                id="industry"
+                name="industry"
+                value={formData.industry}
+                onChange={handleChange}
+                label="Industry"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {industryOptions.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12}>
             <MuiTextField

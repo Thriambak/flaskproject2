@@ -172,8 +172,8 @@
                 <p><i class="fas fa-calendar-alt" style="padding-left: 0.3%;"></i> <strong style="padding-left: 0.5%;">Deadline:</strong> {{ job.deadline.strftime('%d-%m-%Y') }}</p>
               {% endif %}
 
-              <!-- Vacancy Information -->
-              <p><i class="fas fa-users" style="padding-left: 0.2%;"></i> <strong style="padding-left: 0.3%;">Vacancies:</strong> {{ job.total_vacancy - job.filled_vacancy }} available out of {{ job.total_vacancy }}</p>
+              <!-- Vacancy Information 
+              <p><i class="fas fa-users" style="padding-left: 0.2%;"></i> <strong style="padding-left: 0.3%;">Vacancies:</strong> {{ job.total_vacancy - job.filled_vacancy }} available out of {{ job.total_vacancy }}</p> -->
 
               {% if job.form_url %}
                 <p><i class="fas fa-link"></i> <strong>Questionnaire Link:</strong> <a href="{{ job.form_url }}" style="text-decoration: none; color: blue; overflow-wrap: break-word;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p>
