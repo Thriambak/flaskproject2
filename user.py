@@ -747,12 +747,16 @@ def save_job(job_id):
     return redirect(url_for('user.user_dashboard'))
 # Favorites Page Route with Pagination
 from flask import request
-
 @user_blueprint.route('/favorites')
+@login_required
 def favorites():
     login_id = session.get('login_id')
     if not login_id:
         flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+    
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
         return redirect(url_for('auth.login'))
     
     user = User.query.filter_by(login_id=login_id).first()
@@ -764,11 +768,18 @@ def favorites():
     page = request.args.get('page', 1, type=int)
     per_page = 5  # Number of favorites per page, adjust as needed
     
-    # Join Favorite with Job so that all job details are available, with pagination
+    # Join Favorite with Job and include company information like in user_dashboard
     favorites_query = (
-        db.session.query(Favorite, Job)
-        .join(Job, Favorite.job_id == Job.job_id)
-        .filter(Favorite.user_id == user.id)
+        db.session.query(Job)
+        .join(Favorite, Job.job_id == Favorite.job_id)
+        .join(Login, Job.created_by == Login.id)
+        .join(Company, Login.id == Company.login_id)
+        .filter(
+            Favorite.user_id == user.id,
+            Job.filled_vacancy < Job.total_vacancy,  # Not fully filled
+            Company.is_banned == False,  # Company not banned
+            Job.status == 'open'  # Job is active
+        )
         .order_by(Favorite.saved_at.desc())
     )
     
@@ -779,8 +790,8 @@ def favorites():
         error_out=False
     )
     
-    # Extract the Job objects from the tuple results
-    favorites = [job for favorite, job in favorites_pagination.items]
+    # Get the Job objects
+    favorites = favorites_pagination.items
     
     # Get list of job IDs that the user has already applied to
     applied_job_ids = set()
