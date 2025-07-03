@@ -391,12 +391,12 @@
 
             // Handle resume path
             let resumeHtml;
-            if (resumePath && resumePath !== "null") {
+            if (resumePath && resumePath !== "null" && resumePath !== "None") {
                 const resumeFileName = resumePath.split('static/')[1];
                 const resumeUrl = `/static/${resumeFileName}`;
                 resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong><a href="${resumeUrl}" target="_blank">View Resume</a></p>`;
             } else {
-                resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;"><strong>Resume: </strong>No resume uploaded.</p>`;
+                resumeHtml = `<p style="font-family: monospace;font-size: 14.5px;">No resume uploaded.</p>`;
             }
 
             // Build candidate details

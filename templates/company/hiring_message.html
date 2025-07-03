@@ -427,7 +427,14 @@
                     messageDiv.className = 'message-entry';
                     messageDiv.innerHTML = `
                         <div class="message-content">${msg.message}</div>
-                        <div class="message-timestamp">${msg.timestamp}</div>
+                        <div class="message-timestamp">${new Date(msg.timestamp + ' UTC').toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        }).replace(/(\d{2})\/(\d{2})\/(\d{4}), (\d{2}:\d{2})/, '$1-$2-$3 $4')}</div>
                     `;
                     historyContainer.appendChild(messageDiv);
                 });

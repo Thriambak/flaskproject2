@@ -97,7 +97,7 @@
                             {% endif %}
                             
                             {% if job.deadline %}
-                                <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.37%;">Apply Before: {{ job.deadline.strftime('%d-%m-%Y') }}</p></li>
+                                <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.37%;">Apply Before: <span class="job-date" data-utc="{{ job.deadline.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
                             {% endif %}
                             
                             {% if job.form_url %}
@@ -108,7 +108,7 @@
                                 <li><i class="fas fa-users" style="padding-left: 0.1%;"></i><p style="padding-left: 0.1%;">Vacancy: {{ job.total_vacancy }}</p></li>
                             {% endif %}
                             
-                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.4%;">Posted: {{ job.created_at.strftime('%d-%m-%Y') }}</p></li>
+                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.4%;">Posted: <span class="job-date" data-utc="{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
                         </ul>
                         <div class="application-status">
                             <h4>Application Status</h4>
@@ -136,6 +136,21 @@
         </div>
     </main>
     <script>
+        //Time Zone
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.job-date').forEach(function(element) {
+                const utcTime = element.getAttribute('data-utc');
+                const localDate = new Date(utcTime + ' UTC');
+                
+                const day = String(localDate.getDate()).padStart(2, '0');
+                const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                const year = localDate.getFullYear();
+                
+                const formattedDate = `${day}-${month}-${year}`;
+                element.textContent = formattedDate;
+            });
+        });
+
         // Profile dropdown functionality
         window.addEventListener('click', function(event) {
             const dropdown = document.querySelector('.profile-dropdown');

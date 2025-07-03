@@ -1390,7 +1390,7 @@ const JobList = (props) => (
             <SearchInput 
                 source="q" 
                 alwaysOn 
-                placeholder="Search jobs (try: title:, company:, location:, job_type:, status:)..." 
+                placeholder="Search jobs..." 
                 sx={{ maxWidth: 500 }}
             />
         ]} 

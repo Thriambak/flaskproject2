@@ -617,7 +617,7 @@ def company_hiring_communication():
             message_entry = {
                 "name": "Company" if msg.company_id == user_id else recipient_name,
                 "message": msg.message,
-                "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M")
+                "timestamp": msg.timestamp.strftime("%d-%m-%Y %H:%M")
             }
             message_history["candidates"][recipient_id_str].append(message_entry)
 

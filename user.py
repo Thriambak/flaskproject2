@@ -420,14 +420,14 @@ def resume_certifications():
     user_id = session.get('user_id')
     if not user_id:
         flash('You need to log in to access this page.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     # Fetch user data
     user = User.query.get(user_id)
     print(user_id, user)
     if not user:
         flash('User not found.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
         # Check if the form submission is for a resume or a certification
