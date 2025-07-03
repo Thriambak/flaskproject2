@@ -80,7 +80,11 @@
       <!-- Application List -->
       <div class="applications-list" id="applications-container">
         {% for application in applications %}
-        <div class="application-item {{ application.status.lower() }}" data-status="{{ application.status.lower() }}" data-id="{{ application.id }}">
+        <div class="application-item {{ application.status.lower() }}" 
+             data-status="{{ application.status.lower() }}" 
+             data-id="{{ application.id }}"
+             data-date-applied="{{ application.date_applied.isoformat() }}"
+             data-status-updated="{{ application.status_updated_at.isoformat() }}">
           <div class="job-info">
             <h3 class="job-title">{{ application.job.title }}</h3>
             <div class="company-name">
@@ -102,7 +106,7 @@
               {{ application.status.capitalize() }}
             </span>
             <div class="date-applied">
-              <i class="far fa-calendar-alt"></i> {{ application.date_applied.strftime('%d %b, %Y') }}
+              <i class="far fa-calendar-alt"></i> <span class="date-text">{{ application.date_applied.strftime('%d %b, %Y') }}</span>
             </div>
           </div>
           <button class="view-btn" onclick="fetchApplicationDetails('{{ application.id }}')">
@@ -130,7 +134,7 @@
     </div>
   </main>
   
-  <<!-- Modal for Application Details -->
+  <!-- Modal for Application Details -->
 <div id="detailsModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -150,6 +154,10 @@
           <div class="detail-label">Date Applied</div>
           <div class="detail-value" id="modalDateApplied">12 Feb, 2025</div>
         </div>
+        <div class="detail-group">
+          <div class="detail-label">Last Updated</div>
+          <div class="detail-value" id="modalDateStatusChanged">12 Feb, 2025</div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -168,6 +176,37 @@
       duration: 800,
       easing: 'ease-in-out'
     });
+    
+    // Function to convert UTC date to IST
+    function convertToIST(utcDateString) {
+      const utcDate = new Date(utcDateString);
+      // Convert to IST (UTC + 5:30)
+      const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+      const istDate = new Date(utcDate.getTime() + istOffset);
+      
+      const options = { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      };
+      return istDate.toLocaleDateString('en-IN', options);
+    }
+    
+    // Convert all dates to IST on page load
+    function convertDatesToIST() {
+      const applicationItems = document.querySelectorAll('.application-item');
+      applicationItems.forEach(item => {
+        const dateApplied = item.getAttribute('data-date-applied');
+        if (dateApplied) {
+          const istDate = convertToIST(dateApplied);
+          const dateElement = item.querySelector('.date-text');
+          if (dateElement) {
+            dateElement.textContent = istDate;
+          }
+        }
+      });
+    }
     
     // Toggle dropdown for profile menu
     document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
@@ -215,78 +254,27 @@ let currentPage = 1;
 const rowsPerPage = 8; // Show 8 applications per page
 let filteredApplications = [];
 
+// Event listeners for filter buttons
+filterButtons.forEach(button => {
+  button.addEventListener('click', function() {
+    // Remove active class from all buttons
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Add active class to clicked button
+    this.classList.add('active');
+    
+    // Set current filter
+    currentFilter = this.dataset.filter;
+    
+    // Reset to first page
+    currentPage = 1;
+    
+    // Apply filtering
+    filterAndSearchApplications();
+  });
+});
+
 // Function to filter and search applications
-function filterAndSearchApplications() {
-  // Get all applications
-  const applications = Array.from(applicationItems);
-  
-  // Apply filters and search
-  filteredApplications = applications.filter(app => {
-    const status = app.dataset.status;
-    const jobTitle = app.querySelector('.job-title').textContent.toLowerCase();
-    const companyName = app.querySelector('.company-name').textContent.toLowerCase();
-    
-    // Filter by status
-    const statusMatch = currentFilter === 'all' || status === currentFilter;
-    
-    // Filter by search term
-    const searchMatch = searchTerm === '' || 
-                        jobTitle.includes(searchTerm) || 
-                        companyName.includes(searchTerm);
-    
-    return statusMatch && searchMatch;
-  });
-  
-  // Show/hide empty state
-  if (filteredApplications.length === 0) {
-    emptyState.style.display = 'block';
-  } else {
-    emptyState.style.display = 'none';
-  }
-  
-  // Update pagination
-  updatePagination();
-  
-  // Display applications for current page
-  displayApplications();
-}
-// Function to display paginated applications
-function displayApplications() {
-  // Hide all applications first
-  applicationItems.forEach(app => {
-    app.style.display = 'none';
-  });
-  
-  // Calculate start and end indices for the current page
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = Math.min(startIndex + rowsPerPage, filteredApplications.length);
-  
-  // Show only applications for the current page
-  for (let i = startIndex; i < endIndex; i++) {
-    filteredApplications[i].style.display = 'flex';
-    // Add animation with delay
-    filteredApplications[i].style.animation = `fadeIn 0.3s ease-out ${(i - startIndex) * 0.1}s forwards`;
-  }
-}
-
-/// Update pagination controls and info
-function updatePagination() {
-  const totalPages = Math.ceil(filteredApplications.length / rowsPerPage);
-  
-  // Show "Page 0 of 0" when there are no applications
-  if (filteredApplications.length === 0) {
-    document.getElementById('page-info').textContent = `Page 1 of 0`;
-    currentPage = 0;
-  } else {
-    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
-  }
-  
-  // Enable/disable pagination buttons
-  document.getElementById('prev-page').disabled = currentPage <= 1 || filteredApplications.length === 0;
-  document.getElementById('next-page').disabled = currentPage >= totalPages || filteredApplications.length === 0;
-}
-
-// Also update the filterAndSearchApplications function to handle the empty state properly
 function filterAndSearchApplications() {
   // Get all applications
   const applications = Array.from(applicationItems);
@@ -326,7 +314,7 @@ function filterAndSearchApplications() {
   displayApplications();
 }
 
-// Update the displayApplications function to handle page 0
+// Function to display paginated applications
 function displayApplications() {
   // Hide all applications first
   applicationItems.forEach(app => {
@@ -350,28 +338,23 @@ function displayApplications() {
   }
 }
 
-// Update the initialization in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-  // Set initial filter to "all"
-  currentFilter = 'all';
+// Update pagination controls and info
+function updatePagination() {
+  const totalPages = Math.ceil(filteredApplications.length / rowsPerPage);
   
-  // Check if there are any applications at all
-  if (applicationItems.length === 0) {
+  // Show "Page 0 of 0" when there are no applications
+  if (filteredApplications.length === 0) {
+    document.getElementById('page-info').textContent = `Page 1 of 0`;
     currentPage = 0;
   } else {
-    currentPage = 1;
+    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
   }
   
-  // Apply initial filtering
-  filterAndSearchApplications();
-  
-  // Add animation to applications on page load (only if there are applications)
-  if (applicationItems.length > 0) {
-    applicationItems.forEach((app, index) => {
-      app.style.animation = `fadeIn 0.3s ease-out ${index * 0.1}s forwards`;
-    });
-  }
-});
+  // Enable/disable pagination buttons
+  document.getElementById('prev-page').disabled = currentPage <= 1 || filteredApplications.length === 0;
+  document.getElementById('next-page').disabled = currentPage >= totalPages || filteredApplications.length === 0;
+}
+
 // Event listener for search input
 searchInput.addEventListener('input', function() {
   searchTerm = this.value.toLowerCase();
@@ -403,9 +386,6 @@ document.getElementById('next-page').addEventListener('click', function() {
 
 // Application details modal
 function fetchApplicationDetails(applicationId) {
-  // In a real application, you would fetch details from the server
-  // For this demo, we'll simulate a fetch with setTimeout
-  
   // Show loading state
   document.getElementById('modalJobTitle').textContent = 'Loading...';
   document.getElementById('modalCompany').textContent = '';
@@ -420,16 +400,19 @@ function fetchApplicationDetails(applicationId) {
       const jobTitle = application.querySelector('.job-title').textContent;
       const company = application.querySelector('.company-name').textContent.trim();
       const status = application.dataset.status;
-      const last_updated = application.dataset.status_updated_at;
       
-      // Get the date from the application item
-      const dateApplied = application.querySelector('.date-applied').textContent.replace('calendar-alt', '').trim();
+      // Get dates and convert to IST
+      const dateApplied = application.getAttribute('data-date-applied');
+      const statusUpdated = application.getAttribute('data-status-updated');
+      
+      const istDateApplied = convertToIST(dateApplied);
+      const istStatusUpdated = convertToIST(statusUpdated);
       
       // Update modal content
       document.getElementById('modalJobTitle').textContent = jobTitle;
       document.getElementById('modalCompany').textContent = company;
-      document.getElementById('modalDateApplied').textContent = dateApplied;
-      document.getElementById('modalDateStatusChanged').textContent = last_updated; //simulateLastUpdated()
+      document.getElementById('modalDateApplied').textContent = istDateApplied;
+      document.getElementById('modalDateStatusChanged').textContent = istStatusUpdated;
       
       // Update status with correct styling
       const modalStatus = document.getElementById('modalStatus');
@@ -455,34 +438,34 @@ function fetchApplicationDetails(applicationId) {
   }, 300);
 }
 
-// Helper function to simulate random last updated date (within the last month)
-function simulateLastUpdated() {
-  const today = new Date();
-  const daysAgo = Math.floor(Math.random() * 30);
-  const randomDate = new Date(today);
-  randomDate.setDate(today.getDate() - daysAgo);
-  
-  const options = { day: 'numeric', month: 'short', year: 'numeric' };
-  return randomDate.toLocaleDateString('en-US', options);
-}
-
 function closeDetails() {
   document.getElementById('detailsModal').style.display = 'none';
 }
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
+  // Convert all dates to IST
+  convertDatesToIST();
+  
   // Set initial filter to "all"
   currentFilter = 'all';
-  currentPage = 1;
+  
+  // Check if there are any applications at all
+  if (applicationItems.length === 0) {
+    currentPage = 0;
+  } else {
+    currentPage = 1;
+  }
   
   // Apply initial filtering
   filterAndSearchApplications();
   
-  // Add animation to applications on page load
-  applicationItems.forEach((app, index) => {
-    app.style.animation = `fadeIn 0.3s ease-out ${index * 0.1}s forwards`;
-  });
+  // Add animation to applications on page load (only if there are applications)
+  if (applicationItems.length > 0) {
+    applicationItems.forEach((app, index) => {
+      app.style.animation = `fadeIn 0.3s ease-out ${index * 0.1}s forwards`;
+    });
+  }
 });
 </script>
 </body>

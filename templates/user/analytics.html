@@ -120,7 +120,9 @@
           {% for job in live_feed %}
           <tr>
             <td>{{ job.job_title }}</td>
-            <td>{{ job.posted_at.strftime('%d-%m-%Y | %H:%M:%S') if job.posted_at else 'N/A' }}</td>
+            <td class="job-posted-time" data-utc-timestamp="{{ job.posted_at.timestamp() * 1000 if job.posted_at else '' }}">
+              Loading...
+            </td>
           </tr>
           {% else %}
           <tr>
@@ -134,11 +136,111 @@
   </main>
   
   <script>
+    // Function to convert UTC timestamp to IST (for live feed)
+    function convertToIST(utcTimestamp) {
+      if (!utcTimestamp) return 'N/A';
+      
+      try {
+        // Create date object from timestamp (timestamp is in milliseconds)
+        const utcDate = new Date(parseInt(utcTimestamp));
+        
+        // Check if date is valid
+        if (isNaN(utcDate.getTime())) {
+          return 'Invalid Date';
+        }
+        
+        // Convert to IST using toLocaleString with Asia/Kolkata timezone
+        const istOptions = {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        };
+        
+        const istString = utcDate.toLocaleString('en-GB', istOptions);
+        
+        // Format as DD-MM-YYYY | HH:MM:SS
+        const parts = istString.split(', ');
+        const datePart = parts[0];
+        const timePart = parts[1];
+        
+        return `${datePart} | ${timePart}`;
+      } catch (error) {
+        console.error('Error converting time:', error);
+        return 'Error';
+      }
+    }
+    
+    // Function to convert chart dates to IST (for application trends)
+    function convertChartDatesToIST(labels) {
+      return labels.map(label => {
+        if (!label) return label;
+        
+        try {
+          // The backend sends dates extracted from UTC datetime
+          // We need to find what the IST date would be for times around that UTC date
+          
+          // Parse the UTC date string
+          const [year, month, day] = label.split('-');
+          
+          // Create two times: start and end of the UTC date
+          const utcStartOfDay = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
+          const utcEndOfDay = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
+          
+          // Convert both to IST
+          const istStartOfDay = new Date(utcStartOfDay.getTime() + (5.5 * 60 * 60 * 1000));
+          const istEndOfDay = new Date(utcEndOfDay.getTime() + (5.5 * 60 * 60 * 1000));
+          
+          // If the IST start and end are on the same date, use that date
+          // Otherwise, use the date that covers most of the IST day
+          const istStartDate = istStartOfDay.getUTCDate();
+          const istEndDate = istEndOfDay.getUTCDate();
+          
+          let finalDate;
+          if (istStartDate === istEndDate) {
+            // Same IST date throughout
+            finalDate = istStartOfDay;
+          } else {
+            // Different IST dates - use the later one (which is more likely the correct IST date)
+            finalDate = istEndOfDay;
+          }
+          
+          // Format as DD-MM-YYYY for display
+          const istDay = String(finalDate.getUTCDate()).padStart(2, '0');
+          const istMonth = String(finalDate.getUTCMonth() + 1).padStart(2, '0');
+          const istYear = finalDate.getUTCFullYear();
+          
+          return `${istDay}-${istMonth}-${istYear}`;
+        } catch (error) {
+          console.error('Error converting chart date:', error);
+          return label; // Return original if conversion fails
+        }
+      });
+    }
+    
+    // Convert all job posted times to IST
+    document.addEventListener('DOMContentLoaded', function() {
+      const timeElements = document.querySelectorAll('.job-posted-time');
+      timeElements.forEach(element => {
+        const utcTimestamp = element.getAttribute('data-utc-timestamp');
+        if (utcTimestamp) {
+          element.textContent = convertToIST(utcTimestamp);
+        } else {
+          element.textContent = 'N/A';
+        }
+      });
+    });
+    
     // Prepare data from Flask (passed via Jinja)
     const userSuccessRate = {
       hired: {{ user_success_rate.hired }},
       rejected: {{ user_success_rate.rejected }},
-      pending: {{ user_success_rate.pending }}
+      pending: {{ user_success_rate.pending }},
+      interviewed: {{ user_success_rate.interviewed }}
     };
   
     const applicationTrends = {
@@ -146,14 +248,19 @@
       counts: {{ application_trends.counts|tojson }}
     };
   
-    // Futuristic Success Rate Chart (Pie Chart)
+    // Futuristic Success Rate Chart (Pie Chart) - Fixed data order
     const ctxSuccess = document.getElementById('successRateChart').getContext('2d');
     const successRateChart = new Chart(ctxSuccess, {
       type: 'pie',
       data: {
         labels: ['Hired', 'Rejected', 'Pending', 'Interviewed'],
         datasets: [{
-          data: [userSuccessRate.hired, userSuccessRate.rejected, userSuccessRate.pending, userSuccessRate.interviewed],
+          data: [
+            userSuccessRate.hired, 
+            userSuccessRate.rejected, 
+            userSuccessRate.pending, 
+            userSuccessRate.interviewed
+          ],
           backgroundColor: ['#0a9396', '#ff1744', '#ffd600','#00e5ff'],
           borderColor: '#ffffff',
           borderWidth: 2
@@ -178,12 +285,16 @@
       }
     });
   
-    // Application Trends Chart (Line Chart)
+    // Application Trends Chart (Line Chart) - with IST date conversion
     const ctxTrends = document.getElementById('trendsChart').getContext('2d');
+    
+    // Convert chart dates to IST format
+    const istLabels = convertChartDatesToIST(applicationTrends.labels);
+    
     const trendsChart = new Chart(ctxTrends, {
       type: 'line',
       data: {
-        labels: applicationTrends.labels,
+        labels: istLabels, // Use converted IST labels
         datasets: [{
           label: 'Applications per Day',
           data: applicationTrends.counts,
@@ -202,7 +313,7 @@
         plugins: {
           title: {
             display: true,
-            text: 'Application Trends Over Time',
+            text: 'Application Trends Over Time (Last 5 Days)',
             font: { size: 16 }
           },
           legend: {
@@ -213,7 +324,7 @@
         },
         scales: {
           x: {
-            title: { display: true, text: 'Date', font: { size: 14 } }
+            title: { display: true, text: 'Date (IST)', font: { size: 14 } }
           },
           y: {
             beginAtZero: true,

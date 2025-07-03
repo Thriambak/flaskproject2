@@ -227,13 +227,12 @@ def apply1_for_job(job_id):
     return redirect(url_for('user.job_search'))
 from datetime import datetime, timedelta
 import pytz
-
 def get_chart_data_for_user(user_id):
     """
     Retrieves dynamic chart data, recent activities, and live feed for the given user.
     Returns four items:
-      - user_success_rate: counts of applications by status (hired, rejected, pending)
-      - application_trends: daily count of applications (as a trend over time)
+      - user_success_rate: counts of applications by status (hired, rejected, pending, interviewed)
+      - application_trends: daily count of applications (as a trend over time) - LIMITED TO LAST 5 DAYS
       - recent_activities: list of user's recent job applications
       - live_feed: list of recent job postings
     """
@@ -245,35 +244,45 @@ def get_chart_data_for_user(user_id):
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Hired').scalar() or 0
     rejected = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Rejected').scalar() or 0
-   
     pending = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Pending').scalar() or 0
     interviewed = db.session.query(db.func.count(JobApplication.id))\
         .filter(JobApplication.user_id == user_id, JobApplication.status == 'Interviewed').scalar() or 0
+    
     user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending, "interviewed": interviewed}
     
-    # Chart data: Application trends (daily count) - Convert to IST
+    # Chart data: Application trends (daily count) - LIMITED TO LAST 5 DAYS
+    # Calculate the date 5 days ago from today
+    today = datetime.now(ist_timezone).date()
+    five_days_ago = today - timedelta(days=4)  # 4 days ago + today = 5 days total
+    
+    # Query for application trends in the last 5 days
     trend_data = db.session.query(
         db.func.date(JobApplication.date_applied).label('date'),
         db.func.count(JobApplication.id).label('count')
-    ).filter(JobApplication.user_id == user_id)\
-     .group_by(db.func.date(JobApplication.date_applied))\
+    ).filter(
+        JobApplication.user_id == user_id,
+        db.func.date(JobApplication.date_applied) >= five_days_ago
+    ).group_by(db.func.date(JobApplication.date_applied))\
      .order_by(db.func.date(JobApplication.date_applied)).all()
     
-    # Convert dates to IST before formatting
-    trend_labels = []
-    for row in trend_data:
-        if row.date:
-            # Assume the date from DB is in UTC, convert to IST
-            utc_datetime = datetime.combine(row.date, datetime.min.time())
-            utc_datetime = pytz.utc.localize(utc_datetime)
-            ist_datetime = utc_datetime.astimezone(ist_timezone)
-            trend_labels.append(ist_datetime.strftime('%Y-%m-%d'))
-        else:
-            trend_labels.append('')
+    # Create a complete list of the last 5 days (including days with 0 applications)
+    date_range = []
+    count_range = []
     
-    trend_counts = [row.count for row in trend_data]
-    application_trends = {"labels": trend_labels, "counts": trend_counts}
+    for i in range(5):
+        current_date = five_days_ago + timedelta(days=i)
+        date_range.append(current_date.strftime('%Y-%m-%d'))
+        
+        # Find if there's data for this date
+        count_for_date = 0
+        for row in trend_data:
+            if row.date == current_date:
+                count_for_date = row.count
+                break
+        count_range.append(count_for_date)
+    
+    application_trends = {"labels": date_range, "counts": count_range}
     
     # Recent activities: Last 5 job applications by the user
     recent_activities = db.session.query(JobApplication, Job.title)\
@@ -286,7 +295,7 @@ def get_chart_data_for_user(user_id):
         for app, job_title in recent_activities
     ]
     
-    # Live feed: Last 5 job postings - Convert timestamps to IST
+    # Live feed: Last 5 job postings - Pass UTC timestamps for frontend conversion
     live_feed = db.session.query(Job)\
         .order_by(Job.created_at.desc())\
         .limit(5).all()
@@ -294,18 +303,18 @@ def get_chart_data_for_user(user_id):
     live_feed_list = []
     for job in live_feed:
         if job.created_at:
-            # Convert created_at to IST
+            # Ensure we have a UTC datetime for consistent frontend conversion
             if job.created_at.tzinfo is None:
                 # If datetime is naive, assume it's UTC
                 utc_datetime = pytz.utc.localize(job.created_at)
             else:
-                # If datetime is aware, convert to UTC first
+                # If datetime is aware, convert to UTC
                 utc_datetime = job.created_at.astimezone(pytz.utc)
             
-            ist_datetime = utc_datetime.astimezone(ist_timezone)
+            # Pass the UTC datetime to frontend for conversion
             live_feed_list.append({
                 'job_title': job.title, 
-                'posted_at': ist_datetime
+                'posted_at': utc_datetime
             })
         else:
             live_feed_list.append({
@@ -314,6 +323,7 @@ def get_chart_data_for_user(user_id):
             })
     
     return user_success_rate, application_trends, recent_activities_list, live_feed_list
+
 @user_blueprint.route('/analytics')
 @login_required
 def analytics():
@@ -566,7 +576,6 @@ def job_search():
     else:
         return render_template('/user/jobsearch.html')
 
-
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -593,26 +602,24 @@ def profile():
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
     if request.method == 'POST':
-        # Update phone, age, etc.
-        user.phone = request.form.get('phone', user.phone)
-        age_input = request.form.get('age', '')
-        if age_input:
-            try:
-                user.age = int(age_input)
-            except ValueError:
-                flash("Invalid age provided.", "error")
-                return redirect(url_for('user.profile', edit='true'))
-        user.about_me = request.form.get('about_me', user.about_me)
-        
-        # Handle college name and coupon code
+        # Handle college name and coupon code FIRST
         manual_college = request.form.get('college_name', '').strip()
         coupon_code = request.form.get('coupon_code', "").strip()
         
         # Only process new coupon codes if user doesn't already have one
         if coupon_code and not user_coupon:
             coupon = Coupon.query.filter_by(code=coupon_code).first()
-            if coupon:
-                # Check if this coupon is already used by this user
+            if not coupon:
+                # Invalid coupon - don't save profile and stay in edit mode
+                flash("Invalid coupon code provided.", "error")
+                return render_template('/user/profile.html',
+                                       user=user,
+                                       resumes=resumes,
+                                       certifications=certifications,
+                                       user_coupon=user_coupon,
+                                       edit_mode=True)
+            else:
+                # Valid coupon - proceed with coupon logic
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)
@@ -625,9 +632,6 @@ def profile():
                     user.college_name = manual_college or user.college_name
                     
                 flash("Coupon code applied successfully!", "success")
-            else:
-                flash("Invalid coupon code provided.", "error")
-                user.college_name = manual_college or user.college_name
         elif user_coupon:
             # User already has a coupon, don't allow changes to coupon-controlled fields
             if user_coupon.college:
@@ -639,6 +643,17 @@ def profile():
         else:
             # No coupon code provided and user doesn't have one, use manual college
             user.college_name = manual_college or user.college_name
+        
+        # Update other fields only if coupon validation passed
+        user.phone = request.form.get('phone', user.phone)
+        age_input = request.form.get('age', '')
+        if age_input:
+            try:
+                user.age = int(age_input)
+            except ValueError:
+                flash("Invalid age provided.", "error")
+                return redirect(url_for('user.profile', edit='true'))
+        user.about_me = request.form.get('about_me', user.about_me)
         
         # Profile picture URL update
         profile_pic_url = request.form.get('profile_pic_url')

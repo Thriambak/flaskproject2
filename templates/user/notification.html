@@ -114,7 +114,7 @@
                   </span>
                 </div>
                 <p class="notification-message">{{ notification.message }}</p>
-                <p class="notification-timestamp">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
+                <p class="notification-timestamp" data-timestamp="{{ notification.timestamp.isoformat() }}">{{ notification.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
               </div>
               <div class="action-buttons flex gap-2">
                 {% if not notification.read_status %}
@@ -145,15 +145,53 @@
     // Global filter state: 'all', 'read', or 'unread'
     let currentFilter = 'all';
 
+    // Convert timestamps to Indian Standard Time
+    function convertToIST() {
+      const timestampElements = document.querySelectorAll('.notification-timestamp');
+      timestampElements.forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        if (timestamp) {
+          // Parse the timestamp as if it's in local time (to avoid browser timezone interpretation)
+          const parts = timestamp.replace('T', ' ').replace('Z', '').split(/[- :]/);
+          const date = new Date(parts[0], parts[1]-1, parts[2], parts[3] || 0, parts[4] || 0, parts[5] || 0);
+          
+          // Add 5 hours and 30 minutes to convert UTC to IST
+          const istTime = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+          
+          // Format the date
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const month = months[istTime.getMonth()];
+          const day = istTime.getDate();
+          const year = istTime.getFullYear();
+          let hours = istTime.getHours();
+          const minutes = istTime.getMinutes().toString().padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12;
+          hours = hours ? hours : 12;
+          
+          element.textContent = `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+        }
+      });
+    }
+
     // Set the filter and update button styles
     function setFilter(filterType) {
       currentFilter = filterType;
-      document.getElementById('filterUnread').classList.toggle('bg-gray-300', filterType !== 'unread');
-      document.getElementById('filterUnread').classList.toggle('bg-green-500', filterType === 'unread');
-      document.getElementById('filterRead').classList.toggle('bg-gray-300', filterType !== 'read');
-      document.getElementById('filterRead').classList.toggle('bg-gray-800', filterType === 'read');
-      document.getElementById('filterAll').classList.toggle('bg-gray-300', filterType !== 'all');
-      document.getElementById('filterAll').classList.toggle('bg-blue-500', filterType === 'all');
+      
+      // Reset all buttons to default state
+      document.getElementById('filterUnread').className = 'unread';
+      document.getElementById('filterRead').className = 'read';
+      document.getElementById('filterAll').className = 'bg-gray-300 text-gray-800';
+      
+      // Highlight the active button
+      if (filterType === 'unread') {
+        document.getElementById('filterUnread').classList.add('bg-green-500', 'text-white');
+      } else if (filterType === 'read') {
+        document.getElementById('filterRead').classList.add('bg-gray-800', 'text-white');
+      } else if (filterType === 'all') {
+        document.getElementById('filterAll').classList.remove('bg-gray-300', 'text-gray-800');
+        document.getElementById('filterAll').classList.add('bg-blue-500', 'text-white');
+      }
       
       filterAndSearchNotifications();
     }
@@ -225,6 +263,11 @@
         }, 500);
       });
     }, 1200);
+
+    // Initialize IST conversion when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      convertToIST();
+    });
   </script>
 </body>
 </html>
