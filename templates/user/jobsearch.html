@@ -11,8 +11,6 @@
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/jobsearch.css') }}">
-  
-    
 </head>
 <body data-aos-duration="1000">
   <!-- Header -->
@@ -35,7 +33,6 @@
     </div>
   </header>
   
-
 <main>
   <!-- Navigation Sidebar -->
   <div class="navigation" id="side-navigation">
@@ -51,7 +48,7 @@
     <button onclick="window.location.href='/user/resume_certifications'">
       <i class="fas fa-file-alt"></i> Resume & Certifications
     </button>
-    <button onclick="window.location.href='/analytics'" >
+    <button onclick="window.location.href='/user/analytics'" >
       <i class="fas fa-chart-line"></i> Analytics
     </button>
   </div>
@@ -77,14 +74,16 @@
       <div class="job-search-card" data-aos="fade-up">
         <form id="job-search-form" action="{{ url_for('user.job_search') }}" method="POST">
           <div class="mb-3">
-            <label for="keyword" class="form-label"><i class="fas fa-search"></i> Keyword</label>
-            <input type="text" class="form-control" id="keyword" name="keyword" placeholder="e.g., Software Engineer, Python">
+            <label for="keyword" class="form-label"><i class="fas fa-search"></i> Keywords</label>
+            <input type="text" class="form-control" id="keyword" name="keyword" placeholder="Job title, skills, company name, or keywords">
+            <div class="form-text">Search will look in job titles, descriptions, and company names</div>
           </div>
           
           <div class="mb-3">
             <label for="location" class="form-label"><i class="fas fa-map-marker-alt"></i> Location</label>
-            <input type="text" class="form-control" id="location" name="location" placeholder="e.g., Bangalore">
+            <input type="text" class="form-control" id="location" name="location" placeholder="City, state, or 'Remote'">
           </div>
+          
           <div class="mb-3">
             <label for="job_type" class="form-label"><i class="fas fa-briefcase"></i> Job Type</label>
             <select class="form-select" id="job_type" name="job_type">
@@ -103,17 +102,39 @@
           <div class="collapse mt-3" id="advancedFilters">
             <div class="card card-body border-0 bg-light p-3 rounded-3">
               <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label for="years_of_exp" class="form-label"><i class="fas fa-briefcase"></i> Years of Experience</label>
-                  <input type="number" class="form-control" id="years_of_exp" name="years_of_exp" placeholder="e.g., 3" min="0">
+                <div class="col-md-6 mb-3">
+                  <label for="years_of_exp" class="form-label"><i class="fas fa-user-tie"></i> Years of Experience</label>
+                  <select class="form-select" id="years_of_exp" name="years_of_exp">
+                    <option value="">Any</option>
+                    <option value="0">0 years (Fresher)</option>
+                    <option value="1">1 year</option>
+                    <option value="2">2 years</option>
+                    <option value="3">3 years</option>
+                    <option value="4">4 years</option>
+                    <option value="5">5 years</option>
+                    <option value="6">6+ years</option>
+                  </select>
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label for="salary" class="form-label"><i class="fas fa-wallet"></i> Max Salary (₹)</label>
-                  <input type="text" class="form-control" id="salary" name="salary" placeholder="e.g., 1000000">
+                <div class="col-md-6 mb-3">
+                  <label for="skills" class="form-label"><i class="fas fa-tools"></i> Skills</label>
+                  <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g., Python, Java, React, SQL">
+                  <div class="form-text">Search jobs that require specific skills (comma-separated)</div>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-6 mb-3">
+                  <label for="certifications" class="form-label"><i class="fas fa-certificate"></i> Certifications</label>
+                  <input type="text" class="form-control" id="certifications" name="certifications" placeholder="e.g., AWS, PMP, CISSP">
+                  <div class="form-text">Search jobs that require specific certifications (comma-separated)</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="min_salary" class="form-label"><i class="fas fa-rupee-sign"></i> Minimum Salary</label>
+                  <input type="number" class="form-control" id="min_salary" name="min_salary" placeholder="e.g., 500000" min="0">
+                  <div class="form-text">Show jobs with salary greater than or equal to this amount</div>
+                </div>
+              
+                <div class="col-md-6 mb-3">
                   <label for="deadline" class="form-label"><i class="fas fa-calendar-alt"></i> Deadline</label>
                   <input type="date" class="form-control" id="deadline" name="deadline">
+                  <div class="form-text">Find jobs with deadline on or before this date</div>
                 </div>
               </div>
             </div>
@@ -181,10 +202,23 @@
       });
     }, 5000);
     
-    // Enhanced form interactivity - allow search with single letters or incomplete words
+    // Enhanced form interactivity - comprehensive search
     document.getElementById('job-search-form').addEventListener('submit', function(event) {
-      // Removed validation that required keywords or location
-      // Now it will submit even with a single letter or partial word
+      // Form will submit and search across all fields including title, description, requirements, company name, etc.
+      // Backend should implement fuzzy search across multiple fields
+    });
+    
+    // Clear form function
+    document.querySelector('button[type="reset"]').addEventListener('click', function() {
+      // Reset all form fields
+      document.getElementById('job-search-form').reset();
+      
+      // Collapse advanced filters if open
+      const advancedFilters = document.getElementById('advancedFilters');
+      if (advancedFilters.classList.contains('show')) {
+        advancedFilters.classList.remove('show');
+        document.querySelector('.advanced-toggle').setAttribute('aria-expanded', 'false');
+      }
     });
     
     // Move search button when advanced filters expand/collapse
@@ -192,15 +226,12 @@
       const expanded = this.getAttribute('aria-expanded') === 'true';
       this.setAttribute('aria-expanded', !expanded);
       
-      // Move the buttons div after the advanced filters when expanded
       const formButtons = document.getElementById('form-buttons');
       const advancedFilters = document.getElementById('advancedFilters');
       
       if (!expanded) {
-        // When expanding, move buttons after advanced filters
         advancedFilters.after(formButtons);
       } else {
-        // When collapsing, move buttons back to original position
         document.getElementById('job-search-form').appendChild(formButtons);
       }
     });

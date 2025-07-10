@@ -49,11 +49,11 @@ def user_dashboard():
    
     db.session.commit()
     db.session.expire_all()  # Forces fresh query results
-    
+   
     # Paginate the jobs query with filters
     page = request.args.get('page', 1, type=int)
-    per_page = 10  # Adjust as needed
-    
+    per_page = 5  # Changed from 10 to 5
+   
     # Query jobs with filters:
     # 1. Exclude jobs where vacancy is full (filled_vacancy >= total_vacancy)
     # 2. Exclude jobs from banned companies
@@ -66,25 +66,25 @@ def user_dashboard():
             Job.status == 'open'  # Job is active
         )\
         .order_by(Job.created_at.desc())
-    
+   
     jobs_pagination = jobs_query.paginate(page=page, per_page=per_page, error_out=False)
     jobs = jobs_pagination.items
     total_pages = jobs_pagination.pages
-    
+   
     # Get user's applied jobs
     applied_jobs = db.session.query(JobApplication.job_id)\
         .filter(JobApplication.user_id == user_id)\
         .subquery()
-    
+   
     # Get user's saved jobs
     saved_jobs = db.session.query(Favorite.job_id)\
         .filter(Favorite.user_id == user_id)\
         .subquery()
-    
+   
     # Create sets for easier lookup in template
     applied_job_ids = {str(app.job_id) for app in JobApplication.query.filter_by(user_id=user_id).all()}
     saved_job_ids = {str(saved.job_id) for saved in Favorite.query.filter_by(user_id=user_id).all()}
-    
+   
     # Remove chart data; only upcoming events and notifications remain
     current_date = datetime.utcnow()
     upcoming_events = db.session.query(Job.title, Job.deadline)\
@@ -227,6 +227,7 @@ def apply1_for_job(job_id):
     return redirect(url_for('user.job_search'))
 from datetime import datetime, timedelta
 import pytz
+
 def get_chart_data_for_user(user_id):
     """
     Retrieves dynamic chart data, recent activities, and live feed for the given user.
@@ -252,19 +253,41 @@ def get_chart_data_for_user(user_id):
     user_success_rate = {"hired": hired, "rejected": rejected, "pending": pending, "interviewed": interviewed}
     
     # Chart data: Application trends (daily count) - LIMITED TO LAST 5 DAYS
-    # Calculate the date 5 days ago from today
+    # Calculate the date 5 days ago from today in IST
     today = datetime.now(ist_timezone).date()
     five_days_ago = today - timedelta(days=4)  # 4 days ago + today = 5 days total
     
-    # Query for application trends in the last 5 days
-    trend_data = db.session.query(
-        db.func.date(JobApplication.date_applied).label('date'),
-        db.func.count(JobApplication.id).label('count')
-    ).filter(
-        JobApplication.user_id == user_id,
-        db.func.date(JobApplication.date_applied) >= five_days_ago
-    ).group_by(db.func.date(JobApplication.date_applied))\
-     .order_by(db.func.date(JobApplication.date_applied)).all()
+    # Convert IST dates to UTC for database comparison
+    five_days_ago_utc = ist_timezone.localize(datetime.combine(five_days_ago, datetime.min.time())).astimezone(pytz.utc)
+    today_end_utc = ist_timezone.localize(datetime.combine(today, datetime.max.time())).astimezone(pytz.utc)
+    
+    # Query for applications in the last 5 days (in UTC range)
+    applications = db.session.query(JobApplication)\
+        .filter(
+            JobApplication.user_id == user_id,
+            JobApplication.date_applied >= five_days_ago_utc,
+            JobApplication.date_applied <= today_end_utc
+        ).all()
+    
+    # Group applications by IST date
+    date_counts = {}
+    for app in applications:
+        # Convert UTC datetime to IST
+        if app.date_applied.tzinfo is None:
+            # If datetime is naive, assume it's UTC
+            utc_datetime = pytz.utc.localize(app.date_applied)
+        else:
+            utc_datetime = app.date_applied.astimezone(pytz.utc)
+        
+        # Convert to IST
+        ist_datetime = utc_datetime.astimezone(ist_timezone)
+        ist_date = ist_datetime.date()
+        
+        # Count applications per IST date
+        if ist_date in date_counts:
+            date_counts[ist_date] += 1
+        else:
+            date_counts[ist_date] = 1
     
     # Create a complete list of the last 5 days (including days with 0 applications)
     date_range = []
@@ -274,12 +297,8 @@ def get_chart_data_for_user(user_id):
         current_date = five_days_ago + timedelta(days=i)
         date_range.append(current_date.strftime('%Y-%m-%d'))
         
-        # Find if there's data for this date
-        count_for_date = 0
-        for row in trend_data:
-            if row.date == current_date:
-                count_for_date = row.count
-                break
+        # Get count for this date
+        count_for_date = date_counts.get(current_date, 0)
         count_range.append(count_for_date)
     
     application_trends = {"labels": date_range, "counts": count_range}
@@ -323,7 +342,6 @@ def get_chart_data_for_user(user_id):
             })
     
     return user_success_rate, application_trends, recent_activities_list, live_feed_list
-
 @user_blueprint.route('/analytics')
 @login_required
 def analytics():
@@ -516,12 +534,8 @@ def application_history():
     )
 
 from sqlalchemy import or_
-
 from sqlalchemy import or_
 
-from sqlalchemy import or_
-
-from sqlalchemy import or_
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
 def job_search():
     if request.method == 'POST':
@@ -531,8 +545,13 @@ def job_search():
         years_of_exp = request.form.get('years_of_exp')
         salary = request.form.get('salary')
         deadline = request.form.get('deadline')
+        skills = request.form.get('skills')  # Add this
+        certifications = request.form.get('certifications')  # Add this
        
-        query = Job.query
+        query = Job.query.join(Company, Job.created_by == Company.login_id).filter(
+            Job.status != 'closed',
+            Company.is_banned == False
+        )
        
         if keyword:
             query = query.filter(
@@ -546,7 +565,6 @@ def job_search():
         if location:
             query = query.filter(Job.location.ilike(f'%{location}%'))
         if job_type:
-            # Using ilike ensures "full-time" (or variations) match the stored value.
             query = query.filter(Job.job_type.ilike(f'%{job_type}%'))
         if years_of_exp:
             query = query.filter(Job.years_of_exp == int(years_of_exp))
@@ -554,28 +572,39 @@ def job_search():
             query = query.filter(Job.salary <= salary)
         if deadline:
             query = query.filter(Job.deadline <= deadline)
+        
+        # Add specific skills filtering
+        if skills:
+            skills_list = [skill.strip() for skill in skills.split(',')]
+            skills_filters = [Job.skills.ilike(f'%{skill}%') for skill in skills_list]
+            query = query.filter(or_(*skills_filters))
+        
+        # Add specific certifications filtering
+        if certifications:
+            cert_list = [cert.strip() for cert in certifications.split(',')]
+            cert_filters = [Job.certifications.ilike(f'%{cert}%') for cert in cert_list]
+            query = query.filter(or_(*cert_filters))
        
         jobs = query.order_by(Job.created_at.desc()).all()
         
         # Get current user's ID from session
         current_user_id = session.get('user_id')
-        
+       
         # Get jobs the user has already applied to
         applied_applications = JobApplication.query.filter_by(user_id=current_user_id).all()
         applied_jobs = {app.job_id for app in applied_applications}
-        
+       
         # Get jobs the user has already saved (assuming Favorite table exists)
         # You'll need to import the Favorite model at the top of your file
         saved_favorites = Favorite.query.filter_by(user_id=current_user_id).all()
         saved_jobs = {fav.job_id for fav in saved_favorites}
-        
-        return render_template('/user/jobresults.html', 
-                             jobs=jobs, 
-                             applied_jobs=applied_jobs, 
+       
+        return render_template('/user/jobresults.html',
+                             jobs=jobs,
+                             applied_jobs=applied_jobs,
                              saved_jobs=saved_jobs)
     else:
         return render_template('/user/jobsearch.html')
-
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -602,6 +631,23 @@ def profile():
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
     if request.method == 'POST':
+        # Validate phone number uniqueness if provided
+        phone_input = request.form.get('phone', '').strip()
+        if phone_input:
+            # Check if phone number already exists for another user
+            existing_phone_user = User.query.filter(
+                User.phone == phone_input,
+                User.id != user_id
+            ).first()
+            if existing_phone_user:
+                flash("This phone number is already registered to another user.", "error")
+                return render_template('/user/profile.html',
+                                       user=user,
+                                       resumes=resumes,
+                                       certifications=certifications,
+                                       user_coupon=user_coupon,
+                                       edit_mode=True)
+        
         # Handle college name and coupon code FIRST
         manual_college = request.form.get('college_name', '').strip()
         coupon_code = request.form.get('coupon_code', "").strip()
@@ -645,7 +691,9 @@ def profile():
             user.college_name = manual_college or user.college_name
         
         # Update other fields only if coupon validation passed
-        user.phone = request.form.get('phone', user.phone)
+        # Update phone (already validated above)
+        user.phone = phone_input if phone_input else None
+        
         age_input = request.form.get('age', '')
         if age_input:
             try:
@@ -655,10 +703,12 @@ def profile():
                 return redirect(url_for('user.profile', edit='true'))
         user.about_me = request.form.get('about_me', user.about_me)
         
-        # Profile picture URL update
-        profile_pic_url = request.form.get('profile_pic_url')
+        # Profile picture URL update - clear if empty
+        profile_pic_url = request.form.get('profile_pic_url', '').strip()
         if profile_pic_url:
             user.profile_picture = profile_pic_url
+        else:
+            user.profile_picture = None  # Clear the profile picture if no URL provided
         
         try:
             db.session.commit()

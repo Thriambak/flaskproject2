@@ -15,240 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/jobresult.css') }}">
   
-  <style>
-    /* Button styles for different states */
-    .btn-custom {
-      background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      transition: all 0.3s ease;
-      margin: 5px;
-      width: 120px;
-      font-size: 14px;
-    }
-    
-    .btn-custom:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(10, 147, 150, 0.4);
-    }
-    
-    .btn-applied {
-      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      margin: 5px;
-      width: 120px;
-      font-size: 14px;
-      cursor: not-allowed;
-    }
-    
-    .btn-save {
-      background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      transition: all 0.3s ease;
-      margin: 5px;
-      width: 120px;
-      font-size: 14px;
-    }
-    
-    .btn-save:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
-    }
-    
-    .btn-saved {
-      background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      margin: 5px;
-      width: 120px;
-      font-size: 14px;
-      cursor: not-allowed;
-    }
-    
-    .button-container {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-      justify-content: center;
-    }
 
-    /* Modal Styles */
-    .modal-content {
-      border-radius: 15px;
-      border: none;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header {
-      background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
-      color: white;
-      border-radius: 15px 15px 0 0;
-      padding: 20px 30px;
-      border: none;
-    }
-
-    .modal-header .btn-close {
-      filter: brightness(0) invert(1);
-      opacity: 0.8;
-    }
-
-    .modal-header .btn-close:hover {
-      opacity: 1;
-    }
-
-    .modal-body {
-      padding: 30px;
-      background: #f8f9fa;
-    }
-
-    .modal-footer {
-      background: #f8f9fa;
-      border-radius: 0 0 15px 15px;
-      border: none;
-      padding: 20px 30px;
-      justify-content: center;
-    }
-
-    .job-detail-item {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 20px;
-      padding: 15px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-    }
-
-    .job-detail-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .job-detail-icon {
-      min-width: 50px;
-      height: 50px;
-      background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 18px;
-      margin-right: 20px;
-    }
-
-    .job-detail-content {
-      flex: 1;
-    }
-
-    .job-detail-label {
-      font-weight: 600;
-      color: #495057;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 5px;
-    }
-
-    .job-detail-value {
-      color: #212529;
-      font-size: 16px;
-      line-height: 1.5;
-      word-wrap: break-word;
-      word-break: break-word;
-      hyphens: auto;
-      overflow-wrap: break-word;
-    }
-
-    .job-type-badge {
-      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: inline-block;
-    }
-
-    .salary-highlight {
-      color: #28a745;
-      font-weight: 700;
-      font-size: 18px;
-    }
-
-    .deadline-warning {
-      color: #dc3545;
-      font-weight: 600;
-    }
-
-    .skills-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 5px;
-    }
-
-    .skill-tag {
-      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-      color: #495057;
-      padding: 6px 12px;
-      border-radius: 15px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .modal-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .view-details-btn {
-      background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    .view-details-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(10, 147, 150, 0.4);
-      color: white;
-    }
-
-    .external-link {
-      color: #0a9396;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      word-break: break-all;
-    }
-
-    .external-link:hover {
-      color: #005f73;
-      text-decoration: underline;
-    }
-  </style>
 </head>
 <body data-aos-duration="1000">
   <!-- Header -->
@@ -325,16 +92,28 @@
             {% for job in jobs %}
               <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
                 <div class="card h-100">
-                  <div class="card-body">
+                  <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ job.title }}</h5>
-                    <span class="badge bg-info text-dark">{{ job.job_type }}</span>
-                    <p class="card-text">{{ job.description[:100] }}{% if job.description|length > 100 %}...{% endif %}</p>
-                    <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ job.location }}</p>
-                    <p><i class="fas fa-wallet"></i> <strong>Salary:</strong> ₹{{ job.salary }}</p>
-                    <p><i class="fas fa-calendar-alt"></i> <strong>Deadline:</strong> {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+                    <span class="badge bg-info text-dark mb-2">{{ job.job_type }}</span>
+                    <div class="card-description mb-3">{{ job.description }}</div>
                     
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                      <button class="view-details-btn" onclick="openJobModal('{{ job.job_id }}')">
+                    <div class="card-info">
+                      <i class="fas fa-map-marker-alt"></i>
+                      <span class="card-info-text">{{ job.location }}</span>
+                    </div>
+                    
+                    <div class="card-info">
+                      <i class="fas fa-wallet"></i>
+                      <span class="card-info-text">₹{{ job.salary }}</span>
+                    </div>
+                    
+                    <div class="card-info">
+                      <i class="fas fa-calendar-alt"></i>
+                      <span class="card-info-text">{{ job.deadline.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    
+                    <div class="mt-auto">
+                      <button class="view-details-btn w-100" onclick="openJobModal('{{ job.job_id }}')">
                         <i class="fas fa-eye"></i> View Details
                       </button>
                       
@@ -372,20 +151,28 @@
                 </div>
               </div>
             {% endfor %}
-          {% else %}
-            <div class="col-12 text-center" data-aos="fade-up">
-              <div class="card p-5">
-                <h4><i class="fas fa-search text-muted"></i></h4>
-                <p class="mb-0">No job listings available based on your search criteria.</p>
-                <p class="mt-3">
-                  <button class="btn-custom" style="max-width: 250px; margin: 0 auto;" onclick="window.location.href='/user/job_search'">
-                    <i class="fas fa-search"></i> Try New Search
-                  </button>
-                </p>
-              </div>
-            </div>
-          {% endif %}
-        </div>
+  {% else %}
+<div class="col-12 text-center" data-aos="fade-up">
+  <div class="card p-5 no-results-card">
+    <div class="no-results-content">
+      <div class="no-results-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h4 class="no-results-title">No Jobs Found</h4>
+      <p class="no-results-text">We couldn't find any job listings that match your current search criteria. Try adjusting your filters or search terms to discover more opportunities.</p>
+    </div>
+    
+    <div class="mt-4 action-buttons">
+      <button class="search-btn primary-btn" onclick="window.location.href='/user/job_search'">
+        <i class="fas fa-search me-2"></i> 
+        <span>Try New Search</span>
+   
+    </div>
+  </div>
+</div>
+
+{% endif %}
+</div>
         
         <!-- Pagination -->
         {% if jobs and jobs|length > 9 %}
@@ -406,8 +193,7 @@
       </div>
     </div>
   </main>
-
-  <!-- Job Details Modal -->
+<!-- Job Details Modal -->
   <div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
@@ -437,25 +223,30 @@
       '{{ job.job_id }}': {
         title: '{{ job.title }}',
         job_type: '{{ job.job_type }}',
-        description: `{{ job.description | replace('\n', '\\n') | replace('\r', '') }}`,
+        description: `{{ (job.description or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
         location: '{{ job.location }}',
         salary: '{{ job.salary }}',
         deadline: '{{ job.deadline.strftime("%Y-%m-%d") }}',
-        skills: '{{ job.skills }}',
-        certifications: '{{ job.certifications or "None" }}',
-        years_of_exp: '{{ job.years_of_exp }}',
-        total_vacancy: '{{ job.total_vacancy }}',
-        filled_vacancy: '{{ job.filled_vacancy }}',
-        form_url: '{{ job.form_url }}',
+        skills: `{{ (job.skills or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
+        certifications: `{{ (job.certifications or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
+        years_of_exp: '{{ job.years_of_exp or "" }}',
+       
+        form_url: '{{ job.form_url or "" }}',
         has_applied: {% if job.job_id in applied_jobs %}true{% else %}false{% endif %},
         has_saved: {% if job.job_id in saved_jobs %}true{% else %}false{% endif %}
       }{% if not loop.last %},{% endif %}
       {% endfor %}
     };
 
+    let currentJobId = null;
+    let showingFullDetails = false;
+
     function openJobModal(jobId) {
       const job = jobsData[jobId];
       if (!job) return;
+
+      currentJobId = jobId;
+      showingFullDetails = false;
 
       const modalBody = document.getElementById('modalBody');
       const modalFooter = document.getElementById('modalFooter');
@@ -463,134 +254,213 @@
 
       modalTitle.textContent = job.title;
 
-      // Create skills tags
-      const skillsArray = job.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
-      const skillsTags = skillsArray.map(skill => 
-        `<span class="skill-tag">${skill}</span>`
-      ).join('');
+      // Show basic details first
+      showBasicDetails(job);
+      createFooterButtons(job, jobId);
 
-      // Create certifications tags if available
-      const certificationsArray = job.certifications !== 'None' ? 
-        job.certifications.split(',').map(cert => cert.trim()).filter(cert => cert) : [];
-      const certificationsTags = certificationsArray.length > 0 ? 
-        certificationsArray.map(cert => `<span class="skill-tag">${cert}</span>`).join('') :
-        '<span class="text-muted">No specific certifications required</span>';
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+      modal.show();
+    }
 
-      modalBody.innerHTML = `
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-briefcase"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Job Type</div>
-            <div class="job-detail-value">
-              <span class="job-type-badge">${job.job_type}</span>
+    function showBasicDetails(job) {
+      const modalBody = document.getElementById('modalBody');
+      let modalContent = '';
+
+      // Job Type
+      if (job.job_type && job.job_type.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Job Type</div>
+              <div class="job-detail-value">
+                <span class="job-type-badge">${job.job_type}</span>
+              </div>
             </div>
           </div>
-        </div>
+        `;
+      }
 
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-align-left"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Description</div>
-            <div class="job-detail-value">${job.description}</div>
-          </div>
-        </div>
 
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-map-marker-alt"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Location</div>
-            <div class="job-detail-value">${job.location}</div>
-          </div>
-        </div>
-
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-wallet"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Salary</div>
-            <div class="job-detail-value salary-highlight">₹${job.salary}</div>
-          </div>
-        </div>
-
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-clock"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Experience Required</div>
-            <div class="job-detail-value">${job.years_of_exp} years</div>
-          </div>
-        </div>
-
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Vacancy</div>
-            <div class="job-detail-value">${job.total_vacancy - job.filled_vacancy} positions available (${job.filled_vacancy}/${job.total_vacancy} filled)</div>
-          </div>
-        </div>
-
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-calendar-alt"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Application Deadline</div>
-            <div class="job-detail-value deadline-warning">${job.deadline}</div>
-          </div>
-        </div>
-
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-cogs"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Required Skills</div>
-            <div class="job-detail-value">
-              <div class="skills-container">${skillsTags}</div>
+      // Description (full)
+      if (job.description && job.description.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-align-left"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Description</div>
+              <div class="job-detail-value">${job.description}</div>
             </div>
           </div>
-        </div>
+        `;
+      }
 
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-certificate"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">Certifications</div>
-            <div class="job-detail-value">
-              <div class="skills-container">${certificationsTags}</div>
+      // Location
+      if (job.location && job.location.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Location</div>
+              <div class="job-detail-value">${job.location}</div>
             </div>
           </div>
-        </div>
+        `;
+      }
 
-        ${job.form_url ? `
-        <div class="job-detail-item">
-          <div class="job-detail-icon">
-            <i class="fas fa-external-link-alt"></i>
-          </div>
-          <div class="job-detail-content">
-            <div class="job-detail-label">External Application</div>
-            <div class="job-detail-value">
-              <a href="${job.form_url}" target="_blank" class="external-link">
-                <i class="fas fa-external-link-alt"></i> Open Application Form
-              </a>
+      // Salary
+      if (job.salary && job.salary.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Salary</div>
+              <div class="job-detail-value salary-highlight">₹${job.salary}</div>
             </div>
           </div>
-        </div>
-        ` : ''}
-      `;
+        `;
+      }
 
-      // Create footer buttons
+      // Experience
+      if (job.years_of_exp && job.years_of_exp.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Experience Required</div>
+              <div class="job-detail-value">${job.years_of_exp} years</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Vacancy
+      if (job.total_vacancy && job.total_vacancy.trim()) {
+        const filledVacancy = job.filled_vacancy || '0';
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Vacancy</div>
+              <div class="job-detail-value">${job.total_vacancy - filledVacancy} positions available (${filledVacancy}/${job.total_vacancy} filled)</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Deadline
+      if (job.deadline && job.deadline.trim()) {
+        const formattedDate = new Date(job.deadline).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit'
+        });
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Application Deadline</div>
+              <div class="job-detail-value deadline-warning">${formattedDate}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Skills
+      if (job.skills && job.skills.trim()) {
+        const skillsArray = job.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
+        if (skillsArray.length > 0) {
+          const skillsTags = skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+          modalContent += `
+            <div class="job-detail-item">
+              <div class="job-detail-icon">
+                <i class="fas fa-cogs"></i>
+              </div>
+              <div class="job-detail-content">
+                <div class="job-detail-label">Required Skills</div>
+                <div class="job-detail-value">
+                  <div class="skills-container">${skillsTags}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Certifications
+      if (job.certifications && job.certifications.trim()) {
+        const certificationsArray = job.certifications.split(',').map(cert => cert.trim()).filter(cert => cert);
+        if (certificationsArray.length > 0) {
+          const certificationsTags = certificationsArray.map(cert => `<span class="skill-tag">${cert}</span>`).join('');
+          modalContent += `
+            <div class="job-detail-item">
+              <div class="job-detail-icon">
+                <i class="fas fa-certificate"></i>
+              </div>
+              <div class="job-detail-content">
+                <div class="job-detail-label">Certifications</div>
+                <div class="job-detail-value">
+                  <div class="skills-container">${certificationsTags}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // External Form URL
+      if (job.form_url && job.form_url.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon">
+              <i class="fas fa-external-link-alt"></i>
+            </div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">External Application</div>
+              <div class="job-detail-value">
+                <a href="${job.form_url}" target="_blank" class="external-link">
+                  <i class="fas fa-external-link-alt"></i> Open Application Form
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+
+      modalBody.innerHTML = modalContent;
+    }
+
+    function toggleFullDetails() {
+      const job = jobsData[currentJobId];
+      if (!job) return;
+
+      showingFullDetails = !showingFullDetails;
+      
+      if (showingFullDetails) {
+        showFullDetails(job);
+      } else {
+        showBasicDetails(job);
+      }
+    }
+
+    function createFooterButtons(job, jobId) {
+      const modalFooter = document.getElementById('modalFooter');
       let footerButtons = '';
       
       if (job.has_applied) {
@@ -626,12 +496,9 @@
       }
 
       modalFooter.innerHTML = footerButtons;
-
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
-      modal.show();
     }
-
+  
+  
     // Initialize AOS
     AOS.init();
     

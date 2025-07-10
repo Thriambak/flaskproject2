@@ -63,7 +63,7 @@
       <div class="profile-dropdown">
         <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
         <div class="dropdown-content">
-          <a href="{{ url_for('user.profile') }}" style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
+          <a href="{{ url_for('user.profile') }}" style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
             <i class="fas fa-user"></i> Profile
           </a>
           <a href="{{ url_for('auth.logout') }}">
@@ -100,7 +100,7 @@
         <div class="profile-header">
           <div class="profile-picture-container">
             <img src="{{ user.profile_picture or url_for('static', filename='default_profile.png') }}" 
-                 alt="Profile Picture" 
+                 
                  class="profile-picture"
                  id="profileImage">
             <!-- Clicking the overlay sets focus on the URL field -->
@@ -323,11 +323,21 @@
       urlField.addEventListener('input', function() {
         const imageUrl = this.value.trim();
         if(imageUrl) {
-          document.getElementById('profileImage').src = imageUrl;
+          // Try to load the image to check if it's valid
+          const img = new Image();
+          img.onload = function() {
+            document.getElementById('profileImage').src = imageUrl;
+          };
+          img.onerror = function() {
+            // If image fails to load, show default
+            document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
+          };
+          img.src = imageUrl;
         } else {
           // Reset to default if empty
           document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
         }
+        updateProfileProgress();
       });
     }
     

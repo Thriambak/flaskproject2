@@ -99,6 +99,79 @@
     .job-buttons button {
       margin: 0;
     }
+
+    /* Empty state styling */
+    .no-results-card {
+      background: linear-gradient(135deg, rgba(0, 95, 115, 0.02) 0%, rgba(10, 147, 150, 0.05) 100%);
+      border: 1px solid rgba(0, 95, 115, 0.08);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 95, 115, 0.15);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      margin: 1.5rem 0;
+      width: 100%;
+    }
+
+    .no-results-content {
+      margin-bottom: 2rem;
+    }
+
+    .no-results-icon {
+      font-size: 3rem;
+      color: #005f73;
+      margin-bottom: 1.5rem;
+    }
+
+    .no-results-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #005f73;
+      margin-bottom: 1rem;
+    }
+
+    .no-results-text {
+      color: #0a9396;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 0;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .search-btn {
+      background: linear-gradient(135deg, #005f73 0%, #0a9396 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0, 95, 115, 0.25);
+      min-width: 160px;
+      justify-content: center;
+    }
+
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 95, 115, 0.35);
+      background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
+    }
+
+    .search-btn:active {
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -219,9 +292,6 @@
                 <p><i class="fas fa-calendar-alt" style="padding-left: 0.3%;"></i> <strong style="padding-left: 0.5%;">Deadline:</strong> {{ job.deadline.strftime('%d-%m-%Y') }}</p>
               {% endif %}
 
-              <!-- Vacancy Information -->
-              <p><i class="fas fa-users" style="padding-left: 0.2%;"></i> <strong style="padding-left: 0.3%;">Vacancies:</strong> {{ job.total_vacancy - job.filled_vacancy }} available out of {{ job.total_vacancy }}</p>
-
               {% if job.form_url %}
                 <p><i class="fas fa-link"></i> <strong>Questionnaire Link:</strong> <a href="{{ job.form_url }}" style="text-decoration: none; color: blue; overflow-wrap: break-word;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p>
               {% endif %}
@@ -248,47 +318,68 @@
               </div>
             </div>
           {% endfor %}
-          
-          <!-- Pagination Controls -->
-          {% if total_pages > 1 %}
-          <div class="pagination">
-            {% if has_prev %}
-              <a href="?page={{ prev_num }}">
-                <button>
-                  <i class="fas fa-chevron-left"></i> Previous
-                </button>
-              </a>
-            {% else %}
-              <button disabled>
-                <i class="fas fa-chevron-left"></i> Previous
-              </button>
-            {% endif %}
-            
-            <span>Page {{ page }} of {{ total_pages }}</span>
-            
-            {% if has_next %}
-              <a href="?page={{ next_num }}">
-                <button>
-                  Next <i class="fas fa-chevron-right"></i>
-                </button>
-              </a>
-            {% else %}
-              <button disabled>
-                Next <i class="fas fa-chevron-right"></i>
-              </button>
-            {% endif %}
-          </div>
-          {% endif %}
         {% else %}
-          <div class="empty-state">
-            <i class="fas fa-bookmark-slash"></i>
-            <p>You have no favorite jobs saved at the moment.</p>
-            <button onclick="window.location.href='/user/job_search'" class="btn">
-              <i class="fas fa-search"></i> Browse Jobs
-            </button>
+          <div class="col-12 text-center" data-aos="fade-up">
+            <div class="no-results-card">
+              <div class="no-results-content">
+                <div class="no-results-icon">
+                  <i class="fas fa-bookmark-slash"></i>
+                </div>
+                <h4 class="no-results-title">No Favorite Jobs Found</h4>
+                <p class="no-results-text">You have no favorite jobs saved at the moment. Browse through our job listings to find opportunities that interest you and save them to your favorites.</p>
+              </div>
+              
+              <div class="action-buttons">
+                <button class="search-btn" onclick="window.location.href='/user/job_search'">
+                  <i class="fas fa-search"></i> 
+                  <span>Browse Jobs</span>
+                </button>
+              </div>
+            </div>
           </div>
         {% endif %}
       </div>
+
+      <!-- Pagination Controls -->
+      {% if total_pages > 0 %}
+      <div class="pagination">
+        {% if has_prev %}
+          <a href="?page={{ prev_num }}">
+            <button>
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+          </a>
+        {% else %}
+          <button disabled>
+            <i class="fas fa-chevron-left"></i> Previous
+          </button>
+        {% endif %}
+        
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        
+        {% if has_next %}
+          <a href="?page={{ next_num }}">
+            <button>
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </a>
+        {% else %}
+          <button disabled>
+            Next <i class="fas fa-chevron-right"></i>
+          </button>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="pagination">
+        <button disabled>
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <span>Page 0 of 0</span>
+        <button disabled>
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+      {% endif %}
     </div>
   </main>
   

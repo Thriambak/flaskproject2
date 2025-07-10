@@ -310,6 +310,9 @@
  }
  .activity .job-posting .job-type {
    font-size: 14px;
+   background-color: #f0f4ff;
+   padding: 5px 12px;
+   border-radius: 20px;
    color: #0a3d62;
    display: flex;
    align-items: center;

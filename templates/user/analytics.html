@@ -120,7 +120,7 @@
           {% for job in live_feed %}
           <tr>
             <td>{{ job.job_title }}</td>
-            <td class="job-posted-time" data-utc-timestamp="{{ job.posted_at.timestamp() * 1000 if job.posted_at else '' }}">
+            <td class="job-posted-time" data-utc-timestamp="{{ job.posted_at.strftime('%Y-%m-%d %H:%M:%S') if job.posted_at else '' }}">
               Loading...
             </td>
           </tr>
@@ -136,99 +136,70 @@
   </main>
   
   <script>
-    // Function to convert UTC timestamp to IST (for live feed)
-    function convertToIST(utcTimestamp) {
+    // Standardized function to convert UTC timestamp to local time (matching your provided function)
+    function convertUTCToLocalTime(utcTimestamp) {
       if (!utcTimestamp) return 'N/A';
       
       try {
-        // Create date object from timestamp (timestamp is in milliseconds)
-        const utcDate = new Date(parseInt(utcTimestamp));
+        // Create date object from UTC timestamp string (add 'UTC' if not present)
+        const utcString = utcTimestamp.includes('UTC') ? utcTimestamp : utcTimestamp + ' UTC';
+        const date = new Date(utcString);
         
         // Check if date is valid
-        if (isNaN(utcDate.getTime())) {
+        if (isNaN(date.getTime())) {
           return 'Invalid Date';
         }
         
-        // Convert to IST using toLocaleString with Asia/Kolkata timezone
-        const istOptions = {
-          timeZone: 'Asia/Kolkata',
+        // Convert to local time format (DD-MM-YYYY HH:MM)
+        const localString = date.toLocaleString('en-GB', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit',
-          second: '2-digit',
           hour12: false
-        };
+        }).replace(/(\d{2})\/(\d{2})\/(\d{4}), (\d{2}:\d{2})/, '$1-$2-$3 $4');
         
-        const istString = utcDate.toLocaleString('en-GB', istOptions);
-        
-        // Format as DD-MM-YYYY | HH:MM:SS
-        const parts = istString.split(', ');
-        const datePart = parts[0];
-        const timePart = parts[1];
-        
-        return `${datePart} | ${timePart}`;
+        return localString;
       } catch (error) {
         console.error('Error converting time:', error);
         return 'Error';
       }
     }
     
-    // Function to convert chart dates to IST (for application trends)
-    function convertChartDatesToIST(labels) {
-      return labels.map(label => {
-        if (!label) return label;
+    // Function to convert UTC date string to local date for chart labels
+    function convertUTCDateToLocalDate(utcDateStr) {
+      if (!utcDateStr) return utcDateStr;
+      
+      try {
+        // Parse the UTC date string (format: YYYY-MM-DD)
+        const [year, month, day] = utcDateStr.split('-');
         
-        try {
-          // The backend sends dates extracted from UTC datetime
-          // We need to find what the IST date would be for times around that UTC date
-          
-          // Parse the UTC date string
-          const [year, month, day] = label.split('-');
-          
-          // Create two times: start and end of the UTC date
-          const utcStartOfDay = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
-          const utcEndOfDay = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
-          
-          // Convert both to IST
-          const istStartOfDay = new Date(utcStartOfDay.getTime() + (5.5 * 60 * 60 * 1000));
-          const istEndOfDay = new Date(utcEndOfDay.getTime() + (5.5 * 60 * 60 * 1000));
-          
-          // If the IST start and end are on the same date, use that date
-          // Otherwise, use the date that covers most of the IST day
-          const istStartDate = istStartOfDay.getUTCDate();
-          const istEndDate = istEndOfDay.getUTCDate();
-          
-          let finalDate;
-          if (istStartDate === istEndDate) {
-            // Same IST date throughout
-            finalDate = istStartOfDay;
-          } else {
-            // Different IST dates - use the later one (which is more likely the correct IST date)
-            finalDate = istEndOfDay;
-          }
-          
-          // Format as DD-MM-YYYY for display
-          const istDay = String(finalDate.getUTCDate()).padStart(2, '0');
-          const istMonth = String(finalDate.getUTCMonth() + 1).padStart(2, '0');
-          const istYear = finalDate.getUTCFullYear();
-          
-          return `${istDay}-${istMonth}-${istYear}`;
-        } catch (error) {
-          console.error('Error converting chart date:', error);
-          return label; // Return original if conversion fails
-        }
-      });
+        // Create UTC date object
+        const utcDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0));
+        
+        // Convert to local time
+        const localDate = new Date(utcDate.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+        
+        // Format as DD/MM/YYYY
+        const localDay = String(localDate.getDate()).padStart(2, '0');
+        const localMonth = String(localDate.getMonth() + 1).padStart(2, '0');
+        const localYear = localDate.getFullYear();
+        
+        return `${localDay}/${localMonth}/${localYear}`;
+      } catch (error) {
+        console.error('Error converting UTC date to local date:', error);
+        return utcDateStr; // Return original if conversion fails
+      }
     }
     
-    // Convert all job posted times to IST
+    // Convert all job posted times to local time
     document.addEventListener('DOMContentLoaded', function() {
       const timeElements = document.querySelectorAll('.job-posted-time');
       timeElements.forEach(element => {
         const utcTimestamp = element.getAttribute('data-utc-timestamp');
         if (utcTimestamp) {
-          element.textContent = convertToIST(utcTimestamp);
+          element.textContent = convertUTCToLocalTime(utcTimestamp);
         } else {
           element.textContent = 'N/A';
         }
@@ -285,16 +256,16 @@
       }
     });
   
-    // Application Trends Chart (Line Chart) - with IST date conversion
+    // Application Trends Chart (Line Chart) - with local date conversion
     const ctxTrends = document.getElementById('trendsChart').getContext('2d');
     
-    // Convert chart dates to IST format
-    const istLabels = convertChartDatesToIST(applicationTrends.labels);
+    // Convert UTC dates to local dates for chart labels
+    const localLabels = applicationTrends.labels.map(label => convertUTCDateToLocalDate(label));
     
     const trendsChart = new Chart(ctxTrends, {
       type: 'line',
       data: {
-        labels: istLabels, // Use converted IST labels
+        labels: localLabels, // Use converted local labels
         datasets: [{
           label: 'Applications per Day',
           data: applicationTrends.counts,
@@ -324,7 +295,7 @@
         },
         scales: {
           x: {
-            title: { display: true, text: 'Date (IST)', font: { size: 14 } }
+            title: { display: true, text: 'Date (Local Time)', font: { size: 14 } }
           },
           y: {
             beginAtZero: true,

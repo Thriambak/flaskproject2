@@ -281,26 +281,26 @@
     
     // Pagination variables - Fix for empty state
     let currentPage = {{ page if page > 0 else 1 }};
-    const rowsPerPage = 5;
-    let filteredJobs = [];
+    const totalPages = {{ total_pages if total_pages else 0 }};
     
     // Initialize pagination
     window.addEventListener('load', function() {
       const jobs = document.querySelectorAll('.job-item');
-      filteredJobs = Array.from(jobs);
+      // Show all jobs sent by server (server already handles pagination)
+      jobs.forEach(job => {
+        job.style.display = 'block';
+      });
       updatePagination();
-      showPage(currentPage);
     });
     
     // Update pagination controls
     function updatePagination() {
-      const totalPages = Math.ceil(filteredJobs.length / rowsPerPage);
       const displayTotalPages = totalPages || 0;
-      const displayCurrentPage = totalPages === 0 ? 1 : currentPage;
+      const displayCurrentPage = totalPages === 0 ? 0 : currentPage;
       document.getElementById('page-info').textContent = `Page ${displayCurrentPage} of ${displayTotalPages}`;
       
-      document.getElementById('prev-page').disabled = currentPage === 1;
-      document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+      document.getElementById('prev-page').disabled = currentPage === 1 || totalPages === 0;
+      document.getElementById('next-page').disabled = currentPage >= totalPages || totalPages === 0;
     }
     
     // Show specific page
@@ -336,7 +336,6 @@
     });
     
     document.getElementById('next-page').addEventListener('click', function() {
-      const totalPages = {{ total_pages }};
       if (currentPage < totalPages) {
         // Use server-side pagination
         window.location.href = '{{ url_for("user.user_dashboard") }}?page=' + (currentPage + 1);
