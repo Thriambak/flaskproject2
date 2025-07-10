@@ -73,7 +73,7 @@ import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import RefreshIcon from '@mui/icons-material/Refresh'; // Import RefreshIcon
+// import RefreshIcon from '@mui/icons-material/Refresh'; // REMOVED: RefreshIcon is no longer needed
 import { 
     Dialog, // MUI Dialog
     DialogActions, // MUI DialogActions
@@ -547,10 +547,13 @@ const Dashboard = () => {
                         />
                         <Tooltip 
                             contentStyle={{
-                                borderRadius: 8,
+                                backgroundColor: theme.palette.background.paper,
+                                color: theme.palette.text.primary,
+                                borderRadius: '8px',
                                 borderColor: theme.palette.divider,
-                                boxShadow: theme.shadows[3]
+                                boxShadow: theme.shadows[3],
                             }}
+                            cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
                         />
                         <Legend 
                             wrapperStyle={{ paddingTop: 20 }}
@@ -559,17 +562,21 @@ const Dashboard = () => {
                         />
                         <Line 
                             type="monotone" 
-                            dataKey="applications" 
-                            stroke='#d92804' 
+                            dataKey="applications"
+                            name="Applications"
+                            stroke={theme.palette.primary.main} 
                             strokeWidth={2}
-                            dot='#c42606'
+                            activeDot={{ r: 6 }}
+                            dot={{ r: 3 }}
                         />
                         <Line 
                             type="monotone" 
                             dataKey="registrations" 
-                            stroke={theme.palette.secondary.main} 
+                            name="Registrations"
+                            stroke="#388e3c" // A distinct, theme-friendly green
                             strokeWidth={2}
-                            dot={{ fill: theme.palette.secondary.main }}
+                            activeDot={{ r: 6 }}
+                            dot={{ r: 3 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
@@ -1171,45 +1178,13 @@ const AddCompanyButton = () => {
   );
 };
 
-const CustomRefreshButton = () => {
-    const refresh = useRefresh();
-    const theme = useTheme();
-
-    const handleClick = () => {
-        refresh();
-    };
-
-    return (
-        <Button
-            onClick={handleClick}
-            startIcon={<RefreshIcon />}
-            variant="outlined"
-            size="medium"
-            sx={{ 
-                mr: 2,
-                borderRadius: 20,
-                textTransform: 'none',
-                px: 3,
-                bgcolor: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                    bgcolor: theme.palette.action.hover,
-                    borderColor: theme.palette.primary.main
-                }
-            }}
-        >
-            Refresh
-        </Button>
-    );
-};
+// REMOVED: The CustomRefreshButton component is no longer needed.
 
 const ListActions = (props) => {
     const { resource } = props;
     
     return (
         <TopToolbar {...props} sx={{ p: 2, bgcolor: 'background.default' }}>
-            <CustomRefreshButton /> {/* Add the custom refresh button here */}
             <FilterDropdown />
             <ExportButton 
                 sx={{ 
