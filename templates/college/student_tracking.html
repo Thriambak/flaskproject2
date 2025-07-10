@@ -90,7 +90,11 @@
                         <tbody>
                             {% if student_activity %}
                                 {% for activity in student_activity %}
-                                <tr class="student-row" data-name="{{ activity.student_name }}" data-company="{{ activity.company_name }}" data-job="{{ activity.job_title }}" data-status="{{ activity.job_application_status }}">
+                                <tr class="student-row {% if activity.is_banned %}banned-user{% endif %}" 
+                                    data-name="{{ activity.student_name }}" 
+                                    data-company="{{ activity.company_name }}" 
+                                    data-job="{{ activity.job_title }}" 
+                                    data-status="{{ activity.job_application_status }}">
                                     <td>{{ activity.student_name }}</td>
                                     <td>{{ activity.company_name }}</td>
                                     <td>{{ activity.job_title }}</td>
@@ -112,7 +116,7 @@
                 <!-- Pagination -->
                 <div class="pagination">
                     <button id="prev-page" disabled>&laquo; Previous</button>
-                    <span id="page-info">Page 1 of 0</span>
+                    <span id="page-info">Page 0 of 0</span>
                     <button id="next-page" disabled>Next &raquo;</button>
                 </div>
             </div>
@@ -247,13 +251,13 @@
         // Update pagination controls
         function updatePagination() {
             // Count only the actual data rows, ignoring the "No applications found" row
-            const dataRowsCount = filteredRows.filter(row => row.classList.contains('application-row')).length;
+            const dataRowsCount = filteredRows.filter(row => row.classList.contains('student-row')).length;
             const totalPages = Math.ceil(dataRowsCount / rowsPerPage);
 
             // If there are no data rows, the current page should be displayed as 1
-            const displayPage = dataRowsCount === 0 ? 1 : currentPage;
+            const displayPage = dataRowsCount === 0 ? 0 : currentPage;
             
-            // This will correctly display "Page 1 of 0" when no data rows are present
+            // This will correctly display "Page 0 of 0" when no data rows are present
             document.getElementById('page-info').textContent = `Page ${displayPage} of ${totalPages}`;
             
             document.getElementById('prev-page').disabled = currentPage === 1 || dataRowsCount === 0;

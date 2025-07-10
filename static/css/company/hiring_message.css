@@ -239,6 +239,18 @@ main {
     color: white;
 }
 
+#candidates-table tbody tr.banned-user {
+    color: #ec0400; /* Dark red text */
+    background-color: #ffffff; /* #f2dede: Light red background */
+    text-decoration: line-through;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#candidates-table tbody tr.banned-user:hover {
+    background-color: #ebcccc; /* Slightly darker red on hover */
+}
+
 .filter-bar {
     display: flex;
     align-items: center;

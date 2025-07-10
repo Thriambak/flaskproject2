@@ -61,7 +61,12 @@
             <div class="job-list" id="jobList">
                 {% if jobs %}
                     {% for job in jobs %}
+
+                    {% if job.status == 'open' %}
                     <div class="job-card" onclick="window.location.href='{{ url_for('company.company_post_new_job', job_id=job.job_id) }}'">
+                    {% else %}
+                    <div class="job-card closed">
+                    {% endif %}
                         <div class="job-header">
                             <h3 style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</h3>
                             {% if job.status == "open" %}
@@ -123,7 +128,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p id="noResults">No job listings available at the moment.</p>
+                    <p id="noResults" style="text-align: center; padding: 20px; font-family: monospace; font-size: 16px; color: #666;">No job listings available at the moment.</p>
                 {% endif %}
             </div>
             

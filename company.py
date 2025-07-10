@@ -159,6 +159,13 @@ def company_post_new_job():
     if request.method == 'POST':
         # Get form data
         job_id = request.form.get('jobId')
+
+        if job_id:
+            job_to_check = Job.query.get(job_id)
+            if job_to_check and job_to_check.status == 'closed':
+                flash("This job is closed and cannot be edited.", "error")
+                return redirect(url_for('company.company_jobposting'))
+
         title = request.form.get('job-title', '').strip()
         description = request.form.get('description', '').strip()
         skills = request.form.get('skill-sets', '').strip()
@@ -435,7 +442,8 @@ def company_application_review():
             'status': application.status,
             'application_id': application.id,
             'resume_path': resume_path,
-            'user_id': str(application.user_id)  # Convert UUID to string
+            'user_id': str(application.user_id),  # Convert UUID to string
+            'is_banned': application.user.is_banned
         })
     
     # Fetch certifications for each candidate
@@ -496,7 +504,8 @@ def company_hiring_communication():
         db.session.query(
             User.id, 
             User.name,
-            User.login_id,  # Add this line to include login_id
+            User.login_id,
+            User.is_banned,
             Job.title.label('job_title'), 
             JobApplication.status
         )
@@ -504,13 +513,12 @@ def company_hiring_communication():
         .join(Job, JobApplication.job_id == Job.job_id)
         .filter(Job.created_by == user_id)
         .order_by(User.id, JobApplication.id.desc())
-        .distinct(User.id)
         .all()
     )
     
     if selected_status or selected_jobs or search_query:
         filtered_query = (
-            db.session.query(User.id, User.name, User.login_id, Job.title.label('job_title'), JobApplication.status)
+            db.session.query(User.id, User.name, User.login_id, User.is_banned, Job.title.label('job_title'), JobApplication.status)
             .join(JobApplication, JobApplication.user_id == User.id)
             .join(Job, JobApplication.job_id == Job.job_id)
             .filter(Job.created_by == user_id)

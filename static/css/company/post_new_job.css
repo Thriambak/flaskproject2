@@ -372,6 +372,18 @@ textarea {
     background-color: #dc3545; 
 }
 
+ .alert-warning {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    text-align: center;
+    font-family: monospace;
+}
+
 /* Responsive design */
 @media (min-width: 1025px) {
     .navigation {

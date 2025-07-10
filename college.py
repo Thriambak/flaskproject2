@@ -241,6 +241,7 @@ def college_studenttracking():
     # Query to join the tables and filter by the logged-in college's login_id
     student_activity = db.session.query(
         User.name.label('student_name'),
+        User.is_banned,
         Company.company_name.label('company_name'),
         Job.title.label('job_title'),  # Added job title
         JobApplication.status.label('job_application_status')
@@ -249,7 +250,7 @@ def college_studenttracking():
      .join(JobApplication, JobApplication.user_id == User.id)\
      .join(Job, Job.job_id == JobApplication.job_id)\
      .join(Company, Company.login_id == Job.created_by)\
-     .filter(Coupon.college_id == College.query.filter_by(login_id=login_id).first().id)\
+     .filter(Coupon.college_id == college_profile.id)\
      .all()
 
     return render_template('/college/student_tracking.html',
@@ -405,6 +406,7 @@ def college_endorsement():
     coupon_users = db.session.query(
         Coupon.code.label('coupon_code'),
         User.name.label('user_name'),
+        User.is_banned,
         Coupon.faculty_id,
         Coupon.year,
         User.id.label('user_id')

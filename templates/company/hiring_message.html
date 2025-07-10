@@ -101,7 +101,14 @@
                         <tbody>
                             {% if applied_users %}
                                 {% for user in applied_users %}
-                                <tr class="application-row" data-type="candidate" data-name="{{ user.name }}" data-job="{{ user.job_title }}" data-status="{{ user.status }}" data-id="{{ user.id }}" data-login-id="{{ user.login_id }}">
+                                <tr class="application-row {% if user.is_banned %}banned-user{% endif %}" 
+                                    data-type="candidate" 
+                                    data-name="{{ user.name }}" 
+                                    data-job="{{ user.job_title }}" 
+                                    data-status="{{ user.status }}" 
+                                    data-id="{{ user.id }}" 
+                                    data-login-id="{{ user.login_id }}"
+                                    data-banned="{{ 'true' if user.is_banned else 'false' }}">
                                     <td>{{ user.name }}</td>
                                     <td>{{ user.job_title }}</td>
                                     <td>{{ user.status }}</td>
@@ -335,8 +342,8 @@
             const dataRowsCount = candidatesFilteredRows.length;
             const totalPages = Math.ceil(dataRowsCount / rowsPerPage);
 
-            // If there are no rows, display "Page 1 of 0"
-            const displayPage = dataRowsCount === 0 ? 1 : candidatesCurrentPage;
+            // If there are no rows, display "Page 0 of 0"
+            const displayPage = dataRowsCount === 0 ? 0 : candidatesCurrentPage;
 
             document.getElementById('page-info').textContent = `Page ${displayPage} of ${totalPages}`;
             
@@ -380,6 +387,11 @@
         function setupRowClickHandlers() {
             document.querySelectorAll('.application-row').forEach(row => {
                 row.addEventListener('click', function() {
+                    const isBanned = this.getAttribute('data-banned');
+                    if (isBanned === 'true') {
+                        // If banned, do nothing and stop the function.
+                        return;
+                    }
                     const name = this.getAttribute('data-name');
                     const id = this.getAttribute('data-id');
                     const loginId = this.getAttribute('data-login-id');

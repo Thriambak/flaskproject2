@@ -278,6 +278,23 @@ table tbody tr:last-child {
     border-bottom: none;
 }
 
+#student-table tbody tr.banned-user {
+    color: #ec0400; /* Dark red text */
+    background-color: #ffffff; /* #f2dede: Light red background */
+    text-decoration: line-through;
+    opacity: 0.7;
+    cursor: not-allowed; /* Indicates non-interactive */
+}
+
+#student-table tbody tr.banned-user .action-btn {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#student-table tbody tr.banned-user:hover {
+    background-color: #ebcccc; /* Slightly darker red on hover */
+}
+
 .action-btn {
     background: linear-gradient(90deg, #0a9396, #005f73);
     color: white;

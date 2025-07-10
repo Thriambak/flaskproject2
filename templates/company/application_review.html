@@ -100,7 +100,14 @@
                         <tbody>
                             {% if applications %}
                                 {% for application in applications %}
-                                <tr class="application-row" data-name="{{ application.candidate_name }}" data-job="{{ application.job_post }}" data-status="{{ application.status }}" data-resume="{{ application.resume_path }}" data-id="{{ application.application_id }}" data-userid="{{ application.user_id }}">
+                                <tr class="application-row {% if application.is_banned %}banned-user{% endif %}" 
+                                    data-name="{{ application.candidate_name }}" 
+                                    data-job="{{ application.job_post }}" 
+                                    data-status="{{ application.status }}" 
+                                    data-resume="{{ application.resume_path }}" 
+                                    data-id="{{ application.application_id }}" 
+                                    data-userid="{{ application.user_id }}"
+                                    data-banned="{{ 'true' if application.is_banned else 'false' }}">
                                     <td>{{ application.candidate_name }}</td>
                                     <td>{{ application.job_post }}</td>
                                     <td>{{ application.status }}</td>
@@ -121,7 +128,7 @@
                 <!-- Pagination -->
                 <div class="pagination">
                     <button id="prev-page" disabled>&laquo; Previous</button>
-                    <span id="page-info">Page 1 of 0</span>
+                    <span id="page-info">Page 0 of 0</span>
                     <button id="next-page" disabled>Next &raquo;</button>
                 </div>
             </div>
@@ -306,10 +313,10 @@
             const dataRowsCount = filteredRows.filter(row => row.classList.contains('application-row')).length;
             const totalPages = Math.ceil(dataRowsCount / rowsPerPage);
 
-            // If there are no data rows, the current page should be displayed as 1
-            const displayPage = dataRowsCount === 0 ? 1 : currentPage;
+            // If there are no data rows, the current page should be displayed as 0
+            const displayPage = dataRowsCount === 0 ? 0 : currentPage;
             
-            // This will correctly display "Page 1 of 0" when no data rows are present
+            // This will correctly display "Page 0 of 0" when no data rows are present
             document.getElementById('page-info').textContent = `Page ${displayPage} of ${totalPages}`;
             
             document.getElementById('prev-page').disabled = currentPage === 1 || dataRowsCount === 0;
@@ -351,6 +358,11 @@
         // Handle row click to open modal
         document.querySelectorAll('.application-row').forEach(row => {
             row.addEventListener('click', function() {
+                const isBanned = this.getAttribute('data-banned');
+                if (isBanned === 'true') {
+                    // If banned, do nothing and stop the function.
+                    return;
+                }
                 const name = this.getAttribute('data-name');
                 const job = this.getAttribute('data-job');
                 const status = this.getAttribute('data-status');
