@@ -1,5 +1,5 @@
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify, make_response
 from functools import wraps
 import os
 from flask_mail import Mail, Message
@@ -15,10 +15,20 @@ import re, uuid
 
 company_blueprint = Blueprint('company', __name__)
 
+def no_cache(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
+    return decorated_function
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
+        if 'login_id' not in session:
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -26,6 +36,7 @@ def login_required(f):
 
 # Display the user dashboard
 @company_blueprint.route('/company_dashboard')
+@no_cache
 @login_required
 def company_dashboard():
     user_id = session.get('login_id')
@@ -124,6 +135,7 @@ def company_dashboard():
 
 # Job Posting
 @company_blueprint.route('/company_jobposting')
+@no_cache
 @login_required
 def company_jobposting():
     from app import db
@@ -140,6 +152,7 @@ def company_jobposting():
 
 # Post New Job
 @company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
+@no_cache
 @login_required
 def company_post_new_job():
     from app import db
@@ -357,6 +370,7 @@ def is_valid_url(url):
 
 # Application Review
 @company_blueprint.route('/company_application_review', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def company_application_review():
     user_id = session.get('login_id')
@@ -481,6 +495,7 @@ def company_application_review():
 from flask_mail import Message
 from flask import current_app
 @company_blueprint.route('/company_hiring_communication', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def company_hiring_communication():
     mail = current_app.extensions['mail']
@@ -645,6 +660,7 @@ def company_hiring_communication():
 
 # Notifications
 @company_blueprint.route('/company_notification', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def company_notification():
     user_id = session.get('login_id')
@@ -725,6 +741,7 @@ def company_notification():
 
 # Profile
 @company_blueprint.route('/company_profile', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def company_profile():
     user_id = session.get('login_id')

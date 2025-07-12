@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, flash, make_response
 from flask_login import current_user
 from config import Config
 from functools import wraps
@@ -14,21 +14,33 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from datetime import datetime
-
-user_blueprint = Blueprint('user', __name__)
+from flask import request  # Ensure this is imported at the top
 from flask import render_template, session, redirect, url_for, flash
 from flask_login import login_required
+
+user_blueprint = Blueprint('user', __name__)
+
+def no_cache(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
+    return decorated_function
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
+        if 'login_id' not in session:
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
-from flask import request  # Ensure this is imported at the top
+
 
 @user_blueprint.route('/user_dashboard')
+@no_cache
 @login_required
 def user_dashboard():
     login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
@@ -107,7 +119,8 @@ from datetime import datetime
 from models import db, User, Job, JobApplication, ResumeCertification, Notification
 
 @user_blueprint.route('/apply_for_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def apply_for_job(job_id):
     user_id = session.get('user_id')
     user = User.query.get(user_id)  
@@ -169,7 +182,8 @@ def apply_for_job(job_id):
     return redirect(url_for('user.user_dashboard'))
 
 @user_blueprint.route('/apply1_for_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def apply1_for_job(job_id):
     user_id = session.get('user_id')
     user = User.query.get(user_id)  
@@ -343,6 +357,7 @@ def get_chart_data_for_user(user_id):
     
     return user_success_rate, application_trends, recent_activities_list, live_feed_list
 @user_blueprint.route('/analytics')
+@no_cache
 @login_required
 def analytics():
     user_id = session.get('user_id')
@@ -358,6 +373,8 @@ from flask import session, render_template, flash, redirect, url_for
 from models import Communication, User, db  # make sure db is imported from your app
 
 @user_blueprint.route('/notifications', methods=['GET'])
+@no_cache
+@login_required
 def notifications():
     # Retrieve the primary key from the session (User.id)
     user_pk = session.get('user_id')
@@ -381,7 +398,10 @@ def notifications():
         notifications=notifications,
         unread_count=unread_count
     )
+
 @user_blueprint.route('/mark_notification_read/<uuid:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
+@no_cache
+@login_required
 def mark_notification_read(notification_id):
     # Your code for marking a single notification as read...
 
@@ -414,6 +434,8 @@ def mark_notification_read(notification_id):
     return redirect(url_for('user.notifications'))
 
 @user_blueprint.route('/delete_notification/<uuid:notification_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_notification(notification_id):
     user_pk = session.get('user_id')
     if not user_pk:
@@ -442,6 +464,7 @@ def delete_notification(notification_id):
     return redirect(url_for('user.notifications'))
 
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def resume_certifications():
     # Ensure the user is logged in
@@ -509,7 +532,9 @@ def resume_certifications():
         recent_activities=recent_activities,
         live_feed=live_feed
     )
+
 @user_blueprint.route('/application_history', methods=['GET'])
+@no_cache
 @login_required
 def application_history():
     user_id = session.get('user_id')
@@ -537,6 +562,8 @@ from sqlalchemy import or_
 from sqlalchemy import or_
 
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
+@no_cache
+@login_required
 def job_search():
     if request.method == 'POST':
         keyword = request.form.get('keyword')
@@ -605,7 +632,9 @@ def job_search():
                              saved_jobs=saved_jobs)
     else:
         return render_template('/user/jobsearch.html')
+
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def profile():
     user_id = session.get('user_id')
@@ -728,6 +757,8 @@ def profile():
 from flask import jsonify
 
 @user_blueprint.route('/get_application_details/<uuid:application_id>', methods=['GET'])
+@no_cache
+@login_required
 def get_application_details(application_id):
     application = JobApplication.query.get(application_id)
     
@@ -758,7 +789,8 @@ from datetime import datetime
 
 # Save Job Route
 @user_blueprint.route('/save_job1/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def save_job1(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -785,7 +817,8 @@ def save_job1(job_id):
     return redirect(url_for('user.job_search'))
 
 @user_blueprint.route('/save_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def save_job(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -810,9 +843,11 @@ def save_job(job_id):
     
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.user_dashboard'))
+
 # Favorites Page Route with Pagination
 from flask import request
 @user_blueprint.route('/favorites')
+@no_cache
 @login_required
 def favorites():
     login_id = session.get('login_id')
@@ -883,7 +918,10 @@ def favorites():
         next_num=favorites_pagination.next_num,
         applied_job_ids=applied_job_ids
     )
+
 @user_blueprint.route('/remove_favorite/<uuid:job_id>', methods=['POST'])
+@no_cache
+@login_required
 def remove_favorite(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -906,7 +944,10 @@ def remove_favorite(job_id):
     
     flash("Job removed from favorites", "success")
     return redirect(url_for('user.favorites'))
+
 @user_blueprint.route('/delete_resume/<uuid:resume_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_resume(resume_id):
     # Check if user is logged in
     if 'username' not in session:
@@ -955,6 +996,8 @@ def delete_resume(resume_id):
     return redirect(url_for('user.resume_certifications'))
 
 @user_blueprint.route('/delete_certification/<uuid:certification_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_certification(certification_id):
     # Check if user is logged in
     if 'username' not in session:
