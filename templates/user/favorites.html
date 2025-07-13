@@ -171,6 +171,71 @@
     .search-btn:active {
       transform: translateY(0);
     }
+
+    /* Search form styling */
+    .search-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .search-form input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .search-form input:focus {
+      border-color: #1abc9c;
+    }
+
+    .search-form button {
+      padding: 10px 20px;
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: none; /* Hide the search button since we'll use auto-search */
+    }
+
+    .search-form button:hover {
+      background-color: #16a085;
+    }
+
+    .clear-search {
+      background-color: #e74c3c;
+      margin-left: 5px;
+    }
+
+    .clear-search:hover {
+      background-color: #c0392b;
+    }
+
+    /* Search results info */
+    .search-results-info {
+      background-color: #e8f5e8;
+      border: 1px solid #d4edda;
+      border-radius: 5px;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      color: #155724;
+      font-size: 14px;
+    }
+
+    /* Loading indicator */
+    .search-loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #1abc9c;
+    }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -235,12 +300,30 @@
     <!-- Activity Section (Favorites Page) -->
     <div class="activity" id="activityContent">
       <h2>Favorite Jobs</h2>
-      <input type="text" id="search" onkeyup="searchFavorites()" placeholder="Search favorite jobs..." class="search-bar" />
       
-      <div class="job-postings">
+      <!-- Search Form -->
+      <div class="search-form">
+        <input type="text" name="search" value="{{ search_query or '' }}" placeholder="Search favorite jobs by title, description, skills, location, company..." id="searchInput" />
+        <button type="button" class="clear-search" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">
+          <i class="fas fa-times"></i> Clear
+        </button>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div class="search-loading" id="searchLoading">
+        <i class="fas fa-spinner fa-spin"></i> Searching...
+      </div>
+      
+      <!-- Search Results Info -->
+      <div class="search-results-info" id="searchResultsInfo" style="display: none;">
+        <i class="fas fa-info-circle"></i> 
+        <span id="searchResultsText"></span>
+      </div>
+      
+      <div class="job-postings" id="jobPostings">
         {% if favorites %}
           {% for job in favorites %}
-            <div class="job-posting job-item" data-visible="true">
+            <div class="job-posting job-item">
               <div class="job-header">
                 <h3>{{ job.title }}</h3>
 
@@ -318,29 +401,56 @@
             </div>
           {% endfor %}
           
-          <!-- No jobs message -->
-          <div id="no-jobs-message" style="display: none;">
-            <p>No matching job listings available.</p>
-          </div>
-          
           <!-- Pagination Controls -->
-          <div class="pagination">
-            <button id="prev-page" disabled>&laquo; Previous</button>
-            <span id="page-info">Page {{ page if page > 0 else 0 }} of {{ total_pages if total_pages > 0 else 0 }}</span>
-            <button id="next-page" disabled>Next &raquo;</button>
+          <div class="pagination" id="paginationControls">
+            {% if has_prev %}
+              <button onclick="navigateToPage({{ prev_num }})">&laquo; Previous</button>
+            {% else %}
+              <button disabled>&laquo; Previous</button>
+            {% endif %}
+            
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            
+            {% if has_next %}
+              <button onclick="navigateToPage({{ next_num }})">Next &raquo;</button>
+            {% else %}
+              <button disabled>Next &raquo;</button>
+            {% endif %}
           </div>
         {% else %}
           <div class="col-12 text-center" data-aos="fade-up">
             <div class="no-results-card">
               <div class="no-results-content">
                 <div class="no-results-icon">
-                  <i class="fas fa-bookmark-slash"></i>
+                  {% if search_query %}
+                    <i class="fas fa-search-minus"></i>
+                  {% else %}
+                    <i class="fas fa-bookmark-slash"></i>
+                  {% endif %}
                 </div>
-                <h4 class="no-results-title">No Favorite Jobs Found</h4>
-                <p class="no-results-text">You have no favorite jobs saved at the moment. Browse through our job listings to find opportunities that interest you and save them to your favorites.</p>
+                <h4 class="no-results-title">
+                  {% if search_query %}
+                    No Search Results Found
+                  {% else %}
+                    No Favorite Jobs Found
+                  {% endif %}
+                </h4>
+                <p class="no-results-text">
+                  {% if search_query %}
+                    No favorite jobs match your search criteria "{{ search_query }}". Try different keywords or browse all your favorite jobs.
+                  {% else %}
+                    You have no favorite jobs saved at the moment. Browse through our job listings to find opportunities that interest you and save them to your favorites.
+                  {% endif %}
+                </p>
               </div>
               
               <div class="action-buttons">
+                {% if search_query %}
+                  <button class="search-btn" onclick="clearSearch()">
+                    <i class="fas fa-times"></i> 
+                    <span>Clear Search</span>
+                  </button>
+                {% endif %}
                 <button class="search-btn" onclick="window.location.href='/user/job_search'">
                   <i class="fas fa-search"></i> 
                   <span>Browse Jobs</span>
@@ -349,38 +459,155 @@
             </div>
           </div>
           <!-- Pagination for empty state -->
-          <div class="pagination">
-            <button id="prev-page" disabled>&laquo; Previous</button>
-            <span id="page-info">Page 0 of 0</span>
-            <button id="next-page" disabled>Next &raquo;</button>
+          <div class="pagination" id="paginationControls">
+            <button disabled>&laquo; Previous</button>
+            <span>Page 0 of 0</span>
+            <button disabled>Next &raquo;</button>
           </div>
         {% endif %}
       </div>
     </div>
   </main>
   
-  <!-- Scripts for Search & Optional Activity Reload -->
+  <!-- Scripts -->
   <script>
-    // Search functionality
-    function searchFavorites() {
-      const searchInput = document.getElementById("search").value.toLowerCase();
-      const jobs = document.querySelectorAll(".job-posting");
+    // Search functionality with debounce
+    let searchTimeout;
+    let currentPage = 1;
+    let isSearching = false;
+    
+    // Initialize search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('searchInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
       
-      jobs.forEach(job => {
-        const title = job.querySelector("h3").innerText.toLowerCase();
-        const description = job.querySelector("p").innerText.toLowerCase();
-        const skills = Array.from(job.querySelectorAll("p")).find(p => p.textContent.includes("Skills Required:"))?.innerText.toLowerCase() || "";
-        
-        if (title.includes(searchInput) || description.includes(searchInput) || skills.includes(searchInput)) {
-          job.style.display = "block";
-          job.classList.add("animate__animated", "animate__fadeIn");
-          setTimeout(() => {
-            job.classList.remove("animate__animated", "animate__fadeIn");
-          }, 1000);
+      // Show/hide clear button based on input content
+      function toggleClearButton() {
+        if (searchInput.value.trim()) {
+          clearBtn.style.display = 'block';
         } else {
-          job.style.display = "none";
+          clearBtn.style.display = 'none';
+        }
+      }
+      
+      // Initial check
+      toggleClearButton();
+      
+      // Handle input changes
+      searchInput.addEventListener('input', function() {
+        toggleClearButton();
+        handleSearch();
+      });
+      
+      // Handle enter key
+      searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          performSearch();
         }
       });
+    });
+    
+    function handleSearch() {
+      if (isSearching) return;
+      
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        performSearch();
+      }, 800); // 800ms delay for smoother experience
+    }
+    
+    function performSearch() {
+      const searchQuery = document.getElementById('searchInput').value.trim();
+      const loadingDiv = document.getElementById('searchLoading');
+      const resultsInfo = document.getElementById('searchResultsInfo');
+      
+      // Show loading indicator
+      loadingDiv.style.display = 'block';
+      isSearching = true;
+      
+      // Use fetch to get search results without page reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('search', searchQuery);
+      url.searchParams.set('page', '1');
+      
+      fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.text())
+      .then(html => {
+        // Hide loading indicator
+        loadingDiv.style.display = 'none';
+        isSearching = false;
+        
+        // Parse the response and update the page content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Update job postings
+        const newJobPostings = doc.getElementById('jobPostings');
+        document.getElementById('jobPostings').innerHTML = newJobPostings.innerHTML;
+        
+        // Update search results info
+        if (searchQuery) {
+          resultsInfo.style.display = 'block';
+          const jobItems = document.querySelectorAll('.job-item');
+          const resultText = jobItems.length > 0 
+            ? `Showing search results for "${searchQuery}" - ${jobItems.length} results found`
+            : `No results found for "${searchQuery}"`;
+          document.getElementById('searchResultsText').textContent = resultText;
+        } else {
+          resultsInfo.style.display = 'none';
+        }
+        
+        // Update URL without reloading
+        window.history.pushState({}, '', url.toString());
+        
+        // Re-add animations to new content
+        addAnimations();
+      })
+      .catch(error => {
+        console.error('Search error:', error);
+        loadingDiv.style.display = 'none';
+        isSearching = false;
+      });
+    }
+    
+    function addAnimations() {
+      const jobPostings = document.querySelectorAll('.job-posting');
+      jobPostings.forEach((job, index) => {
+        job.classList.remove('animate__animated', 'animate__fadeInUp');
+        setTimeout(() => {
+          job.classList.add('animate__animated', 'animate__fadeInUp');
+        }, index * 50);
+      });
+    }
+    
+    // Function to navigate to a specific page while preserving search
+    function navigateToPage(pageNum) {
+      const searchQuery = document.getElementById('searchInput').value.trim();
+      let url = "{{ url_for('user.favorites') }}?page=" + pageNum;
+      if (searchQuery) {
+        url += "&search=" + encodeURIComponent(searchQuery);
+      }
+      window.location.href = url;
+    }
+    
+    // Function to clear search
+    function clearSearch() {
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      document.getElementById('searchResultsInfo').style.display = 'none';
+      
+      // Focus back on input to maintain smooth UX
+      searchInput.focus();
+      
+      // Perform search with empty query
+      performSearch();
     }
     
     // Toggle dropdown for profile menu
@@ -428,71 +655,14 @@
       });
     }, 3000);
     
-    // Pagination variables - Fix for empty state
-    let currentPage = {{ page if page > 0 else 1 }};
-    const totalPages = {{ total_pages if total_pages else 0 }};
-    
-    // Initialize pagination
-    window.addEventListener('load', function() {
-      const jobs = document.querySelectorAll('.job-item');
-      // Show all jobs sent by server (server already handles pagination)
-      jobs.forEach(job => {
-        job.style.display = 'block';
-      });
-      updatePagination();
-    });
-    
-    // Update pagination controls
-    function updatePagination() {
-      const displayTotalPages = totalPages || 0;
-      const displayCurrentPage = totalPages === 0 ? 0 : currentPage;
-      document.getElementById('page-info').textContent = `Page ${displayCurrentPage} of ${displayTotalPages}`;
-      
-      document.getElementById('prev-page').disabled = currentPage === 1 || totalPages === 0;
-      document.getElementById('next-page').disabled = currentPage >= totalPages || totalPages === 0;
-    }
-    
-    // Pagination controls
-    document.getElementById('prev-page').addEventListener('click', function() {
-      if (currentPage > 1) {
-        // Use server-side pagination
-        window.location.href = '{{ url_for("user.favorites") }}?page=' + (currentPage - 1);
-      }
-    });
-    
-    document.getElementById('next-page').addEventListener('click', function() {
-      if (currentPage < totalPages) {
-        // Use server-side pagination
-        window.location.href = '{{ url_for("user.favorites") }}?page=' + (currentPage + 1);
-      }
-    });
-    
-    // Auto-close flash messages after 5 seconds
-    const flashMessages = document.querySelectorAll('.flash-message');
-    flashMessages.forEach(message => {
-      setTimeout(() => {
-        message.style.opacity = '0';
-        setTimeout(() => {
-          message.style.display = 'none';
-        }, 500);
-      }, 5000);
-    });
-    
     // Add fade-in effect on page load
     document.addEventListener('DOMContentLoaded', function() {
-      const jobPostings = document.querySelectorAll('.job-posting');
-      jobPostings.forEach((job, index) => {
-        setTimeout(() => {
-          job.classList.add('animate__animated', 'animate__fadeInUp');
-        }, index * 100);
-      });
+      addAnimations();
     });
     
     // Function to resize properly for better readability on different screens
     function resizeHandler() {
       const availableWidth = window.innerWidth;
-      
-      // Check if we're in mobile view
       if (availableWidth <= 768) {
         document.body.classList.add('mobile-view');
       } else {
@@ -500,10 +670,8 @@
       }
     }
     
-    // Initial resize
+    // Initial resize and event listener
     resizeHandler();
-    
-    // Resize on window resize
     window.addEventListener('resize', resizeHandler);
   </script>
 </body>

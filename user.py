@@ -560,12 +560,14 @@ def application_history():
 
 from sqlalchemy import or_
 from sqlalchemy import or_, func
+from flask import request, session, render_template
 
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
 @no_cache
 @login_required
 def job_search():
     if request.method == 'POST':
+        # Get search parameters
         keyword = request.form.get('keyword')
         location = request.form.get('location')
         job_type = request.form.get('job_type')
@@ -574,12 +576,18 @@ def job_search():
         deadline = request.form.get('deadline')
         skills = request.form.get('skills')
         certifications = request.form.get('certifications')
-
+        
+        # Get pagination parameters
+        page = request.form.get('page', 1, type=int)
+        per_page = 6  # Jobs per page
+        
+        # Build the query
         query = Job.query.join(Company, Job.created_by == Company.login_id).filter(
             Job.status != 'closed',
             Company.is_banned == False
         )
-
+        
+        # Apply search filters
         if keyword:
             keyword_like = f'%{keyword}%'
             query = query.filter(
@@ -591,17 +599,15 @@ def job_search():
                     Company.company_name.ilike(keyword_like)
                 )
             )
+        
         if location:
             query = query.filter(Job.location.ilike(f'%{location}%'))
-
-        # CORRECTED JOB TYPE LOGIC
+        
         if job_type:
-            # Use ilike for a case-insensitive exact match
             query = query.filter(Job.job_type.ilike(job_type))
-
+        
         if years_of_exp:
             try:
-                # Handle "6+" case from the dropdown value '6'
                 if years_of_exp == '6':
                     query = query.filter(Job.years_of_exp >= 6)
                 else:
@@ -609,47 +615,64 @@ def job_search():
                     query = query.filter(Job.years_of_exp == exp_val)
             except (ValueError, TypeError):
                 pass
-
+        
         if salary:
             try:
                 query = query.filter(Job.salary >= float(salary))
             except (ValueError, TypeError):
                 pass
-        
+       
         if deadline:
             try:
-                # Ensure empty deadline string is ignored
                 if deadline:
                     query = query.filter(Job.deadline <= deadline)
             except ValueError:
                 pass
-
+        
         if skills:
             skills_list = [skill.strip() for skill in skills.split(',') if skill.strip()]
             if skills_list:
                 skills_filters = [Job.skills.ilike(f'%{skill}%') for skill in skills_list]
                 query = query.filter(or_(*skills_filters))
-
+        
         if certifications:
             cert_list = [cert.strip() for cert in certifications.split(',') if cert.strip()]
             if cert_list:
                 cert_filters = [Job.certifications.ilike(f'%{cert}%') for cert in cert_list]
                 query = query.filter(or_(*cert_filters))
-
-        jobs = query.order_by(Job.created_at.desc()).all()
-
+        
+        # Apply pagination
+        jobs_pagination = query.order_by(Job.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        jobs = jobs_pagination.items
+        
+        # Get user's applied and saved jobs
         current_user_id = session.get('user_id')
-
         applied_applications = JobApplication.query.filter_by(user_id=current_user_id).all()
         applied_jobs = {app.job_id for app in applied_applications}
-
         saved_favorites = Favorite.query.filter_by(user_id=current_user_id).all()
         saved_jobs = {fav.job_id for fav in saved_favorites}
-
+        
+        # Pass search parameters to maintain state
+        search_params = {
+            'keyword': keyword,
+            'location': location,
+            'job_type': job_type,
+            'years_of_exp': years_of_exp,
+            'salary': salary,
+            'deadline': deadline,
+            'skills': skills,
+            'certifications': certifications
+        }
+        
         return render_template('/user/jobresults.html',
                              jobs=jobs,
                              applied_jobs=applied_jobs,
-                             saved_jobs=saved_jobs)
+                             saved_jobs=saved_jobs,
+                             pagination=jobs_pagination,
+                             search_params=search_params)
     else:
         return render_template('/user/jobsearch.html')
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
@@ -863,8 +886,9 @@ def save_job(job_id):
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.user_dashboard'))
 
-# Favorites Page Route with Pagination
 from flask import request
+from sqlalchemy import or_
+
 @user_blueprint.route('/favorites')
 @no_cache
 @login_required
@@ -873,21 +897,22 @@ def favorites():
     if not login_id:
         flash("User not logged in", "error")
         return redirect(url_for('auth.login'))
-    
+   
     # Ensure that only regular users access this page
     if session.get('role') != 'user':
         return redirect(url_for('auth.login'))
-    
+   
     user = User.query.filter_by(login_id=login_id).first()
     if not user:
         flash("User not found", "error")
         return redirect(url_for('auth.login'))
-    
-    # Get pagination parameters
+   
+    # Get pagination and search parameters
     page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('search', '', type=str).strip()
     per_page = 5  # Number of favorites per page, adjust as needed
-    
-    # Join Favorite with Job and include company information like in user_dashboard
+   
+    # Base query - Join Favorite with Job and include company information
     favorites_query = (
         db.session.query(Job)
         .join(Favorite, Job.job_id == Favorite.job_id)
@@ -899,19 +924,35 @@ def favorites():
             Company.is_banned == False,  # Company not banned
             Job.status == 'open'  # Job is active
         )
-        .order_by(Favorite.saved_at.desc())
     )
     
+    # Apply search filter if search query exists
+    if search_query:
+        favorites_query = favorites_query.filter(
+            or_(
+                Job.title.ilike(f'%{search_query}%'),
+                Job.description.ilike(f'%{search_query}%'),
+                Job.skills.ilike(f'%{search_query}%'),
+                Job.location.ilike(f'%{search_query}%'),
+                Job.job_type.ilike(f'%{search_query}%'),
+                Job.certifications.ilike(f'%{search_query}%'),
+                Company.company_name.ilike(f'%{search_query}%')
+            )
+        )
+    
+    # Order by saved date
+    favorites_query = favorites_query.order_by(Favorite.saved_at.desc())
+   
     # Apply pagination
     favorites_pagination = favorites_query.paginate(
         page=page,
         per_page=per_page,
         error_out=False
     )
-    
+   
     # Get the Job objects
     favorites = favorites_pagination.items
-    
+   
     # Get list of job IDs that the user has already applied to
     applied_job_ids = set()
     if favorites:
@@ -925,7 +966,7 @@ def favorites():
             .all()
         )
         applied_job_ids = {job_id for (job_id,) in applied_jobs}
-    
+   
     return render_template(
         '/user/favorites.html',
         favorites=favorites,
@@ -935,9 +976,9 @@ def favorites():
         has_next=favorites_pagination.has_next,
         prev_num=favorites_pagination.prev_num,
         next_num=favorites_pagination.next_num,
-        applied_job_ids=applied_job_ids
+        applied_job_ids=applied_job_ids,
+        search_query=search_query  # Pass search query to template
     )
-
 @user_blueprint.route('/remove_favorite/<uuid:job_id>', methods=['POST'])
 @no_cache
 @login_required
