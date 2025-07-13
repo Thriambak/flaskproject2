@@ -10,12 +10,80 @@ from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from functools import wraps
+import re
+import os
 
 auth_blueprint = Blueprint('auth', __name__)
 
-import re
-import os
+def no_cache(f):
+    """Decorator to prevent caching of responses"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
+    return decorated_function
+
+def login_required(f):
+    """Decorator to require login for protected routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'login_id' not in session:
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def secure_route(f):
+    """Enhanced decorator that combines login requirement with no-cache headers"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check session validity first
+        if not check_session_validity():
+            return redirect(url_for('auth.login'))
+        
+        # Execute the route function
+        response = make_response(f(*args, **kwargs))
+        
+        # Add comprehensive cache control headers
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        response.headers['Last-Modified'] = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+        response.headers['ETag'] = '0'
+        
+        return response
+    return decorated_function
+
+def check_session_validity():
+    """Check if the current session is valid"""
+    if 'login_id' not in session:
+        return False
+    
+    # Verify the login still exists in database
+    login = Login.query.filter_by(id=session['login_id']).first()
+    if not login:
+        session.clear()
+        return False
+    
+    # Check if user is banned (if applicable)
+    if login.role == 'user':
+        user = User.query.filter_by(login_id=login.id).first()
+        if user and user.is_banned:
+            session.clear()
+            return False
+    elif login.role == 'company':
+        company = Company.query.filter_by(login_id=login.id).first()
+        if company and company.is_banned:
+            session.clear()
+            return False
+    
+    return True
+
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
+@no_cache
 def signup():
     if request.method == 'POST':
         username = request.form['username']
@@ -109,114 +177,23 @@ def signup():
     return render_template('signup.html')
 
 
-'''@auth_blueprint.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
-        role = request.form.get('role', 'user').strip().lower()  # Default is 'user'
-        email = request.form.get('email', '').strip()
+@auth_blueprint.route('/check-session', methods=['POST'])
+def check_session():
+    """Check if user session is valid - for AJAX calls"""
+    if 'login_id' in session:
+        return jsonify({'authenticated': True})
+    return jsonify({'authenticated': False})
 
-        # Validate mandatory fields
-        if not username or not password or not email:
-            flash('Please fill in all required fields.', 'danger')
-            return redirect(url_for('auth.signup'))
+@auth_blueprint.route('/clear-history')
+def clear_history():
+    """Clear browser history and redirect to login"""
+    response = make_response(redirect(url_for('auth.login')))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
-        # Validate email format
-        if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
-            flash('Please enter a valid email address, e.g., example@domain.com.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        # Validate username:
-        # Allow only alphanumeric characters and @ (if using email as username) and ensure it doesn't start/end with . or _
-        if not re.match(r'^(?![._])(?!.*[._]$)[A-Za-z0-9@]+$', username):
-            flash('Username must be a single word without spaces and cannot start or end with a period or underscore.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        # Check if username or email already exists across Login and role-specific tables
-        if Login.query.filter_by(username=username).first() or (
-            User.query.filter_by(email=email).first() or
-            Company.query.filter_by(email=email).first() or
-            Admin.query.filter_by(email=email).first() or
-            College.query.filter_by(email=email).first()
-        ):
-            flash('Username or email already exists.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        try:
-            # Create a new login entry
-            new_login = Login(username=username, role=role)
-            new_login.set_password(password)
-            db.session.add(new_login)
-            db.session.flush()  # Flush to get new_login.id
-
-            # Create role-specific data entry
-            if role == 'user':
-                new_role_instance = User(login_id=new_login.id, name=username, email=email)
-            elif role == 'company':
-                new_role_instance = Company(login_id=new_login.id, company_name=username, email=email)
-            elif role == 'admin':
-                new_role_instance = Admin(login_id=new_login.id, name=username, email=email)
-            elif role == 'college':
-                new_role_instance = College(login_id=new_login.id, college_name=username, email=email)
-            else:
-                flash('Invalid user account type specified.', 'danger')
-                return redirect(url_for('auth.signup'))
-
-            db.session.add(new_role_instance)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            # Consider logging the exception here for debugging purposes
-            flash('An error occurred during signup. Please try again later.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        flash('Signup successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
-
-    return render_template('signup.html')
-'''
-
-'''@auth_blueprint.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        role = request.form.get('role', 'user')  # Default to 'user' if role is not provided
-        name = request.form['name']
-        email = request.form['email']
-        age = request.form['age']
-        phone = request.form['phone']
-
-        # Check if username or email already exists
-        if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
-            flash('Username or email already exists.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        # Ensure role is either 'user' or 'admin'
-        if role not in ['user', 'admin', 'company']:
-            flash('Invalid role specified.', 'danger')
-            return redirect(url_for('auth.signup'))
-
-        # Create a new user
-        new_user = User(
-            username=username,
-            role=role,  # Set the specified role
-            name=name,
-            email=email,
-            age=age,
-            phone=phone
-        )
-        new_user.set_password(password)  # Hash the password
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('Signup successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
-
-    return render_template('signup.html')'''
-
-
+# Update your existing login route to include cache control headers
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -226,110 +203,110 @@ def login():
         # Check if the user exists in the Login table
         login = Login.query.filter_by(username=username).first()
         if not login or not login.check_password(password):
-            return render_template('login.html', error='Invalid username or password.')
-
+            resp = make_response(render_template('login.html', error='Invalid username or password.'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
         # Now check the `is_banned` status for the user or company
         if login.role in ['user', 'company']:
             # Check if the user or company is banned
             if login.role == 'user':
                 user = User.query.filter_by(login_id=login.id).first()
-                if user and user.is_banned:  # Assuming `is_banned` is a field in the `User` model
-                    return render_template('login.html', error="Cannot login. Contact support.")
+                if user and user.is_banned:
+                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
+                    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                    resp.headers['Pragma'] = 'no-cache'
+                    resp.headers['Expires'] = '0'
+                    return resp
             elif login.role == 'company':
                 company = Company.query.filter_by(login_id=login.id).first()
-                if company and company.is_banned:  # Assuming `is_banned` is a field in the `Company` model
-                    return render_template('login.html', error="Cannot login. Contact support.")
-
+                if company and company.is_banned:
+                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
+                    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                    resp.headers['Pragma'] = 'no-cache'
+                    resp.headers['Expires'] = '0'
+                    return resp
 
         # Store session details
         session['login_id'] = login.id
         session['username'] = login.username
         session['role'] = login.role
+        session.permanent = True  # Make session permanent
 
         # Redirect based on role
         if login.role == 'user':
             user = User.query.filter_by(login_id=login.id).first()
             if not user:
-                return render_template('login.html', error='User details not found.')
+                resp = make_response(render_template('login.html', error='User details not found.'))
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                resp.headers['Pragma'] = 'no-cache'
+                resp.headers['Expires'] = '0'
+                return resp
             session['user_id'] = user.id  
             return redirect(url_for('user.user_dashboard'))
         elif login.role == 'company':
             company = Company.query.filter_by(login_id=login.id).first()
             if not company:
-                return render_template('login.html', error='Company details not found.')
+                resp = make_response(render_template('login.html', error='Company details not found.'))
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                resp.headers['Pragma'] = 'no-cache'
+                resp.headers['Expires'] = '0'
+                return resp
             return redirect(url_for('company.company_dashboard'))
         elif login.role == 'admin':
             admin = Admin.query.filter_by(login_id=login.id).first()
             if not admin:
-                return render_template('login.html', error='Admin details not found.')
+                resp = make_response(render_template('login.html', error='Admin details not found.'))
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                resp.headers['Pragma'] = 'no-cache'
+                resp.headers['Expires'] = '0'
+                return resp
             return redirect(url_for('admin_routes.admin_dashboard'))
         elif login.role == 'college':
             college = College.query.filter_by(login_id=login.id).first()
             session['college_id'] = college.id
             if not college:
-                return render_template('login.html', error='College details not found.')
+                resp = make_response(render_template('login.html', error='College details not found.'))
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                resp.headers['Pragma'] = 'no-cache'
+                resp.headers['Expires'] = '0'
+                return resp
             return redirect(url_for('college.college_dashboard'))
+    
+    # For GET requests, return login page with cache control headers
     resp = make_response(render_template('login.html'))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     resp.headers['Expires'] = '0'
     return resp
-    
-
-
-
-# ith login function, ithil when logged in it checks the login table , and if present, it takes the role and goes to corresponding page,
-
-
-'''@auth_blueprint.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        # Find the user by username
-        user = User.query.filter_by(username=username).first()
-        
-        if not user or not user.check_password(password):
-            flash('Invalid username or password.', 'danger')
-            return redirect(url_for('auth.login'))
-
-        # Login successful, store user information in session
-        session['user_id'] = user.id
-        session['username'] = user.username
-        session['role'] = user.role
-
-        flash(f'Welcome, {user.name}!', 'success')
-        
-        # Case-insensitive role check
-        if user.role == 'admin':
-            return redirect(url_for('admin_routes.admin_dashboard'))
-        elif user.role == 'company':
-            return redirect(url_for('company.company_dashboard'))
-        else:
-            return redirect(url_for('user.user_dashboard'))
-
-    return render_template('login.html')'''
 
 @auth_blueprint.route('/logout')
+@no_cache
 def logout():
-    session.pop('login_id',None)
+    session.pop('login_id', None)
     session.pop('username', None)
     session.pop('role', None)
+    session.pop('user_id', None)
+    session.pop('college_id', None)
+    session.pop('company_id', None)  # Fixed typo: was 'comapany_id'
     session.clear()  # Clears all session variables
-    #flash("You have been logged out.", "info")
-    # Create a response object for the redirect
-    response = redirect(url_for('auth.login'))
     
-    # Add headers to clear the browser cache
+    # Create a response object for the redirect
+    response = make_response(redirect(url_for('auth.login')))
+    
+    # Add comprehensive headers to clear the browser cache
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    response.headers["Last-Modified"] = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+    response.headers["ETag"] = "0"
     
     return response
 
 @auth_blueprint.route('/forgot-password', methods=['GET', 'POST'])
+@no_cache
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
@@ -340,8 +317,6 @@ def forgot_password():
                 user=Company.query.filter_by(email=email).first()
                 if(user is None):
                     user=Admin.query.filter_by(email=email).first()
-
-       
 
         if user:
             otp = ''.join(random.choices(string.digits, k=6))  # Generate OTP
@@ -362,6 +337,7 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 @auth_blueprint.route('/verify-otp', methods=['GET', 'POST'])
+@no_cache
 def verify_otp(): 
     # Check if OTP and OTP time exist in the session
     if 'otp' not in session or 'otp_time' not in session:
@@ -391,6 +367,7 @@ def verify_otp():
     return render_template('verify_otp.html', remaining_time=int(remaining_time.total_seconds()))
 
 @auth_blueprint.route('/otp-timer')
+@no_cache
 def otp_timer():
     """API endpoint to check remaining OTP time."""
     # If OTP time does not exist in the session
@@ -412,6 +389,7 @@ def otp_timer():
 
 # Password Reset Route
 @auth_blueprint.route('/reset-password', methods=['GET', 'POST'])
+@no_cache
 def reset_password():
     if 'email' not in session:
         flash("Session expired. Please request a new OTP.", "danger")

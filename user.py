@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for, flash, make_response
 from flask_login import current_user
 from config import Config
 from functools import wraps
@@ -14,21 +14,33 @@ from models import db  # Ensure 'db' is the instance of SQLAlchemy
 from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from datetime import datetime
-
-user_blueprint = Blueprint('user', __name__)
+from flask import request  # Ensure this is imported at the top
 from flask import render_template, session, redirect, url_for, flash
 from flask_login import login_required
+
+user_blueprint = Blueprint('user', __name__)
+
+def no_cache(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
+    return decorated_function
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
+        if 'login_id' not in session:
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
-from flask import request  # Ensure this is imported at the top
+
 
 @user_blueprint.route('/user_dashboard')
+@no_cache
 @login_required
 def user_dashboard():
     login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
@@ -107,7 +119,8 @@ from datetime import datetime
 from models import db, User, Job, JobApplication, ResumeCertification, Notification
 
 @user_blueprint.route('/apply_for_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def apply_for_job(job_id):
     user_id = session.get('user_id')
     user = User.query.get(user_id)  
@@ -169,7 +182,8 @@ def apply_for_job(job_id):
     return redirect(url_for('user.user_dashboard'))
 
 @user_blueprint.route('/apply1_for_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def apply1_for_job(job_id):
     user_id = session.get('user_id')
     user = User.query.get(user_id)  
@@ -343,6 +357,7 @@ def get_chart_data_for_user(user_id):
     
     return user_success_rate, application_trends, recent_activities_list, live_feed_list
 @user_blueprint.route('/analytics')
+@no_cache
 @login_required
 def analytics():
     user_id = session.get('user_id')
@@ -358,6 +373,8 @@ from flask import session, render_template, flash, redirect, url_for
 from models import Communication, User, db  # make sure db is imported from your app
 
 @user_blueprint.route('/notifications', methods=['GET'])
+@no_cache
+@login_required
 def notifications():
     # Retrieve the primary key from the session (User.id)
     user_pk = session.get('user_id')
@@ -381,7 +398,10 @@ def notifications():
         notifications=notifications,
         unread_count=unread_count
     )
+
 @user_blueprint.route('/mark_notification_read/<uuid:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
+@no_cache
+@login_required
 def mark_notification_read(notification_id):
     # Your code for marking a single notification as read...
 
@@ -414,6 +434,8 @@ def mark_notification_read(notification_id):
     return redirect(url_for('user.notifications'))
 
 @user_blueprint.route('/delete_notification/<uuid:notification_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_notification(notification_id):
     user_pk = session.get('user_id')
     if not user_pk:
@@ -442,6 +464,7 @@ def delete_notification(notification_id):
     return redirect(url_for('user.notifications'))
 
 @user_blueprint.route('/resume_certifications', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def resume_certifications():
     # Ensure the user is logged in
@@ -509,7 +532,9 @@ def resume_certifications():
         recent_activities=recent_activities,
         live_feed=live_feed
     )
+
 @user_blueprint.route('/application_history', methods=['GET'])
+@no_cache
 @login_required
 def application_history():
     user_id = session.get('user_id')
@@ -534,9 +559,11 @@ def application_history():
     )
 
 from sqlalchemy import or_
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
+@no_cache
+@login_required
 def job_search():
     if request.method == 'POST':
         keyword = request.form.get('keyword')
@@ -545,60 +572,80 @@ def job_search():
         years_of_exp = request.form.get('years_of_exp')
         salary = request.form.get('salary')
         deadline = request.form.get('deadline')
-        skills = request.form.get('skills')  # Add this
-        certifications = request.form.get('certifications')  # Add this
-       
+        skills = request.form.get('skills')
+        certifications = request.form.get('certifications')
+
         query = Job.query.join(Company, Job.created_by == Company.login_id).filter(
             Job.status != 'closed',
             Company.is_banned == False
         )
-       
+
         if keyword:
+            keyword_like = f'%{keyword}%'
             query = query.filter(
                 or_(
-                    Job.title.ilike(f'%{keyword}%'),
-                    Job.description.ilike(f'%{keyword}%'),
-                    Job.skills.ilike(f'%{keyword}%'),
-                    Job.certifications.ilike(f'%{keyword}%')
+                    Job.title.ilike(keyword_like),
+                    Job.description.ilike(keyword_like),
+                    Job.skills.ilike(keyword_like),
+                    Job.certifications.ilike(keyword_like),
+                    Company.name.ilike(keyword_like)
                 )
             )
         if location:
             query = query.filter(Job.location.ilike(f'%{location}%'))
+
+        # CORRECTED JOB TYPE LOGIC
         if job_type:
-            query = query.filter(Job.job_type.ilike(f'%{job_type}%'))
+            # Use ilike for a case-insensitive exact match
+            query = query.filter(Job.job_type.ilike(job_type))
+
         if years_of_exp:
-            query = query.filter(Job.years_of_exp == int(years_of_exp))
+            try:
+                # Handle "6+" case from the dropdown value '6'
+                if years_of_exp == '6':
+                    query = query.filter(Job.years_of_exp >= 6)
+                else:
+                    exp_val = int(years_of_exp)
+                    query = query.filter(Job.years_of_exp == exp_val)
+            except (ValueError, TypeError):
+                pass
+
         if salary:
-            query = query.filter(Job.salary <= salary)
+            try:
+                query = query.filter(Job.salary >= float(salary))
+            except (ValueError, TypeError):
+                pass
+        
         if deadline:
-            query = query.filter(Job.deadline <= deadline)
-        
-        # Add specific skills filtering
+            try:
+                # Ensure empty deadline string is ignored
+                if deadline:
+                    query = query.filter(Job.deadline <= deadline)
+            except ValueError:
+                pass
+
         if skills:
-            skills_list = [skill.strip() for skill in skills.split(',')]
-            skills_filters = [Job.skills.ilike(f'%{skill}%') for skill in skills_list]
-            query = query.filter(or_(*skills_filters))
-        
-        # Add specific certifications filtering
+            skills_list = [skill.strip() for skill in skills.split(',') if skill.strip()]
+            if skills_list:
+                skills_filters = [Job.skills.ilike(f'%{skill}%') for skill in skills_list]
+                query = query.filter(or_(*skills_filters))
+
         if certifications:
-            cert_list = [cert.strip() for cert in certifications.split(',')]
-            cert_filters = [Job.certifications.ilike(f'%{cert}%') for cert in cert_list]
-            query = query.filter(or_(*cert_filters))
-       
+            cert_list = [cert.strip() for cert in certifications.split(',') if cert.strip()]
+            if cert_list:
+                cert_filters = [Job.certifications.ilike(f'%{cert}%') for cert in cert_list]
+                query = query.filter(or_(*cert_filters))
+
         jobs = query.order_by(Job.created_at.desc()).all()
-        
-        # Get current user's ID from session
+
         current_user_id = session.get('user_id')
-       
-        # Get jobs the user has already applied to
+
         applied_applications = JobApplication.query.filter_by(user_id=current_user_id).all()
         applied_jobs = {app.job_id for app in applied_applications}
-       
-        # Get jobs the user has already saved (assuming Favorite table exists)
-        # You'll need to import the Favorite model at the top of your file
+
         saved_favorites = Favorite.query.filter_by(user_id=current_user_id).all()
         saved_jobs = {fav.job_id for fav in saved_favorites}
-       
+
         return render_template('/user/jobresults.html',
                              jobs=jobs,
                              applied_jobs=applied_jobs,
@@ -606,6 +653,7 @@ def job_search():
     else:
         return render_template('/user/jobsearch.html')
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
+@no_cache
 @login_required
 def profile():
     user_id = session.get('user_id')
@@ -728,6 +776,8 @@ def profile():
 from flask import jsonify
 
 @user_blueprint.route('/get_application_details/<uuid:application_id>', methods=['GET'])
+@no_cache
+@login_required
 def get_application_details(application_id):
     application = JobApplication.query.get(application_id)
     
@@ -758,7 +808,8 @@ from datetime import datetime
 
 # Save Job Route
 @user_blueprint.route('/save_job1/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def save_job1(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -785,7 +836,8 @@ def save_job1(job_id):
     return redirect(url_for('user.job_search'))
 
 @user_blueprint.route('/save_job/<uuid:job_id>', methods=['POST'])
-
+@no_cache
+@login_required
 def save_job(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -810,9 +862,11 @@ def save_job(job_id):
     
     flash("Job saved to favorites", "success")
     return redirect(url_for('user.user_dashboard'))
+
 # Favorites Page Route with Pagination
 from flask import request
 @user_blueprint.route('/favorites')
+@no_cache
 @login_required
 def favorites():
     login_id = session.get('login_id')
@@ -883,7 +937,10 @@ def favorites():
         next_num=favorites_pagination.next_num,
         applied_job_ids=applied_job_ids
     )
+
 @user_blueprint.route('/remove_favorite/<uuid:job_id>', methods=['POST'])
+@no_cache
+@login_required
 def remove_favorite(job_id):
     login_id = session.get('login_id')
     if not login_id:
@@ -906,7 +963,10 @@ def remove_favorite(job_id):
     
     flash("Job removed from favorites", "success")
     return redirect(url_for('user.favorites'))
+
 @user_blueprint.route('/delete_resume/<uuid:resume_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_resume(resume_id):
     # Check if user is logged in
     if 'username' not in session:
@@ -955,6 +1015,8 @@ def delete_resume(resume_id):
     return redirect(url_for('user.resume_certifications'))
 
 @user_blueprint.route('/delete_certification/<uuid:certification_id>', methods=['POST'])
+@no_cache
+@login_required
 def delete_certification(certification_id):
     # Check if user is logged in
     if 'username' not in session:

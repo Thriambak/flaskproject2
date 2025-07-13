@@ -2,7 +2,7 @@ from datetime import datetime, date
 import random
 import re
 import string
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify, make_response
 from functools import wraps
 import os, uuid
 from werkzeug.utils import secure_filename
@@ -13,22 +13,13 @@ from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from sqlalchemy.sql import func
 from sqlalchemy import distinct
+from auth import secure_route
 
 college_blueprint = Blueprint('college', __name__)
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-
 # Display the user dashboard
-
 @college_blueprint.route('/college_dashboard')
-@login_required
+@secure_route
 def college_dashboard():
     college_id = session.get('login_id')
     
@@ -148,7 +139,7 @@ def college_dashboard():
         college_profile=college_profile)
 
 @college_blueprint.route('/college_profile', methods=['GET', 'POST'])
-@login_required
+@secure_route
 def college_profile():
     user_id = session.get('login_id')
 
@@ -227,7 +218,7 @@ def college_profile():
         message_type=message_type)
 
 @college_blueprint.route('/college_studenttracking')
-@login_required
+@secure_route
 def college_studenttracking():
     login_id = session.get('login_id')
     
@@ -258,12 +249,12 @@ def college_studenttracking():
         college_profile=college_profile)
 
 @college_blueprint.route('/college_referall')
-@login_required
+@secure_route
 def college_referall():
     return render_template('/college/referall.html')
 
 @college_blueprint.route('/college_collab')
-@login_required
+@secure_route
 def college_collab():
     login_id = session.get('login_id')
     
@@ -330,7 +321,7 @@ def generate_coupon_code():
 
 # Updating the generate_coupon route to include college_id
 @college_blueprint.route('/generate_coupon', methods=['GET', 'POST'])
-@login_required
+@secure_route
 def generate_coupon():
     login_id = session.get('login_id')
     
@@ -387,7 +378,7 @@ def generate_coupon():
 
 
 @college_blueprint.route('/college_endorsement')
-@login_required
+@secure_route
 def college_endorsement():
     login_id = session.get('login_id')
     
@@ -421,7 +412,7 @@ def college_endorsement():
 
 # API endpoint to get user details for the modal
 @college_blueprint.route('/api/user_details/<user_id>')
-@login_required
+@secure_route
 def api_user_details(user_id):
     if session.get('role') != 'college':
         return jsonify({"error": "Unauthorized"}), 403
@@ -460,7 +451,7 @@ def api_user_details(user_id):
 
 # Endpoint to verify certification
 @college_blueprint.route('/verify_certification/<cert_id>', methods=['POST'])
-@login_required
+@secure_route
 def verify_certification(cert_id):
     if session.get('role') != 'college':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
@@ -481,24 +472,3 @@ def verify_certification(cert_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
-
-
-
-'''
-@college_blueprint.route('/user_details/<uuid:user_id>')
-@login_required
-def user_details(user_id):
-    user = User.query.get_or_404(user_id)
-    certifications = Certification.query.filter_by(user_id=user_id).all()
-    return render_template('/college/user_details.html', user=user, certifications=certifications)
-
-@college_blueprint.route('/verify_certification/<uuid:cert_id>', methods=['POST'])
-@login_required
-def verify_certification(cert_id):
-    certification = Certification.query.get_or_404(cert_id)
-    certification.verification_status = True
-    db.session.commit()
-    flash('Certification verified successfully!', 'success')
-    return redirect(url_for('college.user_details', user_id=certification.user_id))
-
-'''

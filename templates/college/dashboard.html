@@ -269,6 +269,59 @@
             // Resize on window resize
             window.addEventListener('resize', resizeCharts);
         });
+
+        window.addEventListener('load', function() {
+        // Push a new state to history when page loads
+        window.history.pushState(null, null, window.location.href);
+        
+        // Listen for popstate event (back button)
+        window.addEventListener('popstate', function(event) {
+            // Check if user is still logged in by making a quick request
+            fetch('/check-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    // User is not authenticated, redirect to login
+                    window.location.href = '/login';
+                } else {
+                    // User is authenticated, push state again
+                    window.history.pushState(null, null, window.location.href);
+                }
+            })
+            .catch(error => {
+                // On error, redirect to login for security
+                window.location.href = '/login';
+            });
+        });
+    });
+
+    // Clear cache when page unloads
+    window.addEventListener('beforeunload', function() {
+        // Clear any cached data
+        if (typeof(Storage) !== "undefined") {
+            sessionStorage.clear();
+        }
+    });
+
+    // Disable right-click context menu on sensitive pages (optional)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // Disable F12, Ctrl+Shift+I, Ctrl+U (optional - for additional security)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+            (e.ctrlKey && e.key === 'U')) {
+            e.preventDefault();
+        }
+    });
     </script>
 </body>
 </html>

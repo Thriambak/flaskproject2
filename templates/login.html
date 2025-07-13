@@ -7,16 +7,132 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+
 <script>
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted || (window.performance && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
-            // Remove flash/error messages when navigating back or forward
-            document.querySelectorAll('.flash-message').forEach(function(el) {
-                el.remove();
+    // Comprehensive back button prevention
+    (function() {
+        // Method 1: History manipulation
+        function preventBackButton() {
+            window.history.pushState(null, "", window.location.href);
+            window.addEventListener('popstate', function() {
+                window.history.pushState(null, "", window.location.href);
             });
         }
+
+        // Method 2: Disable keyboard shortcuts
+        function disableKeyboardShortcuts(e) {
+            // Disable back navigation shortcuts
+            if (e.altKey && e.keyCode === 37) { // Alt + Left Arrow
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            if (e.keyCode === 8) { // Backspace
+                var element = e.target || e.srcElement;
+                var type = element.type;
+                var tagName = element.tagName.toLowerCase();
+                
+                // Allow backspace in input fields and textareas
+                if (type !== 'text' && type !== 'password' && type !== 'email' && 
+                    type !== 'search' && type !== 'tel' && type !== 'url' && 
+                    tagName !== 'textarea') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }
+            // Disable F5 and Ctrl+R (refresh)
+            if (e.keyCode === 116 || (e.ctrlKey && e.keyCode === 82)) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Disable other navigation shortcuts
+            if (e.ctrlKey && (e.keyCode === 37 || e.keyCode === 39)) { // Ctrl + Arrow keys
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Disable browser back/forward mouse buttons
+            if (e.which === 8 || e.which === 9) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+
+        // Method 3: Mouse button prevention
+        function disableMouseNavigation(e) {
+            // Disable mouse back/forward buttons (button 3 and 4)
+            if (e.which === 4 || e.which === 5) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+
+        // Method 4: Page visibility handling
+        function handleVisibilityChange() {
+            if (document.hidden) {
+                // Page is hidden, likely user switched tabs or minimized
+                window.history.pushState(null, "", window.location.href);
+            }
+        }
+
+        // Apply all methods when page loads
+        window.addEventListener('load', function() {
+            preventBackButton();
+            
+            // Add event listeners
+            document.addEventListener('keydown', disableKeyboardShortcuts, true);
+            document.addEventListener('keyup', disableKeyboardShortcuts, true);
+            document.addEventListener('mousedown', disableMouseNavigation, true);
+            document.addEventListener('mouseup', disableMouseNavigation, true);
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            // Push initial state
+            window.history.pushState(null, "", window.location.href);
+        });
+
+        // Additional protection on page show
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was loaded from cache
+                window.location.reload();
+            }
+            // Remove any flash messages that might persist
+            setTimeout(function() {
+                document.querySelectorAll('.flash-message').forEach(function(el) {
+                    el.remove();
+                });
+            }, 100);
+        });
+
+        // Prevent page caching
+        window.addEventListener('beforeunload', function() {
+            if (typeof(Storage) !== "undefined") {
+                sessionStorage.clear();
+            }
+        });
+    })();
+
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
     });
-    </script>
+
+    // Disable developer tools shortcuts
+    document.addEventListener('keydown', function(e) {
+        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+            (e.ctrlKey && (e.key === 'U' || e.key === 'S'))) {
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>
     
 <body>
     <!-- Header with Navigation - Fixed vertical alignment -->
@@ -29,7 +145,6 @@
                 <li><a href="/">Home</a></li>
                 <li><a href="/#about">About</a></li>
                 <li><a href="/#footer">Contact</a></li>
-                <!--<li><button class="login-btn" onclick="window.location.href='/auth/login'">Login</button></li>-->
             </ul>
             
             <!-- Mobile Navigation -->
@@ -39,7 +154,6 @@
                     <a href="/"><i class="fas fa-home"></i> Home</a>
                     <a href="/#about"><i class="fas fa-info-circle"></i> About</a>
                     <a href="/#footer"><i class="fas fa-envelope"></i> Contact</a>
-                    <!--<a href="/auth/login"><i class="fas fa-sign-in-alt"></i> Login</a>-->
                 </div>
             </div>
         </nav>
@@ -135,6 +249,14 @@
                 if (dropdownContent.style.display === 'block') {
                     dropdownContent.style.display = 'none';
                 }
+            }
+        });
+
+        // Additional security: Clear any stored data on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.clear();
+                sessionStorage.clear();
             }
         });
     </script>
