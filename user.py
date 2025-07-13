@@ -588,7 +588,7 @@ def job_search():
                     Job.description.ilike(keyword_like),
                     Job.skills.ilike(keyword_like),
                     Job.certifications.ilike(keyword_like),
-                    Company.name.ilike(keyword_like)
+                    Company.company_name.ilike(keyword_like)
                 )
             )
         if location:

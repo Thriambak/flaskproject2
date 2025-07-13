@@ -120,7 +120,7 @@
                     
                     <div class="card-info">
                       <i class="fas fa-calendar-alt"></i>
-                      <span class="card-info-text">{{ job.deadline.strftime('%Y-%m-%d') }}</span>
+                      <span class="card-info-text">{{ job.deadline.strftime('%d-%m-%Y') }}</span>
                     </div>
                     
                     <div class="mt-auto">
@@ -230,7 +230,7 @@ const jobsData = {
     description: `{{ (job.description or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
     location: '{{ job.location or "" }}',
     salary: '{{ job.salary or "" }}',
-    deadline: '{{ job.deadline.strftime("%Y-%m-%d") }}',
+    deadline: '{{ job.deadline.strftime("%d-%m-%Y") }}',
     skills: `{{ (job.skills or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
     certifications: `{{ (job.certifications or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
     years_of_exp: '{{ job.years_of_exp or "" }}',
