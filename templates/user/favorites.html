@@ -44,8 +44,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-top: 30px;
-      gap: 10px;
+      gap: 15px;
+      margin-top: 20px;
     }
     
     .pagination a {
@@ -53,28 +53,27 @@
     }
     
     .pagination button {
-      padding: 10px 15px;
-      background-color: #007bff;
+      padding: 8px 15px;
+      background-color: #1abc9c;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 20px;
       cursor: pointer;
       transition: background-color 0.3s;
     }
     
-    .pagination button:hover {
-      background-color: #0056b3;
-    }
-    
     .pagination button:disabled {
-      background-color: #6c757d;
+      background-color: #ccc;
       cursor: not-allowed;
     }
     
+    .pagination button:hover:not(:disabled) {
+      background-color: #16a085;
+    }
+    
     .pagination span {
-      padding: 10px 15px;
-      font-weight: bold;
-      color: #495057;
+      font-size: 16px;
+      color: #333;
     }
     
     .page-info {
@@ -318,6 +317,18 @@
               </div>
             </div>
           {% endfor %}
+          
+          <!-- No jobs message -->
+          <div id="no-jobs-message" style="display: none;">
+            <p>No matching job listings available.</p>
+          </div>
+          
+          <!-- Pagination Controls -->
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page {{ page if page > 0 else 0 }} of {{ total_pages if total_pages > 0 else 0 }}</span>
+            <button id="next-page" disabled>Next &raquo;</button>
+          </div>
         {% else %}
           <div class="col-12 text-center" data-aos="fade-up">
             <div class="no-results-card">
@@ -337,49 +348,14 @@
               </div>
             </div>
           </div>
+          <!-- Pagination for empty state -->
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page 0 of 0</span>
+            <button id="next-page" disabled>Next &raquo;</button>
+          </div>
         {% endif %}
       </div>
-
-      <!-- Pagination Controls -->
-      {% if total_pages > 0 %}
-      <div class="pagination">
-        {% if has_prev %}
-          <a href="?page={{ prev_num }}">
-            <button>
-              <i class="fas fa-chevron-left"></i> Previous
-            </button>
-          </a>
-        {% else %}
-          <button disabled>
-            <i class="fas fa-chevron-left"></i> Previous
-          </button>
-        {% endif %}
-        
-        <span>Page {{ page }} of {{ total_pages }}</span>
-        
-        {% if has_next %}
-          <a href="?page={{ next_num }}">
-            <button>
-              Next <i class="fas fa-chevron-right"></i>
-            </button>
-          </a>
-        {% else %}
-          <button disabled>
-            Next <i class="fas fa-chevron-right"></i>
-          </button>
-        {% endif %}
-      </div>
-      {% else %}
-      <div class="pagination">
-        <button disabled>
-          <i class="fas fa-chevron-left"></i> Previous
-        </button>
-        <span>Page 0 of 0</span>
-        <button disabled>
-          Next <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
-      {% endif %}
     </div>
   </main>
   
@@ -441,6 +417,56 @@
       }
     });
     
+    // Auto-hide flash messages
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        message.classList.remove('show');
+        setTimeout(() => {
+          message.remove();
+        }, 500);
+      });
+    }, 3000);
+    
+    // Pagination variables - Fix for empty state
+    let currentPage = {{ page if page > 0 else 1 }};
+    const totalPages = {{ total_pages if total_pages else 0 }};
+    
+    // Initialize pagination
+    window.addEventListener('load', function() {
+      const jobs = document.querySelectorAll('.job-item');
+      // Show all jobs sent by server (server already handles pagination)
+      jobs.forEach(job => {
+        job.style.display = 'block';
+      });
+      updatePagination();
+    });
+    
+    // Update pagination controls
+    function updatePagination() {
+      const displayTotalPages = totalPages || 0;
+      const displayCurrentPage = totalPages === 0 ? 0 : currentPage;
+      document.getElementById('page-info').textContent = `Page ${displayCurrentPage} of ${displayTotalPages}`;
+      
+      document.getElementById('prev-page').disabled = currentPage === 1 || totalPages === 0;
+      document.getElementById('next-page').disabled = currentPage >= totalPages || totalPages === 0;
+    }
+    
+    // Pagination controls
+    document.getElementById('prev-page').addEventListener('click', function() {
+      if (currentPage > 1) {
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.favorites") }}?page=' + (currentPage - 1);
+      }
+    });
+    
+    document.getElementById('next-page').addEventListener('click', function() {
+      if (currentPage < totalPages) {
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.favorites") }}?page=' + (currentPage + 1);
+      }
+    });
+    
     // Auto-close flash messages after 5 seconds
     const flashMessages = document.querySelectorAll('.flash-message');
     flashMessages.forEach(message => {
@@ -461,6 +487,24 @@
         }, index * 100);
       });
     });
+    
+    // Function to resize properly for better readability on different screens
+    function resizeHandler() {
+      const availableWidth = window.innerWidth;
+      
+      // Check if we're in mobile view
+      if (availableWidth <= 768) {
+        document.body.classList.add('mobile-view');
+      } else {
+        document.body.classList.remove('mobile-view');
+      }
+    }
+    
+    // Initial resize
+    resizeHandler();
+    
+    // Resize on window resize
+    window.addEventListener('resize', resizeHandler);
   </script>
 </body>
 </html>

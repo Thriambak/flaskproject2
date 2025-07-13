@@ -87,25 +87,36 @@
       </div>
       
       <div class="container-fluid job-listings">
-        <div class="row g-4">
+        <div class="row g-4" id="job-container">
           {% if jobs %}
             {% for job in jobs %}
-              <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+              <div class="col-md-6 col-lg-4 job-item" data-aos="fade-up" data-aos-delay="{{ loop.index0 % 6 * 100 }}">
                 <div class="card h-100">
                   <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ job.title }}</h5>
+                    
+                    {% if job.user and job.user.company %}
+                    <div class="company-name">
+                      <i class="fas fa-building"></i>{{ job.user.company.company_name }}
+                    </div>
+                    {% endif %}
+                    
                     <span class="badge bg-info text-dark mb-2">{{ job.job_type }}</span>
                     <div class="card-description mb-3">{{ job.description }}</div>
                     
+                    {% if job.location %}
                     <div class="card-info">
                       <i class="fas fa-map-marker-alt"></i>
                       <span class="card-info-text">{{ job.location }}</span>
                     </div>
+                    {% endif %}
                     
+                    {% if job.salary %}
                     <div class="card-info">
                       <i class="fas fa-wallet"></i>
                       <span class="card-info-text">₹{{ job.salary }}</span>
                     </div>
+                    {% endif %}
                     
                     <div class="card-info">
                       <i class="fas fa-calendar-alt"></i>
@@ -118,29 +129,28 @@
                       </button>
                       
                       <div class="button-container">
-                        <!-- Check if user has already applied -->
                         {% set has_applied = job.job_id in applied_jobs %}
                         {% set has_saved = job.job_id in saved_jobs %}
                         
                         {% if has_applied %}
-                          <button type="button" class="btn-applied btn-sm" disabled>
+                          <button type="button" class="btn-applied" disabled>
                             <i class="fas fa-check"></i> Applied
                           </button>
                         {% else %}
-                          <form action="{{ url_for('user.apply1_for_job', job_id=job.job_id) }}" method="POST" style="display: inline;">
-                            <button type="submit" class="btn-custom btn-sm">
+                          <form action="{{ url_for('user.apply1_for_job', job_id=job.job_id) }}" method="POST" style="display: inline; flex: 1;">
+                            <button type="submit" class="btn-custom">
                               <i class="fas fa-paper-plane"></i> Apply
                             </button>
                           </form>
                         {% endif %}
                         
                         {% if has_saved %}
-                          <button type="button" class="btn-saved btn-sm" disabled>
+                          <button type="button" class="btn-saved" disabled>
                             <i class="fas fa-heart"></i> Saved
                           </button>
                         {% else %}
-                          <form action="{{ url_for('user.save_job1', job_id=job.job_id) }}" method="POST" style="display: inline;">
-                            <button type="submit" class="btn-save btn-sm">
+                          <form action="{{ url_for('user.save_job1', job_id=job.job_id) }}" method="POST" style="display: inline; flex: 1;">
+                            <button type="submit" class="btn-save">
                               <i class="fas fa-save"></i> Save
                             </button>
                           </form>
@@ -151,48 +161,40 @@
                 </div>
               </div>
             {% endfor %}
-  {% else %}
-<div class="col-12 text-center" data-aos="fade-up">
-  <div class="card p-5 no-results-card">
-    <div class="no-results-content">
-      <div class="no-results-icon">
-        <i class="fas fa-search"></i>
-      </div>
-      <h4 class="no-results-title">No Jobs Found</h4>
-      <p class="no-results-text">We couldn't find any job listings that match your current search criteria. Try adjusting your filters or search terms to discover more opportunities.</p>
-    </div>
-    
-    <div class="mt-4 action-buttons">
-      <button class="search-btn primary-btn" onclick="window.location.href='/user/job_search'">
-        <i class="fas fa-search me-2"></i> 
-        <span>Try New Search</span>
-   
-    </div>
-  </div>
-</div>
-
-{% endif %}
-</div>
+          {% else %}
+            <div class="col-12 text-center" data-aos="fade-up">
+              <div class="card p-5 no-results-card">
+                <div class="no-results-content">
+                  <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <h4 class="no-results-title">No Jobs Found</h4>
+                  <p class="no-results-text">We couldn't find any job listings that match your current search criteria. Try adjusting your filters or search terms to discover more opportunities.</p>
+                </div>
+                
+                <div class="mt-4 action-buttons">
+                  <button class="search-btn primary-btn" onclick="window.location.href='/user/job_search'">
+                    <i class="fas fa-search me-2"></i> 
+                    <span>Try New Search</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
         
-        <!-- Pagination -->
-        {% if jobs and jobs|length > 9 %}
-        <nav aria-label="Page navigation" class="mt-4">
-          <ul class="pagination justify-content-center">
-            <li class="page-item disabled">
-              <a class="page-link" href="#" tabindex="-1">Previous</a>
-            </li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item">
-              <a class="page-link" href="#">Next</a>
-            </li>
-          </ul>
-        </nav>
+        <!-- Pagination Controls -->
+        {% if jobs %}
+        <div class="pagination">
+          <button id="prev-page" disabled>« Previous</button>
+          <span id="page-info">Page 1 of 1</span>
+          <button id="next-page" disabled>Next »</button>
+        </div>
         {% endif %}
       </div>
     </div>
   </main>
+
 <!-- Job Details Modal -->
   <div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -217,48 +219,127 @@
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   
   <script>
-    // Store job data for modal
-    const jobsData = {
-      {% for job in jobs %}
-      '{{ job.job_id }}': {
-        title: '{{ job.title }}',
-        job_type: '{{ job.job_type }}',
-        description: `{{ (job.description or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
-        location: '{{ job.location }}',
-        salary: '{{ job.salary }}',
-        deadline: '{{ job.deadline.strftime("%Y-%m-%d") }}',
-        skills: `{{ (job.skills or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
-        certifications: `{{ (job.certifications or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
-        years_of_exp: '{{ job.years_of_exp or "" }}',
-       
-        form_url: '{{ job.form_url or "" }}',
-        has_applied: {% if job.job_id in applied_jobs %}true{% else %}false{% endif %},
-        has_saved: {% if job.job_id in saved_jobs %}true{% else %}false{% endif %}
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    };
+ // Store job data for modal
+const jobsData = {
+  {% for job in jobs %}
+  '{{ job.job_id }}': {
+    title: '{{ job.title }}',
+    company_name: '{{ job.user.company.company_name if job.user and job.user.company else "" }}',
+    company_website: '{{ job.user.company.website if job.user and job.user.company and job.user.company.website else "" }}',
+    job_type: '{{ job.job_type }}',
+    description: `{{ (job.description or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
+    location: '{{ job.location or "" }}',
+    salary: '{{ job.salary or "" }}',
+    deadline: '{{ job.deadline.strftime("%Y-%m-%d") }}',
+    skills: `{{ (job.skills or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
+    certifications: `{{ (job.certifications or "") | replace('\n', '\\n') | replace('\r', '') | replace('`', '\\`') }}`,
+    years_of_exp: '{{ job.years_of_exp or "" }}',
+    form_url: '{{ job.form_url or "" }}',
+    has_applied: {% if job.job_id in applied_jobs %}true{% else %}false{% endif %},
+    has_saved: {% if job.job_id in saved_jobs %}true{% else %}false{% endif %}
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+};  
+ // Pagination variables
+let currentPage = 1;
+const jobsPerPage = 6;
+const totalJobs = {{ jobs|length if jobs else 0 }};
+const totalPages = Math.ceil(totalJobs / jobsPerPage);
+
+// Initialize pagination event listeners
+function initializePaginationEvents() {
+  const prevButton = document.getElementById('prev-page');
+  const nextButton = document.getElementById('next-page');
+  
+  if (prevButton) {
+    prevButton.addEventListener('click', function() {
+      if (currentPage > 1) {
+        showPage(currentPage - 1);
+      }
+    });
+  }
+  
+  if (nextButton) {
+    nextButton.addEventListener('click', function() {
+      if (currentPage < totalPages) {
+        showPage(currentPage + 1);
+      }
+    });
+  }
+}
+
+// Show specific page - **FIXED**
+function showPage(page) {
+  const jobs = document.querySelectorAll('.job-item');
+  if (jobs.length === 0) return;
+
+  const startIndex = (page - 1) * jobsPerPage;
+  const endIndex = startIndex + jobsPerPage;
+
+  jobs.forEach((job, index) => {
+    // Use Bootstrap's d-none class for clean show/hide
+    if (index >= startIndex && index < endIndex) {
+      job.classList.remove('d-none');
+    } else {
+      job.classList.add('d-none');
+    }
+  });
+
+  currentPage = page;
+  updatePagination();
+
+  // ***** THIS IS THE FIX *****
+  // Refresh AOS to detect and animate the newly visible items.
+  // A small timeout ensures the DOM has updated before AOS refreshes.
+  setTimeout(() => {
+    AOS.refresh();
+  }, 100); 
+}
+
+// Initialize pagination
+window.addEventListener('load', function() {
+  if (totalJobs > 0) {
+    showPage(1); // Show the first page initially
+    initializePaginationEvents();
+  }
+  updatePagination(); // Update controls based on total pages
+});
+
+// Update pagination controls
+function updatePagination() {
+  const paginationElement = document.querySelector('.pagination');
+  if (!paginationElement) return;
+
+  // Hide pagination if there's only one page or no results
+  paginationElement.style.display = totalPages > 1 ? 'flex' : 'none';
+
+  const pageInfo = document.getElementById('page-info');
+  if (pageInfo) {
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+  }
+  
+  const prevButton = document.getElementById('prev-page');
+  const nextButton = document.getElementById('next-page');
+  
+  if (prevButton) prevButton.disabled = (currentPage === 1);
+  if (nextButton) nextButton.disabled = (currentPage === totalPages);
+}
+    
+    // --- All Modal and other UI functions remain the same ---
 
     let currentJobId = null;
-    let showingFullDetails = false;
 
     function openJobModal(jobId) {
       const job = jobsData[jobId];
       if (!job) return;
 
       currentJobId = jobId;
-      showingFullDetails = false;
-
       const modalBody = document.getElementById('modalBody');
       const modalFooter = document.getElementById('modalFooter');
       const modalTitle = document.getElementById('jobDetailsModalLabel');
-
       modalTitle.textContent = job.title;
-
-      // Show basic details first
       showBasicDetails(job);
       createFooterButtons(job, jobId);
-
-      // Show modal
       const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
       modal.show();
     }
@@ -267,169 +348,121 @@
       const modalBody = document.getElementById('modalBody');
       let modalContent = '';
 
-      // Job Type
+      if (job.company_name && job.company_name.trim()) {
+        modalContent += `
+          <div class="job-detail-item">
+            <div class="job-detail-icon"><i class="fas fa-building"></i></div>
+            <div class="job-detail-content">
+              <div class="job-detail-label">Company</div>
+              <div class="job-detail-value">
+                ${job.company_website && job.company_website.trim() ? 
+                  `<a href="${job.company_website}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${job.company_name}</a>` : 
+                  `<span class="text-blue-600">${job.company_name}</span>`
+                }
+              </div>
+            </div>
+          </div>`;
+      }
+
       if (job.job_type && job.job_type.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-briefcase"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-briefcase"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Job Type</div>
-              <div class="job-detail-value">
-                <span class="job-type-badge">${job.job_type}</span>
-              </div>
+              <div class="job-detail-value"><span class="job-type-badge">${job.job_type}</span></div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-
-      // Description (full)
       if (job.description && job.description.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-align-left"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-align-left"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Description</div>
               <div class="job-detail-value">${job.description}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Location
       if (job.location && job.location.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-map-marker-alt"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-map-marker-alt"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Location</div>
               <div class="job-detail-value">${job.location}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Salary
       if (job.salary && job.salary.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-wallet"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-wallet"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Salary</div>
               <div class="job-detail-value salary-highlight">₹${job.salary}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Experience
       if (job.years_of_exp && job.years_of_exp.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-clock"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-clock"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Experience Required</div>
               <div class="job-detail-value">${job.years_of_exp} years</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Vacancy
-      if (job.total_vacancy && job.total_vacancy.trim()) {
-        const filledVacancy = job.filled_vacancy || '0';
-        modalContent += `
-          <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="job-detail-content">
-              <div class="job-detail-label">Vacancy</div>
-              <div class="job-detail-value">${job.total_vacancy - filledVacancy} positions available (${filledVacancy}/${job.total_vacancy} filled)</div>
-            </div>
-          </div>
-        `;
-      }
-
-      // Deadline
       if (job.deadline && job.deadline.trim()) {
-        const formattedDate = new Date(job.deadline).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: '2-digit',
-          year: '2-digit'
-        });
+        const formattedDate = new Date(job.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-calendar-alt"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-calendar-alt"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">Application Deadline</div>
               <div class="job-detail-value deadline-warning">${formattedDate}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Skills
       if (job.skills && job.skills.trim()) {
-        const skillsArray = job.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
-        if (skillsArray.length > 0) {
-          const skillsTags = skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+        const skillsTags = job.skills.split(',').map(skill => skill.trim()).filter(skill => skill).map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+        if (skillsTags) {
           modalContent += `
             <div class="job-detail-item">
-              <div class="job-detail-icon">
-                <i class="fas fa-cogs"></i>
-              </div>
+              <div class="job-detail-icon"><i class="fas fa-cogs"></i></div>
               <div class="job-detail-content">
                 <div class="job-detail-label">Required Skills</div>
-                <div class="job-detail-value">
-                  <div class="skills-container">${skillsTags}</div>
-                </div>
+                <div class="job-detail-value"><div class="skills-container">${skillsTags}</div></div>
               </div>
-            </div>
-          `;
+            </div>`;
         }
       }
 
-      // Certifications
       if (job.certifications && job.certifications.trim()) {
-        const certificationsArray = job.certifications.split(',').map(cert => cert.trim()).filter(cert => cert);
-        if (certificationsArray.length > 0) {
-          const certificationsTags = certificationsArray.map(cert => `<span class="skill-tag">${cert}</span>`).join('');
+        const certificationsTags = job.certifications.split(',').map(cert => cert.trim()).filter(cert => cert).map(cert => `<span class="skill-tag">${cert}</span>`).join('');
+        if (certificationsTags) {
           modalContent += `
             <div class="job-detail-item">
-              <div class="job-detail-icon">
-                <i class="fas fa-certificate"></i>
-              </div>
+              <div class="job-detail-icon"><i class="fas fa-certificate"></i></div>
               <div class="job-detail-content">
                 <div class="job-detail-label">Certifications</div>
-                <div class="job-detail-value">
-                  <div class="skills-container">${certificationsTags}</div>
-                </div>
+                <div class="job-detail-value"><div class="skills-container">${certificationsTags}</div></div>
               </div>
-            </div>
-          `;
+            </div>`;
         }
       }
 
-      // External Form URL
       if (job.form_url && job.form_url.trim()) {
         modalContent += `
           <div class="job-detail-item">
-            <div class="job-detail-icon">
-              <i class="fas fa-external-link-alt"></i>
-            </div>
+            <div class="job-detail-icon"><i class="fas fa-external-link-alt"></i></div>
             <div class="job-detail-content">
               <div class="job-detail-label">External Application</div>
               <div class="job-detail-value">
@@ -438,25 +471,10 @@
                 </a>
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
-
 
       modalBody.innerHTML = modalContent;
-    }
-
-    function toggleFullDetails() {
-      const job = jobsData[currentJobId];
-      if (!job) return;
-
-      showingFullDetails = !showingFullDetails;
-      
-      if (showingFullDetails) {
-        showFullDetails(job);
-      } else {
-        showBasicDetails(job);
-      }
     }
 
     function createFooterButtons(job, jobId) {
@@ -464,43 +482,30 @@
       let footerButtons = '';
       
       if (job.has_applied) {
-        footerButtons += `
-          <button type="button" class="btn-applied" disabled>
-            <i class="fas fa-check"></i> Already Applied
-          </button>
-        `;
+        footerButtons += `<button type="button" class="btn-applied" disabled><i class="fas fa-check"></i> Applied</button>`;
       } else {
         footerButtons += `
           <form action="/user/apply1_for_job/${jobId}" method="POST" style="display: inline;">
-            <button type="submit" class="btn-custom">
-              <i class="fas fa-paper-plane"></i> Apply Now
-            </button>
-          </form>
-        `;
+            <button type="submit" class="btn-custom"><i class="fas fa-paper-plane"></i> Apply</button>
+          </form>`;
       }
 
       if (job.has_saved) {
-        footerButtons += `
-          <button type="button" class="btn-saved" disabled>
-            <i class="fas fa-heart"></i> Already Saved
-          </button>
-        `;
+        footerButtons += `<button type="button" class="btn-saved" disabled><i class="fas fa-heart"></i> Saved</button>`;
       } else {
         footerButtons += `
           <form action="/user/save_job1/${jobId}" method="POST" style="display: inline;">
-            <button type="submit" class="btn-save">
-              <i class="fas fa-save"></i> Save Job
-            </button>
-          </form>
-        `;
+            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save</button>
+          </form>`;
       }
 
       modalFooter.innerHTML = footerButtons;
     }
   
-  
-    // Initialize AOS
-    AOS.init();
+    // Initialize AOS globally
+    AOS.init({
+      once: false // Allows animations to trigger more than once
+    });
     
     // Toggle dropdown for profile menu
     document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
@@ -527,10 +532,7 @@
     document.addEventListener('click', function(event) {
       const sideNav = document.getElementById('side-navigation');
       const menuToggle = document.querySelector('.menu-toggle');
-      
-      if (sideNav.classList.contains('active') && 
-          !sideNav.contains(event.target) && 
-          !menuToggle.contains(event.target)) {
+      if (sideNav.classList.contains('active') && !sideNav.contains(event.target) && !menuToggle.contains(event.target)) {
         sideNav.classList.remove('active');
         menuToggle.classList.remove('active');
       }
@@ -538,20 +540,17 @@
     
     // Auto-hide flash messages after 5 seconds
     setTimeout(function() {
-      const flashMessages = document.querySelectorAll('.flash-message');
-      flashMessages.forEach(function(message) {
-        message.style.display = 'none';
+      document.querySelectorAll('.flash-message').forEach(function(message) {
+        new bootstrap.Alert(message).close();
       });
     }, 5000);
     
     // Add animation to job cards on hover
-    const jobCards = document.querySelectorAll('.job-listings .card');
-    jobCards.forEach(card => {
+    document.querySelectorAll('.job-listings .card').forEach(card => {
       card.addEventListener('mouseenter', function() {
         this.style.transform = 'translateY(-5px)';
         this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
       });
-      
       card.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.08)';
