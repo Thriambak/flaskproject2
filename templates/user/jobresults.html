@@ -58,6 +58,11 @@
       color: #6c757d;
       font-size: 14px;
     }
+
+    /* Mobile-first card layout fixes */
+    .card {
+      min-height: 350px;
+    }
   </style>
 </head>
 <body data-aos-duration="1000">
@@ -135,10 +140,10 @@
       </div>
       
       <div class="container-fluid job-listings">
-        <div class="row g-4" id="job-container">
+        <div class="row g-3 g-md-4" id="job-container">
           {% if jobs %}
             {% for job in jobs %}
-              <div class="col-md-6 col-lg-4 job-item" data-aos="fade-up" data-aos-delay="{{ loop.index0 % 6 * 100 }}">
+              <div class="col-12 col-sm-6 col-lg-4 job-item" data-aos="fade-up" data-aos-delay="{{ loop.index0 % 6 * 100 }}">
                 <div class="card h-100">
                   <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ job.title }}</h5>
