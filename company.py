@@ -156,6 +156,7 @@ def company_jobposting():
 @login_required
 def company_post_new_job():
     from app import db
+    from datetime import datetime, date
     user_id = session.get('login_id')
 
     if 'login_id' not in session or session.get('role') != 'company':
@@ -207,110 +208,125 @@ def company_post_new_job():
             'deadline': deadline_str
         }
         
-        # Validate inputs
-        if len(title) < 3 or len(title) > 255:
-            message = "Job Title must be between 3-255 characters!"
-            message_type = "error"
-        elif len(description) < 10 or len(description) > 2000:
-            message = "Job Description must be between 10-2000 characters!"
-            message_type = "error"
-        elif not exp_str or not exp_str.isdigit():
-            message = "Years of Experience must be a valid number!"
-            message_type = "error"
-        elif not vacancy_str or not vacancy_str.isdigit():
-            message = "Vacancy must be a valid number!"
-            message_type = "error"
-        elif not deadline_str:
-            message = "Application deadline is required!"
-            message_type = "error"
-        #elif form_url and not is_valid_url(form_url):
-        #    message = "Please enter a valid URL for the questionnaire form!"
-        #    message_type = "error"
-        else:
-            try:
-                # Convert string values to appropriate types
-                exp = int(exp_str)
-                total_vacancy = int(vacancy_str)
-                # salary = int(salary_str) if salary_str else None
-                salary = salary_str
-                
-                # Additional validations
-                if exp < 0 or exp > 50:
-                    message = "Years of Experience must be between 0-50!"
-                    message_type = "error"
-                elif total_vacancy < 1 or total_vacancy > 1000:
-                    message = "Vacancy must be between 1-1000!"
-                    message_type = "error"
-                else:
-                    # Convert the deadline string to a Python date object
-                    try:
-                        deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
-                        current_date = date.today()
-                        
-                        if deadline < current_date:
-                            message = "Deadline cannot be in the past!"
-                            message_type = "error"
-                        else:
-                            filled_vacancy = 0
-                            status = "open" if total_vacancy > filled_vacancy else "closed"
-                            
-                            if job_id:  # Update the job
-                                job = Job.query.get(job_id)
-                                if job and job.created_by == user_id:  # Security check
-                                    # Save current filled_vacancy
-                                    filled_vacancy = job.filled_vacancy
-                                    
-                                    job.title = title
-                                    job.description = description
-                                    job.job_type = job_type
-                                    job.skills = skills
-                                    job.years_of_exp = exp
-                                    job.certifications = certifications
-                                    job.location = locations
-                                    job.salary = salary
-                                    job.total_vacancy = total_vacancy
-                                    job.deadline = deadline
-                                    job.form_url = form_url
-                                    
-                                    # Update status based on vacancies
-                                    job.status = "open" if total_vacancy > filled_vacancy else "closed"
-                                    
-                                    db.session.commit()
-                                    message = "Job updated successfully!"
-                                    message_type = "success"
-                                else:
-                                    message = "Job not found or you don't have permission to edit it."
-                                    message_type = "error"
-                            else:  # Add a new job
-                                new_job = Job(
-                                    title=title,
-                                    description=description,
-                                    job_type=job_type,
-                                    skills=skills,
-                                    years_of_exp=exp,
-                                    certifications=certifications,
-                                    location=locations,
-                                    salary=salary,
-                                    total_vacancy=total_vacancy,
-                                    filled_vacancy=filled_vacancy,
-                                    status=status,
-                                    form_url=form_url,
-                                    deadline=deadline,
-                                    created_by=created_by
-                                )
-                                db.session.add(new_job)
-                                db.session.commit()
-                                message = "Job added successfully!"
-                                message_type = "success"
-                            
-                            if message_type == "success":
-                                return redirect(url_for('company.company_jobposting'))
-                    except ValueError:
-                        message = "Invalid date format for the deadline. Please use YYYY-MM-DD."
-                        message_type = "error"
-            except ValueError:
-                message = "Please ensure all numeric fields contain valid numbers!"
+        # Check for duplicate job title on the same day (only for new jobs, not edits)
+        if not job_id:
+            today = date.today()
+            existing_job = Job.query.filter(
+                Job.created_by == user_id,
+                Job.title.ilike(title),  # Case-insensitive comparison
+                db.func.date(Job.created_at) == today
+            ).first()
+            
+            if existing_job:
+                message = f"A job with the title '{title}' has already been posted today. Please use a different title or wait until tomorrow."
                 message_type = "error"
+            
+        # Continue with existing validations only if no duplicate found
+        if not message:
+            # Validate inputs
+            if len(title) < 3 or len(title) > 255:
+                message = "Job Title must be between 3-255 characters!"
+                message_type = "error"
+            elif len(description) < 10 or len(description) > 2000:
+                message = "Job Description must be between 10-2000 characters!"
+                message_type = "error"
+            elif not exp_str or not exp_str.isdigit():
+                message = "Years of Experience must be a valid number!"
+                message_type = "error"
+            elif not vacancy_str or not vacancy_str.isdigit():
+                message = "Vacancy must be a valid number!"
+                message_type = "error"
+            elif not deadline_str:
+                message = "Application deadline is required!"
+                message_type = "error"
+            #elif form_url and not is_valid_url(form_url):
+            #    message = "Please enter a valid URL for the questionnaire form!"
+            #    message_type = "error"
+            else:
+                try:
+                    # Convert string values to appropriate types
+                    exp = int(exp_str)
+                    total_vacancy = int(vacancy_str)
+                    # salary = int(salary_str) if salary_str else None
+                    salary = salary_str
+                    
+                    # Additional validations
+                    if exp < 0 or exp > 50:
+                        message = "Years of Experience must be between 0-50!"
+                        message_type = "error"
+                    elif total_vacancy < 1 or total_vacancy > 1000:
+                        message = "Vacancy must be between 1-1000!"
+                        message_type = "error"
+                    else:
+                        # Convert the deadline string to a Python date object
+                        try:
+                            deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+                            current_date = date.today()
+                            
+                            if deadline < current_date:
+                                message = "Deadline cannot be in the past!"
+                                message_type = "error"
+                            else:
+                                filled_vacancy = 0
+                                status = "open" if total_vacancy > filled_vacancy else "closed"
+                                
+                                if job_id:  # Update the job
+                                    job = Job.query.get(job_id)
+                                    if job and job.created_by == user_id:  # Security check
+                                        # Save current filled_vacancy
+                                        filled_vacancy = job.filled_vacancy
+                                        
+                                        job.title = title
+                                        job.description = description
+                                        job.job_type = job_type
+                                        job.skills = skills
+                                        job.years_of_exp = exp
+                                        job.certifications = certifications
+                                        job.location = locations
+                                        job.salary = salary
+                                        job.total_vacancy = total_vacancy
+                                        job.deadline = deadline
+                                        job.form_url = form_url
+                                        
+                                        # Update status based on vacancies
+                                        job.status = "open" if total_vacancy > filled_vacancy else "closed"
+                                        
+                                        db.session.commit()
+                                        message = "Job updated successfully!"
+                                        message_type = "success"
+                                    else:
+                                        message = "Job not found or you don't have permission to edit it."
+                                        message_type = "error"
+                                else:  # Add a new job
+                                    new_job = Job(
+                                        title=title,
+                                        description=description,
+                                        job_type=job_type,
+                                        skills=skills,
+                                        years_of_exp=exp,
+                                        certifications=certifications,
+                                        location=locations,
+                                        salary=salary,
+                                        total_vacancy=total_vacancy,
+                                        filled_vacancy=filled_vacancy,
+                                        status=status,
+                                        form_url=form_url,
+                                        deadline=deadline,
+                                        created_by=created_by
+                                    )
+                                    db.session.add(new_job)
+                                    db.session.commit()
+                                    message = "Job added successfully!"
+                                    message_type = "success"
+                                
+                                if message_type == "success":
+                                    return redirect(url_for('company.company_jobposting'))
+                        except ValueError:
+                            message = "Invalid date format for the deadline. Please use YYYY-MM-DD."
+                            message_type = "error"
+                except ValueError:
+                    message = "Please ensure all numeric fields contain valid numbers!"
+                    message_type = "error"
     else:  # GET request
         if job_id:
             job = Job.query.get(job_id)
@@ -350,11 +366,19 @@ def company_post_new_job():
     current_date = date.today().strftime('%Y-%m-%d')
     profile = Company.query.filter_by(login_id=user_id).first()
     
+    # Check if job is closed for template rendering
+    is_closed = False
+    if job_id:
+        job_to_check = Job.query.get(job_id)
+        if job_to_check and job_to_check.status == 'closed':
+            is_closed = True
+    
     return render_template('/company/post_new_job.html', 
                            current_date=current_date, 
                            profile=profile,
                            job_id=job_id,
                            form_data=form_data,  # Pass form data for populating fields
+                           is_closed=is_closed,
                            total_successful=total_successful, 
                            total_unsuccessful=total_unsuccessful,
                            message=message,
