@@ -419,7 +419,9 @@
       }
 
       if (job.deadline && job.deadline.trim()) {
-        const formattedDate = new Date(job.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        // Convert DD-MM-YYYY to DD-MM-YY format
+        const dateParts = job.deadline.split('-');
+        const formattedDate = `${dateParts[0]}-${dateParts[1]}-${dateParts[2].slice(-2)}`;
         modalContent += `
           <div class="job-detail-item">
             <div class="job-detail-icon"><i class="fas fa-calendar-alt"></i></div>
@@ -431,7 +433,9 @@
       }
 
       if (job.skills && job.skills.trim()) {
-        const skillsTags = job.skills.split(',').map(skill => skill.trim()).filter(skill => skill).map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+        // Split by commas only, then filter out empty strings
+        const skillsArray = job.skills.split(',').filter(skill => skill.trim());
+        const skillsTags = skillsArray.map(skill => `<span class="skill-tag">${skill.trim()}</span>`).join('');
         if (skillsTags) {
           modalContent += `
             <div class="job-detail-item">
@@ -445,7 +449,9 @@
       }
 
       if (job.certifications && job.certifications.trim()) {
-        const certificationsTags = job.certifications.split(',').map(cert => cert.trim()).filter(cert => cert).map(cert => `<span class="skill-tag">${cert}</span>`).join('');
+        // Split by commas only, then filter out empty strings
+        const certificationsArray = job.certifications.split(',').filter(cert => cert.trim());
+        const certificationsTags = certificationsArray.map(cert => `<span class="skill-tag">${cert.trim()}</span>`).join('');
         if (certificationsTags) {
           modalContent += `
             <div class="job-detail-item">
