@@ -83,7 +83,7 @@
         
                 <div class="form-group">
                     <label for="skill-sets">Expected Skill Sets:</label>
-                    <textarea id="skill-sets" name="skill-sets" placeholder="Enter required skillsets" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.skills if form_data else '' }}</textarea>
+                    <textarea id="skill-sets" name="skill-sets" placeholder="e.g., Python, JavaScript, React, SQL, Git (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.skills if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
@@ -93,7 +93,7 @@
 
                 <div class="form-group">
                     <label for="certifications">Required Certifications:</label>
-                    <textarea id="certifications" name="certifications" placeholder="Enter required certifications" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.certifications if form_data else '' }}</textarea>
+                    <textarea id="certifications" name="certifications" placeholder="e.g., AWS Certified Developer, PMP, Scrum Master, Oracle Certified (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.certifications if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
