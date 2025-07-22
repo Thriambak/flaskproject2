@@ -437,16 +437,22 @@
                 messages.forEach(msg => {
                     const messageDiv = document.createElement('div');
                     messageDiv.className = 'message-entry';
+
+                    // Create a Date object from the ISO string sent from Python
+                    const localDate = new Date(msg.timestamp + 'Z');
+
+                    // Manually format the date to DD-MM-YYYY | HH:MM:SS to match the notification page
+                    const day = String(localDate.getDate()).padStart(2, '0');
+                    const month = String(localDate.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+                    const year = localDate.getFullYear();
+                    const hours = String(localDate.getHours()).padStart(2, '0');
+                    const minutes = String(localDate.getMinutes()).padStart(2, '0');
+                    const seconds = String(localDate.getSeconds()).padStart(2, '0');
+                    const formattedTimestamp = `${day}-${month}-${year} | ${hours}:${minutes}:${seconds}`;
+
                     messageDiv.innerHTML = `
                         <div class="message-content">${msg.message}</div>
-                        <div class="message-timestamp">${new Date(msg.timestamp + ' UTC').toLocaleString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false
-                        }).replace(/(\d{2})\/(\d{2})\/(\d{4}), (\d{2}:\d{2})/, '$1-$2-$3 $4')}</div>
+                        <div class="message-timestamp">${formattedTimestamp}</div>
                     `;
                     historyContainer.appendChild(messageDiv);
                 });
