@@ -897,6 +897,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
   const [create] = useCreate();
   const notify = useNotify();
   const refresh = useRefresh();
+  const dataProvider = useDataProvider(); // Add this hook for checking existing companies
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -912,6 +913,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
   const [passwordError, setPasswordError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [companyNameError, setCompanyNameError] = useState('');
+  const [isCheckingCompany, setIsCheckingCompany] = useState(false); // Loading state for company check
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -954,6 +956,25 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     return '';
   };
 
+  // New function to check if company name already exists
+  const checkCompanyNameExists = async (companyName) => {
+    try {
+      const { data } = await dataProvider.getList('companies', {
+        pagination: { page: 1, perPage: 1000 }, // Adjust perPage as needed
+        sort: { field: 'id', order: 'ASC' },
+        filter: {}
+      });
+      
+      // Check if company name exists (case-insensitive)
+      return data.some(company => 
+        company.company_name.toLowerCase() === companyName.toLowerCase()
+      );
+    } catch (error) {
+      console.error('Error checking company name:', error);
+      throw new Error('Unable to verify company name. Please try again.');
+    }
+  };
+
   const handleSubmit = async () => {
     const passwordValidationMessage = validatePassword(formData.password);
     const emailValidationMessage = validateEmail(formData.email);
@@ -972,6 +993,23 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
       return;
     }
+
+    // Check if company name already exists
+    setIsCheckingCompany(true);
+    try {
+      const companyExists = await checkCompanyNameExists(formData.company_name);
+      
+      if (companyExists) {
+        setCompanyNameError('A company with this name already exists. Please choose a different name.');
+        setIsCheckingCompany(false);
+        return;
+      }
+    } catch (error) {
+      setIsCheckingCompany(false);
+      notify(`Error: ${error.message}`, { type: 'error' });
+      return;
+    }
+    setIsCheckingCompany(false);
 
     try {
       const dataToCreate = {
@@ -1136,8 +1174,13 @@ const AddCompanyDialog = ({ open, handleClose }) => {
         <Button onClick={handleClose} color="primary">
           Cancel
         </Button>
-        <Button onClick={handleSubmit} color="primary" variant="contained">
-          Add Company
+        <Button 
+          onClick={handleSubmit} 
+          color="primary" 
+          variant="contained"
+          disabled={isCheckingCompany}
+        >
+          {isCheckingCompany ? 'Checking...' : 'Add Company'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -1178,7 +1221,6 @@ const AddCompanyButton = () => {
   );
 };
 
-// REMOVED: The CustomRefreshButton component is no longer needed.
 
 const ListActions = (props) => {
     const { resource } = props;
