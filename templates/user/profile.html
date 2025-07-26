@@ -190,7 +190,7 @@
             </div>
             
             <div class="editable-field">
-              <label>About Me</label>
+              <label>About Me <span id="wordCount">(0/200 words)</span></label>
               <textarea name="about_me" id="aboutMeField" rows="5">{{ user.about_me or '' }}</textarea>
             </div>
             <!-- New field for Profile Picture URL -->
@@ -270,6 +270,39 @@
     // Initialize AOS (Animate on Scroll)
     AOS.init({ duration: 800, once: true });
     
+    // Function to count words in text
+    function countWords(text) {
+      return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    }
+    
+    // Function to create and show flash message
+    function showFlashMessage(message, category = 'danger') {
+      // Remove any existing flash messages first
+      const existingMessages = document.querySelectorAll('.flash-message');
+      existingMessages.forEach(msg => msg.remove());
+      
+      // Create new flash message
+      const flashContainer = document.querySelector('.flash-container');
+      const flashDiv = document.createElement('div');
+      flashDiv.className = `alert alert-${category} flash-message fade show`;
+      flashDiv.setAttribute('role', 'alert');
+      flashDiv.textContent = message;
+      
+      flashContainer.appendChild(flashDiv);
+      
+      // Scroll to top to show the message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        flashDiv.style.transition = 'opacity 0.5s ease-out';
+        flashDiv.style.opacity = '0';
+        setTimeout(() => {
+          flashDiv.remove();
+        }, 500);
+      }, 5000);
+    }
+    
     // Update profile progress based on filled fields
     function updateProfileProgress() {
       let total = 5; // phone, age, college, about me, profile picture
@@ -316,6 +349,30 @@
   // Run on page load
   window.addEventListener('DOMContentLoaded', function() {
     updateProfileProgress();
+    
+    // Word count functionality for About Me field
+    const aboutMeField = document.getElementById('aboutMeField');
+    const wordCountElement = document.getElementById('wordCount');
+    
+    if(aboutMeField && wordCountElement) {
+      function updateWordCount() {
+        const text = aboutMeField.value;
+        const wordCount = countWords(text);
+        wordCountElement.textContent = `(${wordCount}/200 words)`;
+        
+        if(wordCount > 200) {
+          wordCountElement.style.color = 'red';
+        } else {
+          wordCountElement.style.color = '';
+        }
+      }
+      
+      // Update word count on input
+      aboutMeField.addEventListener('input', updateWordCount);
+      
+      // Initialize word count on page load
+      updateWordCount();
+    }
     
     // Preview profile picture as user types URL
     const urlField = document.getElementById('profilePicUrlField');
@@ -377,27 +434,54 @@
     editForm.addEventListener('submit', function(e) {
       const phoneField = document.getElementById('phoneField');
       const ageField = document.getElementById('ageField');
+      const aboutMeField = document.getElementById('aboutMeField');
+      const couponCodeField = document.querySelector('input[name="coupon_code"]');
       
+      let hasError = false;
+      
+      // Coupon code expiration validation
+      if(couponCodeField && couponCodeField.value.trim() !== '' && !hasError) {
+        // This validation should be done on the server side, but we can add a placeholder
+        // The actual check will be in your Flask route where you have access to the coupon's created_at date
+        // For now, we'll leave this as a server-side validation point
+      }
+      
+      // Phone validation
       if(phoneField.value.trim() !== '') {
-        // Simple phone validation
         const phoneRegex = /^\d{10,15}$/;
         if(!phoneRegex.test(phoneField.value.trim())) {
           e.preventDefault();
-          alert('Please enter a valid phone number (10-15 digits)');
+          showFlashMessage('Please enter a valid phone number (10-15 digits)', 'danger');
           phoneField.focus();
-          return false;
+          hasError = true;
         }
       }
       
-      if(ageField.value.trim() !== '') {
-        // Age validation
+      // Age validation
+      if(ageField.value.trim() !== '' && !hasError) {
         const age = parseInt(ageField.value);
-        if(isNaN(age) || age < 18 || age > 100) {
+        if(isNaN(age) || age < 18 || age > 80) {
           e.preventDefault();
-          alert('Please enter a valid age between 18 and 100');
+          showFlashMessage('Please enter a valid age between 18 and 80', 'danger');
           ageField.focus();
-          return false;
+          hasError = true;
         }
+      }
+      
+      // About Me word count validation
+      if(aboutMeField.value.trim() !== '' && !hasError) {
+        const wordCount = countWords(aboutMeField.value);
+        if(wordCount > 200) {
+          e.preventDefault();
+          showFlashMessage('About Me section cannot exceed 200 words. Current count: ' + wordCount + ' words', 'danger');
+          aboutMeField.focus();
+          hasError = true;
+        }
+      }
+      
+      // If there are errors, prevent form submission
+      if(hasError) {
+        return false;
       }
       
       // If all validations pass, form will submit

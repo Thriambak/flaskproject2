@@ -675,6 +675,8 @@ def job_search():
                              search_params=search_params)
     else:
         return render_template('/user/jobsearch.html')
+from datetime import datetime, timedelta
+
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @no_cache
 @login_required
@@ -736,7 +738,21 @@ def profile():
                                        user_coupon=user_coupon,
                                        edit_mode=True)
             else:
-                # Valid coupon - proceed with coupon logic
+                # Check if coupon is expired (created more than 2 years ago)
+                current_date = datetime.now()
+                coupon_creation_date = coupon.created_at  # Assuming this is your created_at field
+                expiration_threshold = current_date - timedelta(days=730)  # 2 years = 730 days
+                
+                if coupon_creation_date < expiration_threshold:
+                    flash("Coupon has expired. This coupon is more than 2 years old.", "error")
+                    return render_template('/user/profile.html',
+                                           user=user,
+                                           resumes=resumes,
+                                           certifications=certifications,
+                                           user_coupon=user_coupon,
+                                           edit_mode=True)
+                
+                # Valid and non-expired coupon - proceed with coupon logic
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)

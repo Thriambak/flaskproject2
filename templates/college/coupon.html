@@ -53,7 +53,7 @@
             <!-- Input Widgets -->
             <form method="POST" action="{{ url_for('college.generate_coupon') }}" onsubmit="return validateForm()">
                 <div class="input-widgets">
-                    <input type="text" id="year" name="year" placeholder="Enter Batch (Name / Year)" required maxlength="20" />
+                    <input type="text" id="year" name="year" placeholder="Enter Batch Year (YYYY)" required maxlength="4" />
                     <input type="text" id="faculty_id" name="faculty_id" placeholder="Enter Faculty ID" required maxlength="20" />
                     <button type="submit"><i class="fas fa-plus-circle"></i> Generate Coupon</button>
                 </div>
@@ -124,10 +124,18 @@
             const year = document.getElementById('year').value.trim();
             const facultyId = document.getElementById('faculty_id').value.trim();
             
-            // Validate Year - letters, numbers, and certain symbols (#,@)
-            const yearRegex = /^[a-zA-Z0-9#@\-_]+$/;
+            // Validate Year - must be exactly 4 digits (YYYY format)
+            const yearRegex = /^\d{4}$/;
             if (!yearRegex.test(year)) {
-                showPopup("Year can only contain letters, numbers, and certain symbols (#, @, -, _)!", "error");
+                showPopup("Year must be a 4-digit number (YYYY format)!", "error");
+                return false;
+            }
+            
+            // Additional validation to ensure it's a reasonable year
+            const yearNum = parseInt(year);
+            const currentYear = new Date().getFullYear();
+            if (yearNum < 1900 || yearNum > currentYear) {
+                showPopup(`Please enter a valid year between 1900 and ${currentYear}!`, "error");
                 return false;
             }
             

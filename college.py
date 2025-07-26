@@ -318,65 +318,94 @@ def college_collab():
 
 def generate_coupon_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-
-# Updating the generate_coupon route to include college_id
 @college_blueprint.route('/generate_coupon', methods=['GET', 'POST'])
 @secure_route
 def generate_coupon():
     login_id = session.get('login_id')
-    
+   
     if not login_id or session.get('role') != 'college':
         flash("College is not logged in.", "error")
         return redirect(url_for('auth.login'))
-    
+   
     # Get college profile using login_id instead of college_id
     college_profile = College.query.filter_by(login_id=login_id).first()
-
     # Fetch all active coupons from the database using the college profile
     coupons = Coupon.query.filter_by(college_id=college_profile.id).all()
-
+    
     if request.method == 'POST':
         faculty_id = request.form['faculty_id']
         year = request.form['year']
-        
-        # Validate input server-side as well
-        if not re.match(r'^[a-zA-Z0-9#@\-_]{1,20}$', year):
-            flash("Batch can only contain letters, numbers, and certain symbols (#, @, -, _)!", "error")
+       
+        # Validate year - must be exactly 4 digits (YYYY format)
+        if not re.match(r'^\d{4}$', year):
+            flash("Year must be a 4-digit number (YYYY format)!", "error")
             return redirect(url_for('college.generate_coupon'))
-            
+        
+        # Additional validation to ensure it's a reasonable year
+        year_num = int(year)
+        current_year = datetime.now().year
+        if year_num < 1900 or year_num > current_year:
+            flash(f"Please enter a valid year between 1900 and {current_year}!", "error")
+            return redirect(url_for('college.generate_coupon'))
+           
+        # Validate Faculty ID - letters, numbers, hyphens, underscores
         if not re.match(r'^[a-zA-Z0-9\-_]{1,20}$', faculty_id):
             flash("Faculty ID can only contain letters and numbers!", "error")
             return redirect(url_for('college.generate_coupon'))
         
+        # Check if a coupon already exists for this year, previous year, or next year
+        existing_coupon_same_year = Coupon.query.filter_by(
+            college_id=college_profile.id, 
+            year=str(year_num)
+        ).first()
+        
+        existing_coupon_prev_year = Coupon.query.filter_by(
+            college_id=college_profile.id, 
+            year=str(year_num - 1)
+        ).first()
+        
+        existing_coupon_next_year = Coupon.query.filter_by(
+            college_id=college_profile.id, 
+            year=str(year_num + 1)
+        ).first()
+        
+        if existing_coupon_same_year:
+            flash(f"Coupon for year {year} already exists!", "error")
+            return redirect(url_for('college.generate_coupon'))
+        elif existing_coupon_prev_year:
+            flash(f"Cannot create coupon for {year} as coupon for consecutive year {year_num - 1} already exists!", "error")
+            return redirect(url_for('college.generate_coupon'))
+        elif existing_coupon_next_year:
+            flash(f"Cannot create coupon for {year} as coupon for consecutive year {year_num + 1} already exists!", "error")
+            return redirect(url_for('college.generate_coupon'))
+       
         # Generate a unique coupon code
         coupon_code = generate_coupon_code()
         while Coupon.query.filter_by(code=coupon_code).first():
             coupon_code = generate_coupon_code()
-        
+       
         # Add the coupon to the database
         new_coupon = Coupon(code=coupon_code, faculty_id=faculty_id, year=year, college_id=college_profile.id)
         db.session.add(new_coupon)
         db.session.commit()
-        
-        flash('Coupon generated successfully!', 'success')
+       
+        flash(f'Coupon "{coupon_code}" generated successfully and is valid for 2 years!', 'success')
         return redirect(url_for('college.generate_coupon'))
-    
+   
     # Set message to pass to template for both GET and POST requests
     message = None
     message_type = None
-    
+   
     if 'message' in session:
         message = session.pop('message')
         message_type = session.pop('message_type', 'success')
-    
+   
     # Render the template with data
-    return render_template('/college/coupon.html', 
+    return render_template('college/coupon.html',
         coupons=coupons,
         college_profile=college_profile,
         message=message,
         message_type=message_type)
-
-
 @college_blueprint.route('/college_endorsement')
 @secure_route
 def college_endorsement():
