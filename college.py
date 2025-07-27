@@ -431,10 +431,11 @@ def college_endorsement():
         Coupon.year,
         User.id.label('user_id')
     ).join(Couponuser, Couponuser.coupon_id == Coupon.id)\
-     .join(User, Couponuser.user_id == User.id)\
-     .filter(Coupon.college_id == college_profile.id)\
-     .all()
-
+    .join(User, Couponuser.user_id == User.id)\
+    .join(Certification, Certification.user_id == User.id)\
+    .filter(Coupon.college_id == college_profile.id)\
+    .distinct()\
+    .all()
     return render_template('/college/endorse.html', 
         coupon_users=coupon_users,
         college_profile=college_profile)
