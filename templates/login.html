@@ -27,34 +27,42 @@
                 e.stopPropagation();
                 return false;
             }
+            
+            // Improved backspace handling
             if (e.keyCode === 8) { // Backspace
                 var element = e.target || e.srcElement;
-                var type = element.type;
+                var type = (element.type || "").toLowerCase();
                 var tagName = element.tagName.toLowerCase();
+                var isReadOnly = element.readOnly || element.disabled;
+                var isContentEditable = element.contentEditable === "true";
                 
-                // Allow backspace in input fields and textareas
-                if (type !== 'text' && type !== 'password' && type !== 'email' && 
-                    type !== 'search' && type !== 'tel' && type !== 'url' && 
-                    tagName !== 'textarea') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
+                // Allow backspace in editable elements
+                if (!isReadOnly && (
+                    type === 'text' || type === 'password' || type === 'email' || 
+                    type === 'search' || type === 'tel' || type === 'url' || 
+                    type === 'number' || type === 'textarea' ||
+                    tagName === 'textarea' || tagName === 'input' ||
+                    isContentEditable
+                )) {
+                    // Allow backspace in input fields
+                    return true;
                 }
+                
+                // Prevent backspace navigation only when not in input fields
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
             }
+            
             // Disable F5 and Ctrl+R (refresh)
             if (e.keyCode === 116 || (e.ctrlKey && e.keyCode === 82)) {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
             }
+            
             // Disable other navigation shortcuts
             if (e.ctrlKey && (e.keyCode === 37 || e.keyCode === 39)) { // Ctrl + Arrow keys
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            // Disable browser back/forward mouse buttons
-            if (e.which === 8 || e.which === 9) {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
@@ -85,7 +93,6 @@
             
             // Add event listeners
             document.addEventListener('keydown', disableKeyboardShortcuts, true);
-            document.addEventListener('keyup', disableKeyboardShortcuts, true);
             document.addEventListener('mousedown', disableMouseNavigation, true);
             document.addEventListener('mouseup', disableMouseNavigation, true);
             document.addEventListener('visibilitychange', handleVisibilityChange);
