@@ -101,25 +101,45 @@ def signup():
         username_lower = username.lower()
         if username_lower == 'admin' or username_lower == 'administrator':
             flash('The entered username is not allowed. Please choose a different username.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         
         # Username length validation
         if not (3 <= len(username) <= 30):
             flash('Username must be between 3 and 30 characters long.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         
         # Username validation
         # Allowed: single word (alphanumeric), email, or 10-digit phone number
         username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
         if not re.match(username_pattern, username):
             flash('Username must be a single word (letters/numbers only) and a valid email.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         if username.startswith('_') or username.startswith('.') or username.endswith('_') or username.endswith('.'):
             flash('Username cannot start or end with an underscore (_) or period (.)', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         if ' ' in username:
             flash('Username cannot contain spaces.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
         # Password validation
         password = password.strip()
@@ -128,27 +148,47 @@ def signup():
             return redirect(url_for('auth.signup'))'''
         if not re.match(r'^[a-zA-Z0-9@#$%^&+= ]+$', password):
             flash('Password can only contain letters, numbers, and special characters @ #$%^&+=', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
        
         # Email validation
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             flash('Invalid email format. Please use a valid email (e.g., user@domain.com).', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
         # Check for existing username or email
         if Login.query.filter(func.lower(Login.username) == username.lower()).first():
             flash('Username already exists.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         if (User.query.filter_by(email=email).first() or 
             Company.query.filter_by(email=email).first() or 
             College.query.filter_by(email=email).first() or 
             Admin.query.filter_by(email=email).first()):
             flash('Email already exists.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
         # Create entry in the Login table
         new_login = Login(username=username, role=role)
@@ -168,15 +208,36 @@ def signup():
             db.session.add(new_college)
         else:
             flash('Invalid profile type specified.', 'danger')
-            return redirect(url_for('auth.signup'))
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
-        db.session.commit()
-        flash('Signup successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
+        try:
+            db.session.commit()
+            # SUCCESS - Show success message on login page
+            flash('Signup successful! Please log in with your new account.', 'success')
+            resp = make_response(render_template('login.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during signup. Please try again.', 'danger')
+            resp = make_response(render_template('signup.html'))
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
 
-    return render_template('signup.html')
-
-
+    # For GET requests, return signup page
+    resp = make_response(render_template('signup.html'))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 @auth_blueprint.route('/check-session', methods=['POST'])
 def check_session():
     """Check if user session is valid - for AJAX calls"""
@@ -203,7 +264,9 @@ def login():
         # Check if the user exists in the Login table
         login = Login.query.filter_by(username=username).first()
         if not login or not login.check_password(password):
-            resp = make_response(render_template('login.html', error='Invalid username or password.'))
+            # Don't redirect - render template directly with flash message
+            flash('Invalid username or password.', 'danger')
+            resp = make_response(render_template('login.html'))
             resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
             resp.headers['Pragma'] = 'no-cache'
             resp.headers['Expires'] = '0'
@@ -215,7 +278,8 @@ def login():
             if login.role == 'user':
                 user = User.query.filter_by(login_id=login.id).first()
                 if user and user.is_banned:
-                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
+                    flash("Cannot login. Contact support.", 'danger')
+                    resp = make_response(render_template('login.html'))
                     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                     resp.headers['Pragma'] = 'no-cache'
                     resp.headers['Expires'] = '0'
@@ -223,7 +287,8 @@ def login():
             elif login.role == 'company':
                 company = Company.query.filter_by(login_id=login.id).first()
                 if company and company.is_banned:
-                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
+                    flash("Cannot login. Contact support.", 'danger')
+                    resp = make_response(render_template('login.html'))
                     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                     resp.headers['Pragma'] = 'no-cache'
                     resp.headers['Expires'] = '0'
@@ -239,7 +304,8 @@ def login():
         if login.role == 'user':
             user = User.query.filter_by(login_id=login.id).first()
             if not user:
-                resp = make_response(render_template('login.html', error='User details not found.'))
+                flash('User details not found.', 'danger')
+                resp = make_response(render_template('login.html'))
                 resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                 resp.headers['Pragma'] = 'no-cache'
                 resp.headers['Expires'] = '0'
@@ -249,7 +315,8 @@ def login():
         elif login.role == 'company':
             company = Company.query.filter_by(login_id=login.id).first()
             if not company:
-                resp = make_response(render_template('login.html', error='Company details not found.'))
+                flash('Company details not found.', 'danger')
+                resp = make_response(render_template('login.html'))
                 resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                 resp.headers['Pragma'] = 'no-cache'
                 resp.headers['Expires'] = '0'
@@ -258,7 +325,8 @@ def login():
         elif login.role == 'admin':
             admin = Admin.query.filter_by(login_id=login.id).first()
             if not admin:
-                resp = make_response(render_template('login.html', error='Admin details not found.'))
+                flash('Admin details not found.', 'danger')
+                resp = make_response(render_template('login.html'))
                 resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                 resp.headers['Pragma'] = 'no-cache'
                 resp.headers['Expires'] = '0'
@@ -268,7 +336,8 @@ def login():
             college = College.query.filter_by(login_id=login.id).first()
             session['college_id'] = college.id
             if not college:
-                resp = make_response(render_template('login.html', error='College details not found.'))
+                flash('College details not found.', 'danger')
+                resp = make_response(render_template('login.html'))
                 resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
                 resp.headers['Pragma'] = 'no-cache'
                 resp.headers['Expires'] = '0'

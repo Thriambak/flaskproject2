@@ -107,12 +107,7 @@
                 // Page was loaded from cache
                 window.location.reload();
             }
-            // Remove any flash messages that might persist
-            setTimeout(function() {
-                document.querySelectorAll('.flash-message').forEach(function(el) {
-                    el.remove();
-                });
-            }, 100);
+            // DON'T remove error messages immediately - let them display first
         });
 
         // Prevent page caching
@@ -170,6 +165,29 @@
     <div class="main-content">
         <div class="login-container">
             <h2>Login</h2>
+            
+            <!-- Error message from context - MOVED TO TOP OF FORM -->
+            {% if error %}
+                <div class="flash-message-container">
+                    <div class="flash-message danger" style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                        {{ error }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Flash messages container -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-message-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}" style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+            
             <form action="{{ url_for('auth.login') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -191,38 +209,27 @@
             <p class="signup-link">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
         </div>
     </div>
-    
-    <!-- Flash messages container -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-message-container">
-            {% for category, message in messages %}
-                <div class="flash-message {{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% endwith %}
-    
-    <!-- Error message from context -->
-    {% if error %}
-        <div class="flash-message-container">
-            <div class="flash-message alert-error">
-                {{ error }}
-            </div>
-        </div>
-    {% endif %}
 
     <script>
-        // Flash message handling
+        // Flash message handling - MODIFIED to not immediately remove error messages
         document.addEventListener("DOMContentLoaded", function () {
+            // Only auto-hide success messages, not error messages
             setTimeout(() => {
-                document.querySelectorAll('.flash-message').forEach(msg => {
+                document.querySelectorAll('.flash-message.success').forEach(msg => {
                     msg.style.transition = 'opacity 1s ease-out';
                     msg.style.opacity = '0';
                     setTimeout(() => msg.remove(), 1000);
                 });
+                
+                // For error messages, fade them out after a longer delay (8 seconds)
+                setTimeout(() => {
+                    document.querySelectorAll('.flash-message.danger').forEach(msg => {
+                        msg.style.transition = 'opacity 1s ease-out';
+                        msg.style.opacity = '0';
+                        setTimeout(() => msg.remove(), 1000);
+                    });
+                }, 4000); // Additional 4 seconds for error messages
+                
             }, 4000);
         });
 

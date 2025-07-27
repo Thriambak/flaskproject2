@@ -20,7 +20,6 @@
                 <li><a href="/">Home</a></li>
                 <li><a href="/#about">About</a></li>
                 <li><a href="/#footer">Contact</a></li>
-                <!--<li><button class="login-btn" onclick="window.location.href='/auth/login'">Login</button></li>-->
             </ul>
             
             <!-- Mobile Navigation -->
@@ -30,7 +29,6 @@
                     <a href="/"><i class="fas fa-home"></i> Home</a>
                     <a href="/#about"><i class="fas fa-info-circle"></i> About</a>
                     <a href="/#footer"><i class="fas fa-envelope"></i> Contact</a>
-                    <!--<a href="/auth/login"><i class="fas fa-sign-in-alt"></i> Login</a>-->
                 </div>
             </div>
         </nav>
@@ -40,6 +38,36 @@
     <div class="main-content">
         <div class="signup-container">
             <h2>Create an Account</h2>
+            
+            <!-- Flash messages container - MOVED TO TOP -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-message-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}" style="
+                            {% if category == 'danger' %}
+                                background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                            {% elif category == 'success' %}
+                                background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+                            {% endif %}
+                            padding: 10px; margin-bottom: 15px; border-radius: 4px; display: block;
+                        ">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+            
+            <!-- Error message from context -->
+            {% if error %}
+                <div class="flash-message-container">
+                    <div class="flash-message danger" style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                        {{ error }}
+                    </div>
+                </div>
+            {% endif %}
+            
             <form action="{{ url_for('auth.signup') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -63,15 +91,6 @@ Password can only contain letters, numbers, and special characters @#$% ^&+=">
                     </div>
                 </div>
                 
-                <!--<div class="form-group">
-                    <label for="confirm_password">Confirm Password</label>
-                    <div class="password-container">
-                        <input type="password" id="confirm_password" name="confirm_password" required title="Please re-enter your password.">
-                        <span class="material-icons password-toggle" id="toggleConfirmPassword" onclick="toggleConfirmPassword()">visibility</span>
-                    </div>
-                </div>-->
-                
-                
                 <div class="form-group">
                     <label for="role">Role</label>
                     <select id="role" name="role" required>
@@ -88,58 +107,45 @@ Password can only contain letters, numbers, and special characters @#$% ^&+=">
             <p class="login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
         </div>
     </div>
-    
-    <!-- Flash messages container -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="flash-message-container">
-            {% for category, message in messages %}
-                <div class="flash-message {{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% endwith %}
-    
-    <!-- Error message from context -->
-    {% if error %}
-        <div class="flash-message-container">
-            <div class="flash-message alert-error">
-                {{ error }}
-            </div>
-        </div>
-    {% endif %}
 
     <script>
-        // Flash message handling
+        // Flash message handling - IMPROVED
         document.addEventListener("DOMContentLoaded", function () {
+            // Handle success messages - keep them visible longer
             setTimeout(() => {
-                document.querySelectorAll('.flash-message').forEach(msg => {
+                document.querySelectorAll('.flash-message.success').forEach(msg => {
                     msg.style.transition = 'opacity 1s ease-out';
                     msg.style.opacity = '0';
                     setTimeout(() => msg.remove(), 1000);
                 });
-            }, 4000);
+            }, 6000); // Success messages stay for 6 seconds
+            
+            // Handle error messages - shorter display time
+            setTimeout(() => {
+                document.querySelectorAll('.flash-message.danger').forEach(msg => {
+                    msg.style.transition = 'opacity 1s ease-out';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 1000);
+                });
+            }, 8000); // Error messages stay for 8 seconds
         });
 
         // Password toggle function
         function togglePassword() {
-    const field = document.getElementById("password");
-    const icon = document.getElementById("togglePassword");
-    const isVisible = field.type === "text";
-    field.type = isVisible ? "password" : "text";
-    icon.textContent = isVisible ? "visibility" : "visibility_off";
-}
+            const field = document.getElementById("password");
+            const icon = document.getElementById("togglePassword");
+            const isVisible = field.type === "text";
+            field.type = isVisible ? "password" : "text";
+            icon.textContent = isVisible ? "visibility" : "visibility_off";
+        }
 
-function toggleConfirmPassword() {
-    const field = document.getElementById("confirm_password");
-    const icon = document.getElementById("toggleConfirmPassword");
-    const isVisible = field.type === "text";
-    field.type = isVisible ? "password" : "text";
-    icon.textContent = isVisible ? "visibility" : "visibility_off";
-}
-
+        function toggleConfirmPassword() {
+            const field = document.getElementById("confirm_password");
+            const icon = document.getElementById("toggleConfirmPassword");
+            const isVisible = field.type === "text";
+            field.type = isVisible ? "password" : "text";
+            icon.textContent = isVisible ? "visibility" : "visibility_off";
+        }
 
         // Toggle dropdown when profile icon is clicked
         document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
