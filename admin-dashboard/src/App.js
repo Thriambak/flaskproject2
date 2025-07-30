@@ -433,6 +433,7 @@ const metricIcons = {
     jobs: <WorkOutlineIcon sx={{ fontSize: 40, color: 'white' }} />,
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
 };
+// Replace your existing Dashboard component with this updated version
 
 const Dashboard = () => {
     const theme = useTheme();
@@ -442,27 +443,75 @@ const Dashboard = () => {
         jobs: 0,
         applications: 0
     });
-
     const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for faster initial load
+            
+            const response = await fetch(`${API_BASE_URL}/dashboard`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            const transformedMetrics = {
+                job_seekers: data.metrics?.users || data.metrics?.job_seekers || 0,
+                companies: data.metrics?.companies || 0,
+                jobs: data.metrics?.jobs || 0,
+                applications: data.metrics?.applications || 0
+            };
+            
+            setMetrics(transformedMetrics);
+            setChartData(data.trends?.map(item => ({ 
+                x: item.x, 
+                applications: item.applications, 
+                registrations: item.logins 
+            })) || []);
+            
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            setError(error.message);
+            
+            // Set default values on error
+            setMetrics({
+                job_seekers: 0,
+                companies: 0,
+                jobs: 0,
+                applications: 0
+            });
+            setChartData([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/dashboard`)
-            .then((res) => res.json())
-            .then((data) => {
-                const transformedMetrics = {
-                    job_seekers: data.metrics.users || data.metrics.job_seekers || 0,
-                    companies: data.metrics.companies || 0,
-                    jobs: data.metrics.jobs || 0,
-                    applications: data.metrics.applications || 0
-                };
-                setMetrics(transformedMetrics);
-                setChartData(data.trends.map(item => ({ 
-                    x: item.x, 
-                    applications: item.applications, 
-                    registrations: item.logins 
-                })));
-            })
-            .catch((error) => console.error("Error fetching dashboard data:", error));
+        // Immediate data fetch on component mount
+        fetchDashboardData();
+        
+        // Set up auto-refresh every 30 seconds
+        const intervalId = setInterval(fetchDashboardData, 30000);
+        
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
     }, []);
 
     const metricColors = [
@@ -476,8 +525,55 @@ const Dashboard = () => {
         return key === 'job_seekers' ? 'JOB SEEKERS' : key.replace("_", " ").toUpperCase();
     };
 
+    // Show loading state only for initial load
+    if (loading && Object.values(metrics).every(val => val === 0)) {
+        return (
+            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Box textAlign="center">
+                    <CircularProgress size={40} />
+                    <Typography variant="body1" sx={{ mt: 1 }}>
+                        Loading...
+                    </Typography>
+                </Box>
+            </Box>
+        );
+    }
+
+    // Show error state with retry option
+    if (error && Object.values(metrics).every(val => val === 0)) {
+        return (
+            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+                <Box textAlign="center">
+                    <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+                        Failed to load dashboard data
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        {error}
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        onClick={fetchDashboardData}
+                        disabled={loading}
+                    >
+                        {loading ? 'Retrying...' : 'Retry'}
+                    </Button>
+                </Box>
+            </Box>
+        );
+    }
+
     return (
         <Box p={3}>
+            {/* Add refresh indicator */}
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" sx={{ ml: 1 }}>
+                        Refreshing...
+                    </Typography>
+                </Box>
+            )}
+            
             <Grid container spacing={3}>
                 {Object.entries(metrics).map(([key, value], index) => (
                     <Grid item xs={12} sm={6} md={3} key={key}>
@@ -521,9 +617,19 @@ const Dashboard = () => {
                 p: 3,
                 boxShadow: 1
             }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
-                    Activity Trends
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                        Activity Trends
+                    </Typography>
+                    <Button 
+                        size="small" 
+                        onClick={fetchDashboardData}
+                        disabled={loading}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        {loading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                </Box>
                 <ResponsiveContainer width="100%" height="90%">
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
@@ -574,7 +680,7 @@ const Dashboard = () => {
                             type="monotone" 
                             dataKey="registrations" 
                             name="Registrations"
-                            stroke="#388e3c" // A distinct, theme-friendly green
+                            stroke="#388e3c"
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{ r: 3 }}
