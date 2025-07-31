@@ -27,6 +27,7 @@ import {
   useCreate,
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
+  defaultTheme,
 } from "react-admin";
 import {
   Card,
@@ -51,6 +52,7 @@ import {
   InputLabel, 
   FormControl, 
 } from "@mui/material";
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -176,67 +178,82 @@ const CustomLayout = (props) => (
     <Layout {...props} appBar={CustomAppBar} />
 );
 
+// <<< CREATE A DEDICATED LIGHT THEME FOR THE LOGIN PAGE >>>
+const loginPageTheme = createTheme({
+  ...defaultTheme,
+  palette: {
+    ...defaultTheme.palette,
+    mode: 'light', // This forces the light mode
+  },
+});
+
 // Custom Login Page Component
 const CustomLoginPage = () => {
-    const theme = useTheme();
+    // We get the theme from the outer context for the background gradient
+    const theme = useTheme(); 
     
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 2
-            }}
-        >
-            <Paper
-                elevation={10}
+        // <<< WRAP THE ENTIRE PAGE IN THE LIGHT THEME PROVIDER >>>
+        <ThemeProvider theme={loginPageTheme}>
+            <Box
                 sx={{
-                    padding: 4,
-                    borderRadius: 4,
-                    maxWidth: 400,
-                    width: '100%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)'
+                    minHeight: '100vh',
+                    // Use the specific color values for the gradient
+                    background: `linear-gradient(135deg, ${loginPageTheme.palette.primary.main} 0%, ${loginPageTheme.palette.secondary.main} 100%)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 2
                 }}
             >
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <AdminPanelSettingsIcon 
-                        sx={{ 
-                            fontSize: 60, 
-                            color: theme.palette.primary.main,
-                            mb: 2
-                        }} 
-                    />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                        Admin Portal
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Sign in to access your dashboard
-                    </Typography>
-                </Box>
-                
-                <LoginForm 
-                    sx={{ justifyItems: 'center', 
-                        '& .MuiTextField-root': {
-                            mb: 1,
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: 2,
-                            }
-                        },
-                        '& .MuiButton-root': {
-                            borderRadius: 2,
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }
+                <Paper
+                    elevation={10}
+                    sx={{
+                        padding: 4,
+                        borderRadius: 4,
+                        maxWidth: 400,
+                        width: '100%',
+                        // Force a light background for the paper component
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(10px)'
                     }}
-                />
-            </Paper>
-        </Box>
+                >
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                        <AdminPanelSettingsIcon 
+                            sx={{ 
+                                fontSize: 60, 
+                                color: 'primary.main', // This will now correctly use the light theme's primary color
+                                mb: 2
+                            }} 
+                        />
+                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                            Admin Portal
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Sign in to access your dashboard
+                        </Typography>
+                    </Box>
+                    
+                    <LoginForm 
+                        sx={{ justifyItems: 'center', 
+                            '& .MuiTextField-root': {
+                                mb: 1,
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                }
+                            },
+                            '& .MuiButton-root': {
+                                borderRadius: 2,
+                                py: 1.5,
+                                textTransform: 'none',
+                                fontSize: '1rem',
+                                fontWeight: 600
+                            }
+                        }}
+                    />
+                </Paper>
+            </Box>
+        </ThemeProvider>
     );
 };
 
