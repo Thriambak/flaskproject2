@@ -946,14 +946,14 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     website: '',
     logo: '',
     description: '',
-    industry: '', // Default to empty string for initial selection
+    industry: '',
     password: '',
   });
 
   const [passwordError, setPasswordError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [companyNameError, setCompanyNameError] = useState('');
-  const [isCheckingCompany, setIsCheckingCompany] = useState(false); // Loading state for company check
+  const [isCheckingCompany, setIsCheckingCompany] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -1000,7 +1000,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
   const checkCompanyNameExists = async (companyName) => {
     try {
       const { data } = await dataProvider.getList('companies', {
-        pagination: { page: 1, perPage: 1000 }, // Adjust perPage as needed
+        pagination: { page: 1, perPage: 1000 },
         sort: { field: 'id', order: 'ASC' },
         filter: {}
       });
@@ -1083,11 +1083,11 @@ const AddCompanyDialog = ({ open, handleClose }) => {
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       <DialogTitle>Add New Company</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{ mb: 2 }}>
+      <DialogContent sx={{ padding: 0 }}>
+        <DialogContentText sx={{ px: 3, pt: 2, mb: 2 }}>
           Please fill in the details for the new company.
         </DialogContentText>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} sx={{ px: 3 }}>
           <Grid item xs={12} sm={6}>
             <MuiTextField
               autoFocus
@@ -1210,7 +1210,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
           </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={handleClose} color="primary">
           Cancel
         </Button>

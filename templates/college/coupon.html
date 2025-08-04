@@ -85,7 +85,7 @@
                                 <tr class="coupon-row" data-code="{{ coupon.code }}" data-faculty="{{ coupon.faculty_id }}" data-year="{{ coupon.year }}">
                                     <td>{{ coupon.code }}</td>
                                     <td>{{ coupon.faculty_id }}</td>
-                                    <td>{{ coupon.year }}</td>
+                                    <td>{{ coupon.year }} - {{ coupon.year | int + 1 }}</td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
