@@ -123,7 +123,7 @@
                 
                 <!-- Add Questionnaire Button -->
                 <div class="action-buttons">
-                {% if job_id %}
+                {% if form_data.form_url %}
                     <button type="button" class="questionnaire-btn" onclick="window.location.href='{{ form_data.form_url if form_data else '' }}'" {% if is_closed %}disabled{% endif %}>
                         <i class="fas fa-question-circle"></i> Update Questionnaire
                     </button>
