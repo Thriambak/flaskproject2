@@ -27,7 +27,6 @@ import {
   useCreate,
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
-  defaultTheme,
 } from "react-admin";
 import {
   Card,
@@ -52,7 +51,6 @@ import {
   InputLabel, 
   FormControl, 
 } from "@mui/material";
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -89,7 +87,6 @@ import './App.css';
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 // Authentication Provider
-// Authentication Provider
 const authProvider = {
     login: ({ username, password }) => {
     if (username === 'admin' && password === 'admin') {
@@ -101,7 +98,6 @@ const authProvider = {
 },
     logout: () => {
     localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
-    sessionStorage.removeItem('redirected'); // Clear refresh flag on logout
     return Promise.resolve();
 },
     checkError: ({ status }) => {
@@ -112,27 +108,7 @@ const authProvider = {
         return Promise.resolve();
     },
     checkAuth: () => {
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-        if (isAuthenticated) {
-            // If authenticated, clear any refresh flag and proceed
-            sessionStorage.removeItem('redirected');
-            return Promise.resolve();
-        }
-
-        // If not authenticated, check if we've already tried to refresh this session
-        const hasRefreshed = sessionStorage.getItem('redirected');
-
-        if (!hasRefreshed) {
-            // If we haven't refreshed yet, set the flag and reload the page once
-            sessionStorage.setItem('redirected', 'true');
-            window.location.reload();
-            // Return a pending promise to prevent the app from rendering briefly
-            return new Promise(() => {}); 
-        }
-
-        // If we have already refreshed, reject to trigger the normal login redirect
-        return Promise.reject();
+    return localStorage.getItem('isAuthenticated') ? Promise.resolve() : Promise.reject();
     },
     getPermissions: () => Promise.resolve(),
 };
@@ -178,82 +154,67 @@ const CustomLayout = (props) => (
     <Layout {...props} appBar={CustomAppBar} />
 );
 
-// <<< CREATE A DEDICATED LIGHT THEME FOR THE LOGIN PAGE >>>
-const loginPageTheme = createTheme({
-  ...defaultTheme,
-  palette: {
-    ...defaultTheme.palette,
-    mode: 'light', // This forces the light mode
-  },
-});
-
 // Custom Login Page Component
 const CustomLoginPage = () => {
-    // We get the theme from the outer context for the background gradient
-    const theme = useTheme(); 
+    const theme = useTheme();
     
     return (
-        // <<< WRAP THE ENTIRE PAGE IN THE LIGHT THEME PROVIDER >>>
-        <ThemeProvider theme={loginPageTheme}>
-            <Box
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 2
+            }}
+        >
+            <Paper
+                elevation={10}
                 sx={{
-                    minHeight: '100vh',
-                    // Use the specific color values for the gradient
-                    background: `linear-gradient(135deg, ${loginPageTheme.palette.primary.main} 0%, ${loginPageTheme.palette.secondary.main} 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 2
+                    padding: 4,
+                    borderRadius: 4,
+                    maxWidth: 400,
+                    width: '100%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)'
                 }}
             >
-                <Paper
-                    elevation={10}
-                    sx={{
-                        padding: 4,
-                        borderRadius: 4,
-                        maxWidth: 400,
-                        width: '100%',
-                        // Force a light background for the paper component
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        backdropFilter: 'blur(10px)'
-                    }}
-                >
-                    <Box sx={{ textAlign: 'center', mb: 3 }}>
-                        <AdminPanelSettingsIcon 
-                            sx={{ 
-                                fontSize: 60, 
-                                color: 'primary.main', // This will now correctly use the light theme's primary color
-                                mb: 2
-                            }} 
-                        />
-                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                            Admin Portal
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Sign in to access your dashboard
-                        </Typography>
-                    </Box>
-                    
-                    <LoginForm 
-                        sx={{ justifyItems: 'center', 
-                            '& .MuiTextField-root': {
-                                mb: 1,
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 2,
-                                }
-                            },
-                            '& .MuiButton-root': {
-                                borderRadius: 2,
-                                py: 1.5,
-                                textTransform: 'none',
-                                fontSize: '1rem',
-                                fontWeight: 600
-                            }
-                        }}
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <AdminPanelSettingsIcon 
+                        sx={{ 
+                            fontSize: 60, 
+                            color: theme.palette.primary.main,
+                            mb: 2
+                        }} 
                     />
-                </Paper>
-            </Box>
-        </ThemeProvider>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                        Admin Portal
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Sign in to access your dashboard
+                    </Typography>
+                </Box>
+                
+                <LoginForm 
+                    sx={{ justifyItems: 'center', 
+                        '& .MuiTextField-root': {
+                            mb: 1,
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            }
+                        },
+                        '& .MuiButton-root': {
+                            borderRadius: 2,
+                            py: 1.5,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            fontWeight: 600
+                        }
+                    }}
+                />
+            </Paper>
+        </Box>
     );
 };
 
@@ -472,6 +433,7 @@ const metricIcons = {
     jobs: <WorkOutlineIcon sx={{ fontSize: 40, color: 'white' }} />,
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
 };
+// Replace your existing Dashboard component with this updated version
 
 const Dashboard = () => {
     const theme = useTheme();
@@ -481,27 +443,75 @@ const Dashboard = () => {
         jobs: 0,
         applications: 0
     });
-
     const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for faster initial load
+            
+            const response = await fetch(`${API_BASE_URL}/dashboard`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            const transformedMetrics = {
+                job_seekers: data.metrics?.users || data.metrics?.job_seekers || 0,
+                companies: data.metrics?.companies || 0,
+                jobs: data.metrics?.jobs || 0,
+                applications: data.metrics?.applications || 0
+            };
+            
+            setMetrics(transformedMetrics);
+            setChartData(data.trends?.map(item => ({ 
+                x: item.x, 
+                applications: item.applications, 
+                registrations: item.logins 
+            })) || []);
+            
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            setError(error.message);
+            
+            // Set default values on error
+            setMetrics({
+                job_seekers: 0,
+                companies: 0,
+                jobs: 0,
+                applications: 0
+            });
+            setChartData([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/dashboard`)
-            .then((res) => res.json())
-            .then((data) => {
-                const transformedMetrics = {
-                    job_seekers: data.metrics.users || data.metrics.job_seekers || 0,
-                    companies: data.metrics.companies || 0,
-                    jobs: data.metrics.jobs || 0,
-                    applications: data.metrics.applications || 0
-                };
-                setMetrics(transformedMetrics);
-                setChartData(data.trends.map(item => ({ 
-                    x: item.x, 
-                    applications: item.applications, 
-                    registrations: item.logins 
-                })));
-            })
-            .catch((error) => console.error("Error fetching dashboard data:", error));
+        // Immediate data fetch on component mount
+        fetchDashboardData();
+        
+        // Set up auto-refresh every 30 seconds
+        const intervalId = setInterval(fetchDashboardData, 30000);
+        
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
     }, []);
 
     const metricColors = [
@@ -515,8 +525,55 @@ const Dashboard = () => {
         return key === 'job_seekers' ? 'JOB SEEKERS' : key.replace("_", " ").toUpperCase();
     };
 
+    // Show loading state only for initial load
+    if (loading && Object.values(metrics).every(val => val === 0)) {
+        return (
+            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Box textAlign="center">
+                    <CircularProgress size={40} />
+                    <Typography variant="body1" sx={{ mt: 1 }}>
+                        Loading...
+                    </Typography>
+                </Box>
+            </Box>
+        );
+    }
+
+    // Show error state with retry option
+    if (error && Object.values(metrics).every(val => val === 0)) {
+        return (
+            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+                <Box textAlign="center">
+                    <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+                        Failed to load dashboard data
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        {error}
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        onClick={fetchDashboardData}
+                        disabled={loading}
+                    >
+                        {loading ? 'Retrying...' : 'Retry'}
+                    </Button>
+                </Box>
+            </Box>
+        );
+    }
+
     return (
         <Box p={3}>
+            {/* Add refresh indicator */}
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" sx={{ ml: 1 }}>
+                        Refreshing...
+                    </Typography>
+                </Box>
+            )}
+            
             <Grid container spacing={3}>
                 {Object.entries(metrics).map(([key, value], index) => (
                     <Grid item xs={12} sm={6} md={3} key={key}>
@@ -560,9 +617,19 @@ const Dashboard = () => {
                 p: 3,
                 boxShadow: 1
             }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
-                    Activity Trends
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                        Activity Trends
+                    </Typography>
+                    <Button 
+                        size="small" 
+                        onClick={fetchDashboardData}
+                        disabled={loading}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        {loading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                </Box>
                 <ResponsiveContainer width="100%" height="90%">
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
@@ -613,7 +680,7 @@ const Dashboard = () => {
                             type="monotone" 
                             dataKey="registrations" 
                             name="Registrations"
-                            stroke="#388e3c" // A distinct, theme-friendly green
+                            stroke="#388e3c"
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{ r: 3 }}
@@ -932,12 +999,11 @@ const industryOptions = [
   "Activities of Households as Employers",
   "Activities of Extraterritorial Organizations and Bodies"
 ];
-
 const AddCompanyDialog = ({ open, handleClose }) => {
   const [create] = useCreate();
   const notify = useNotify();
   const refresh = useRefresh();
-  const dataProvider = useDataProvider(); // Add this hook for checking existing companies
+  const dataProvider = useDataProvider();
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -946,14 +1012,14 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     website: '',
     logo: '',
     description: '',
-    industry: '', // Default to empty string for initial selection
+    industry: '',
     password: '',
   });
 
   const [passwordError, setPasswordError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [companyNameError, setCompanyNameError] = useState('');
-  const [isCheckingCompany, setIsCheckingCompany] = useState(false); // Loading state for company check
+  const [isCheckingCompany, setIsCheckingCompany] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -996,16 +1062,13 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     return '';
   };
 
-  // New function to check if company name already exists
   const checkCompanyNameExists = async (companyName) => {
     try {
       const { data } = await dataProvider.getList('companies', {
-        pagination: { page: 1, perPage: 1000 }, // Adjust perPage as needed
+        pagination: { page: 1, perPage: 1000 },
         sort: { field: 'id', order: 'ASC' },
         filter: {}
       });
-      
-      // Check if company name exists (case-insensitive)
       return data.some(company => 
         company.company_name.toLowerCase() === companyName.toLowerCase()
       );
@@ -1034,11 +1097,9 @@ const AddCompanyDialog = ({ open, handleClose }) => {
       return;
     }
 
-    // Check if company name already exists
     setIsCheckingCompany(true);
     try {
       const companyExists = await checkCompanyNameExists(formData.company_name);
-      
       if (companyExists) {
         setCompanyNameError('A company with this name already exists. Please choose a different name.');
         setIsCheckingCompany(false);
@@ -1081,14 +1142,14 @@ const AddCompanyDialog = ({ open, handleClose }) => {
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" scroll="paper">
       <DialogTitle>Add New Company</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{ mb: 2 }}>
+      <DialogContent sx={{ padding: 0, overflowY: 'auto', maxHeight: '70vh', maxWidth:'70vw' }}>
+        <DialogContentText sx={{ px: 3, pt: 2, mb: 2 }}>
           Please fill in the details for the new company.
         </DialogContentText>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+        <Grid container spacing={2} sx={{ px: 3, py: 2, alignItems: 'center' }}>
+          <Grid sx={{ width: '50%', pr: 1 }}>
             <MuiTextField
               autoFocus
               margin="dense"
@@ -1102,9 +1163,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               required
               error={!!companyNameError}
               helperText={companyNameError}
+              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid sx={{ width: '50%', pl: 1 }}>
             <MuiTextField
               margin="dense"
               name="email"
@@ -1117,9 +1179,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               required
               error={!!emailError}
               helperText={emailError}
+              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid sx={{ width: '50%', pr: 1 }}>
             <MuiTextField
               margin="dense"
               name="password"
@@ -1132,9 +1195,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               error={!!passwordError}
               helperText={passwordError || "Must be at least 8 characters and contain letters, numbers, or @#$%^&+="}
               required
+              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid sx={{ width: '50%', pl: 1 }}>
             <FormControl fullWidth margin="dense" variant="outlined">
               <InputLabel id="industry-label">Industry</InputLabel>
               <Select
@@ -1144,6 +1208,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
                 value={formData.industry}
                 onChange={handleChange}
                 label="Industry"
+                sx={{ height: '56px' }}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -1156,7 +1221,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12}>
+          <Grid sx={{ width: '100%' }}>
             <MuiTextField
               margin="dense"
               name="address"
@@ -1168,9 +1233,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               variant="outlined"
               value={formData.address}
               onChange={handleChange}
+              sx={{ '& .MuiOutlinedInput-root': { minHeight: '96px' } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid sx={{ width: '50%', pr: 1 }}>
             <MuiTextField
               margin="dense"
               name="website"
@@ -1180,9 +1246,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               variant="outlined"
               value={formData.website}
               onChange={handleChange}
+              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid sx={{ width: '50%', pl: 1 }}>
             <MuiTextField
               margin="dense"
               name="logo"
@@ -1192,9 +1259,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               variant="outlined"
               value={formData.logo}
               onChange={handleChange}
+              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid sx={{ width: '100%' }}>
             <MuiTextField
               margin="dense"
               name="description"
@@ -1206,13 +1274,14 @@ const AddCompanyDialog = ({ open, handleClose }) => {
               variant="outlined"
               value={formData.description}
               onChange={handleChange}
+              sx={{ '& .MuiOutlinedInput-root': { minHeight: '144px' } }}
             />
           </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ p: '16px 24px', justifyContent: 'flex-end', gap: 1 }}>
         <Button onClick={handleClose} color="primary">
-          Cancel
+          CANCEL
         </Button>
         <Button 
           onClick={handleSubmit} 
@@ -1220,13 +1289,12 @@ const AddCompanyDialog = ({ open, handleClose }) => {
           variant="contained"
           disabled={isCheckingCompany}
         >
-          {isCheckingCompany ? 'Checking...' : 'Add Company'}
+          ADD COMPANY
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
-
 const AddCompanyButton = () => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
