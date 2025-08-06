@@ -50,9 +50,15 @@ import {
   CircularProgress,
   Select, 
   InputLabel, 
-  FormControl, 
+  FormControl,
+  Chip,
+  List as MuiList,
+  ListItem,
+  ListItemAvatar,
+  Avatar,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -75,6 +81,13 @@ import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SchoolIcon from '@mui/icons-material/School';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PostAddIcon from '@mui/icons-material/PostAdd';
+import SendIcon from '@mui/icons-material/Send';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 // import RefreshIcon from '@mui/icons-material/Refresh'; // REMOVED: RefreshIcon is no longer needed
 import { 
     Dialog, // MUI Dialog
@@ -473,6 +486,128 @@ const metricIcons = {
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
 };
 
+// Recent Activity Feed Component
+const RecentActivityFeed = () => {
+    const theme = useTheme();
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Fetch recent activities - you'll need to create this endpoint
+        fetch(`${API_BASE_URL}/recent-activities`)
+            .then((res) => res.json())
+            .then((data) => {
+                setActivities(data.slice(0, 10)); // Show only last 10 activities
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching recent activities:", error);
+                setLoading(false);
+            });
+    }, []);
+
+    const getActivityIcon = (type) => {
+        switch(type) {
+            case 'user_registration':
+                return <PersonAddIcon sx={{ color: theme.palette.primary.main }} />;
+            case 'company_registration':
+                return <AddBusinessIcon sx={{ color: theme.palette.secondary.main }} />;
+            case 'job_posting':
+                return <PostAddIcon sx={{ color: theme.palette.success.main }} />;
+            case 'application_submission':
+                return <SendIcon sx={{ color: theme.palette.info.main }} />;
+            default:
+                return <EventIcon sx={{ color: theme.palette.text.secondary }} />;
+        }
+    };
+
+    const formatActivityText = (activity) => {
+        switch(activity.type) {
+            case 'user_registration':
+                return `${activity.user_name} registered as a job seeker`;
+            case 'company_registration':
+                return `${activity.company_name} registered as a company`;
+            case 'job_posting':
+                return `${activity.company_name} posted a new job: ${activity.job_title}`;
+            case 'application_submission':
+                return `${activity.user_name} applied for ${activity.job_title}`;
+            default:
+                return activity.description || 'Unknown activity';
+        }
+    };
+
+    const formatTimeAgo = (timestamp) => {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffInMinutes = Math.floor((now - time) / (1000 * 60));
+        
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+        return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    };
+
+    if (loading) {
+        return (
+            <Card sx={{ height: 400 }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+                        <CircularProgress />
+                    </Box>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card sx={{ height: 400, overflow: 'hidden' }}>
+            <CardContent sx={{ p: 0, height: '100%' }}>
+                <Box sx={{ p: 3, pb: 1 }}>
+                    <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+                </Box>
+                <MuiList sx={{ height: 'calc(100% - 80px)', overflow: 'auto', p: 0 }}>
+                    {activities.length === 0 ? (
+                        <ListItem>
+                            <Typography variant="body2" color="text.secondary">
+                                No recent activities found
+                            </Typography>
+                        </ListItem>
+                    ) : (
+                        activities.map((activity, index) => (
+                            <ListItem key={index} sx={{ py: 1.5, px: 3 }}>
+                                <ListItemAvatar>
+                                    <Avatar sx={{ bgcolor: 'transparent', width: 32, height: 32 }}>
+                                        {getActivityIcon(activity.type)}
+                                    </Avatar>
+                                </ListItemAvatar>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            mb: 0.5,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                        }}
+                                    >
+                                        {formatActivityText(activity)}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {formatTimeAgo(activity.timestamp)}
+                                    </Typography>
+                                </Box>
+                            </ListItem>
+                        ))
+                    )}
+                </MuiList>
+            </CardContent>
+        </Card>
+    );
+};
+
 const Dashboard = () => {
     const theme = useTheme();
     const [metrics, setMetrics] = useState({
@@ -553,74 +688,84 @@ const Dashboard = () => {
 
             <Divider sx={{ my: 4, bgcolor: 'divider', height: 2 }} />
 
-            <Box sx={{ 
-                height: 400,
-                bgcolor: 'background.paper',
-                borderRadius: 3,
-                p: 3,
-                boxShadow: 1
-            }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
-                    Activity Trends
-                </Typography>
-                <ResponsiveContainer width="100%" height="90%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                        <XAxis 
-                            dataKey="x" 
-                            label={{ 
-                                value: "Date", 
-                                position: "bottom",
-                                offset: 0,
-                                fill: theme.palette.text.secondary
-                            }}
-                            tick={{ fill: theme.palette.text.secondary }}
-                        />
-                        <YAxis 
-                            label={{ 
-                                value: "Activity", 
-                                angle: -90, 
-                                position: "left",
-                                fill: theme.palette.text.secondary
-                            }}
-                            tick={{ fill: theme.palette.text.secondary }}
-                        />
-                        <Tooltip 
-                            contentStyle={{
-                                backgroundColor: theme.palette.background.paper,
-                                color: theme.palette.text.primary,
-                                borderRadius: '8px',
-                                borderColor: theme.palette.divider,
-                                boxShadow: theme.shadows[3],
-                            }}
-                            cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
-                        />
-                        <Legend 
-                            wrapperStyle={{ paddingTop: 20 }}
-                            iconSize={16}
-                            iconType="circle"
-                        />
-                        <Line 
-                            type="monotone" 
-                            dataKey="applications"
-                            name="Applications"
-                            stroke={theme.palette.primary.main} 
-                            strokeWidth={2}
-                            activeDot={{ r: 6 }}
-                            dot={{ r: 3 }}
-                        />
-                        <Line 
-                            type="monotone" 
-                            dataKey="registrations" 
-                            name="Registrations"
-                            stroke="#388e3c" // A distinct, theme-friendly green
-                            strokeWidth={2}
-                            activeDot={{ r: 6 }}
-                            dot={{ r: 3 }}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            </Box>
+            <Grid container spacing={3}>
+                {/* Activity Trends Chart */}
+                <Grid item xs={12} md={8}>
+                    <Box sx={{ 
+                        height: 400,
+                        bgcolor: 'background.paper',
+                        borderRadius: 3,
+                        p: 3,
+                        boxShadow: 1
+                    }}>
+                        <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
+                            Activity Trends
+                        </Typography>
+                        <ResponsiveContainer width="100%" height="90%">
+                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                <XAxis 
+                                    dataKey="x" 
+                                    label={{ 
+                                        value: "Date", 
+                                        position: "bottom",
+                                        offset: 0,
+                                        fill: theme.palette.text.secondary
+                                    }}
+                                    tick={{ fill: theme.palette.text.secondary }}
+                                />
+                                <YAxis 
+                                    label={{ 
+                                        value: "Activity", 
+                                        angle: -90, 
+                                        position: "left",
+                                        fill: theme.palette.text.secondary
+                                    }}
+                                    tick={{ fill: theme.palette.text.secondary }}
+                                />
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                        borderRadius: '8px',
+                                        borderColor: theme.palette.divider,
+                                        boxShadow: theme.shadows[3],
+                                    }}
+                                    cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
+                                />
+                                <Legend 
+                                    wrapperStyle={{ paddingTop: 20 }}
+                                    iconSize={16}
+                                    iconType="circle"
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="applications"
+                                    name="Applications"
+                                    stroke={theme.palette.primary.main} 
+                                    strokeWidth={2}
+                                    activeDot={{ r: 6 }}
+                                    dot={{ r: 3 }}
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="registrations" 
+                                    name="Registrations"
+                                    stroke="#388e3c" // A distinct, theme-friendly green
+                                    strokeWidth={2}
+                                    activeDot={{ r: 6 }}
+                                    dot={{ r: 3 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </Box>
+                </Grid>
+
+                {/* Recent Activity Feed */}
+                <Grid item xs={12} md={4}>
+                    <RecentActivityFeed />
+                </Grid>
+            </Grid>
         </Box>
     );
 };
@@ -812,6 +957,55 @@ const ClickableNameField = ({ source, resource }) => {
     );
 };
 
+// Job Status Visual Indicator Component
+const JobStatusIndicator = ({ status }) => {
+    const getStatusProps = (status) => {
+        switch(status?.toLowerCase()) {
+            case 'open':
+                return {
+                    color: 'success',
+                    icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
+                    label: 'Open'
+                };
+            case 'closed':
+                return {
+                    color: 'error',
+                    icon: <CancelIcon sx={{ fontSize: 16 }} />,
+                    label: 'Closed'
+                };
+            case 'paused':
+                return {
+                    color: 'warning',
+                    icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />,
+                    label: 'Paused'
+                };
+            default:
+                return {
+                    color: 'default',
+                    icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />,
+                    label: status || 'Unknown'
+                };
+        }
+    };
+
+    const statusProps = getStatusProps(status);
+
+    return (
+        <Chip
+            icon={statusProps.icon}
+            label={statusProps.label}
+            color={statusProps.color}
+            variant="outlined"
+            size="small"
+            sx={{ 
+                fontWeight: 600,
+                '& .MuiChip-icon': {
+                    marginLeft: '8px'
+                }
+            }}
+        />
+    );
+};
 
 const FilterDropdown = () => {
     const { resource, filterValues, setFilters } = useListContext();
@@ -832,13 +1026,14 @@ const FilterDropdown = () => {
             case 'users':
                 return [
                     { label: "Name", value: "name:", icon: <PersonIcon /> },
-                    { label: "Email", value: "email:", icon: <EmailIcon /> }
+                    { label: "Email", value: "email:", icon: <EmailIcon /> },
+                    { label: "College", value: "college_name:", icon: <SchoolIcon /> }
                 ];
             case 'companies':
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-            { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+                    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
@@ -934,297 +1129,269 @@ const industryOptions = [
 ];
 
 const AddCompanyDialog = ({ open, handleClose }) => {
-  const [create] = useCreate();
-  const notify = useNotify();
-  const refresh = useRefresh();
-  const dataProvider = useDataProvider(); // Add this hook for checking existing companies
+    const [create] = useCreate();
+    const notify = useNotify();
+    const refresh = useRefresh();
+    const dataProvider = useDataProvider();
+    const theme = useTheme();
 
-  const [formData, setFormData] = useState({
-    company_name: '',
-    email: '',
-    address: '',
-    website: '',
-    logo: '',
-    description: '',
-    industry: '',
-    password: '',
-  });
+    const [formData, setFormData] = useState({ company_name: '', email: '', address: '', website: '', logo: '', description: '', industry: '', password: '' });
+    const [passwordError, setPasswordError] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [companyNameError, setCompanyNameError] = useState('');
+    const [isCheckingCompany, setIsCheckingCompany] = useState(false);
 
-  const [passwordError, setPasswordError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [companyNameError, setCompanyNameError] = useState('');
-  const [isCheckingCompany, setIsCheckingCompany] = useState(false);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        if (name === 'password') setPasswordError('');
+        if (name === 'email') setEmailError('');
+        if (name === 'company_name') setCompanyNameError('');
+    };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (e.target.name === 'password') {
-      setPasswordError('');
-    } else if (e.target.name === 'email') {
-      setEmailError('');
-    } else if (e.target.name === 'company_name') {
-      setCompanyNameError('');
-    }
-  };
+    const validatePassword = (password) => {
+        if (password.includes(' ')) return 'Password cannot contain spaces.';
+        if (!/^[a-zA-Z0-9@#$%^&+=]+$/.test(password)) return 'Password can only contain letters, numbers, and @#$%^&+=';
+        if (password.length < 8) return 'Password must be at least 8 characters long.';
+        return '';
+    };
 
-  const validatePassword = (password) => {
-    if (password.includes(' ')) {
-      return 'Password cannot contain spaces.';
-    }
-    if (!/^[a-zA-Z0-9@#$%^&+=]+$/.test(password)) {
-      return 'Password can only contain letters, numbers, and special characters @#$%^&+=';
-    }
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long.';
-    }
-    return '';
-  };
+    const validateEmail = (email) => {
+        if (!email) return 'Email address is required.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
+        return '';
+    };
 
-  const validateEmail = (email) => {
-    if (!email) {
-      return 'Email address is required.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return 'Please enter a valid email address.';
-    }
-    return '';
-  };
+    const validateCompanyName = (companyName) => {
+        if (!companyName) return 'Company Name is required.';
+        return '';
+    };
 
-  const validateCompanyName = (companyName) => {
-    if (!companyName) {
-      return 'Company Name is required.';
-    }
-    return '';
-  };
+    const checkCompanyNameExists = async (companyName) => {
+        try {
+            const { data } = await dataProvider.getList('companies', { pagination: { page: 1, perPage: 1000 }, sort: { field: 'id', order: 'ASC' }, filter: {} });
+            return data.some(company => company.company_name.toLowerCase() === companyName.toLowerCase());
+        } catch (error) {
+            console.error('Error checking company name:', error);
+            throw new Error('Unable to verify company name. Please try again.');
+        }
+    };
+    
+    const resetForm = () => {
+        setFormData({ company_name: '', email: '', address: '', website: '', logo: '', description: '', industry: '', password: '' });
+        setPasswordError('');
+        setEmailError('');
+        setCompanyNameError('');
+    };
+    
+    const handleDialogClose = () => {
+        resetForm();
+        handleClose();
+    };
 
-  // New function to check if company name already exists
-  const checkCompanyNameExists = async (companyName) => {
-    try {
-      const { data } = await dataProvider.getList('companies', {
-        pagination: { page: 1, perPage: 1000 },
-        sort: { field: 'id', order: 'ASC' },
-        filter: {}
-      });
-      
-      // Check if company name exists (case-insensitive)
-      return data.some(company => 
-        company.company_name.toLowerCase() === companyName.toLowerCase()
-      );
-    } catch (error) {
-      console.error('Error checking company name:', error);
-      throw new Error('Unable to verify company name. Please try again.');
-    }
-  };
+    const handleSubmit = async () => {
+        const passwordValidationMessage = validatePassword(formData.password);
+        const emailValidationMessage = validateEmail(formData.email);
+        const companyNameValidationMessage = validateCompanyName(formData.company_name);
+        if (passwordValidationMessage) setPasswordError(passwordValidationMessage);
+        if (emailValidationMessage) setEmailError(emailValidationMessage);
+        if (companyNameValidationMessage) setCompanyNameError(companyNameValidationMessage);
+        if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) return;
 
-  const handleSubmit = async () => {
-    const passwordValidationMessage = validatePassword(formData.password);
-    const emailValidationMessage = validateEmail(formData.email);
-    const companyNameValidationMessage = validateCompanyName(formData.company_name);
-
-    if (passwordValidationMessage) {
-      setPasswordError(passwordValidationMessage);
-    }
-    if (emailValidationMessage) {
-      setEmailError(emailValidationMessage);
-    }
-    if (companyNameValidationMessage) {
-      setCompanyNameError(companyNameValidationMessage);
-    }
-
-    if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
-      return;
-    }
-
-    // Check if company name already exists
-    setIsCheckingCompany(true);
-    try {
-      const companyExists = await checkCompanyNameExists(formData.company_name);
-      
-      if (companyExists) {
-        setCompanyNameError('A company with this name already exists. Please choose a different name.');
+        setIsCheckingCompany(true);
+        try {
+            const companyExists = await checkCompanyNameExists(formData.company_name);
+            if (companyExists) {
+                setCompanyNameError('A company with this name already exists.');
+                setIsCheckingCompany(false);
+                return;
+            }
+        } catch (error) {
+            setIsCheckingCompany(false);
+            notify(`Error: ${error.message}`, { type: 'error' });
+            return;
+        }
         setIsCheckingCompany(false);
-        return;
-      }
-    } catch (error) {
-      setIsCheckingCompany(false);
-      notify(`Error: ${error.message}`, { type: 'error' });
-      return;
-    }
-    setIsCheckingCompany(false);
 
-    try {
-      const dataToCreate = {
-        ...formData,
-        is_banned: false,
-      };
+        try {
+            await create('companies', { data: { ...formData, is_banned: false } });
+            notify('Company added successfully!', { type: 'success' });
+            refresh();
+            handleDialogClose();
+        } catch (error) {
+            notify(`Error adding company: ${error.message}`, { type: 'error' });
+        }
+    };
 
-      await create('companies', { data: dataToCreate });
-      notify('Company added successfully!', { type: 'success' });
-      refresh();
-      handleClose();
-      setFormData({
-        company_name: '',
-        email: '',
-        address: '',
-        website: '',
-        logo: '',
-        description: '',
-        industry: '',
-        password: '',
-      });
-      setPasswordError('');
-      setEmailError('');
-      setCompanyNameError('');
-    } catch (error) {
-      notify(`Error adding company: ${error.message}`, { type: 'error' });
-      console.error("Error adding company:", error);
-    }
-  };
+    return (
+        <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+            <Box sx={{
+                p: 3,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <AddBusinessIcon sx={{ fontSize: 40 }}/>
+                <Box>
+                    <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                        Create New Company
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Fill out the form to register a new company profile.
+                    </Typography>
+                </Box>
+            </Box>
+            
+            <DialogContent sx={{ p: 3 }}>
+                {/* PRIMARY DETAILS SECTION */}
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>
+                        PRIMARY DETAILS
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 3,
+                        mb: 3
+                    }}>
+                        <MuiTextField 
+                            autoFocus 
+                            name="company_name" 
+                            label="Company Name" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.company_name} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!companyNameError} 
+                            helperText={companyNameError} 
+                        />
+                        <MuiTextField 
+                            name="email" 
+                            label="Email Address" 
+                            type="email" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!emailError} 
+                            helperText={emailError} 
+                        />
+                    </Box>
+                    
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 3
+                    }}>
+                        <MuiTextField 
+                            name="password" 
+                            label="Password" 
+                            type="password" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.password} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!passwordError} 
+                            helperText={passwordError || "8+ characters, no spaces"} 
+                        />
+                        <FormControl fullWidth variant="outlined">
+                            <InputLabel id="industry-label">Industry</InputLabel>
+                            <Select 
+                                labelId="industry-label" 
+                                id="industry" 
+                                name="industry" 
+                                value={formData.industry} 
+                                onChange={handleChange} 
+                                label="Industry"
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {industryOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
 
-  return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add New Company</DialogTitle>
-      <DialogContent sx={{ padding: 0 }}>
-        <DialogContentText sx={{ px: 3, pt: 2, mb: 2 }}>
-          Please fill in the details for the new company.
-        </DialogContentText>
-        <Grid container spacing={2} sx={{ px: 3 }}>
-          <Grid item xs={12} sm={6}>
-            <MuiTextField
-              autoFocus
-              margin="dense"
-              name="company_name"
-              label="Company Name"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={formData.company_name}
-              onChange={handleChange}
-              required
-              error={!!companyNameError}
-              helperText={companyNameError}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <MuiTextField
-              margin="dense"
-              name="email"
-              label="Email Address"
-              type="email"
-              fullWidth
-              variant="outlined"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              error={!!emailError}
-              helperText={emailError}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <MuiTextField
-              margin="dense"
-              name="password"
-              label="Password"
-              type="password"
-              fullWidth
-              variant="outlined"
-              value={formData.password}
-              onChange={handleChange}
-              error={!!passwordError}
-              helperText={passwordError || "Must be at least 8 characters and contain letters, numbers, or @#$%^&+="}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth margin="dense" variant="outlined">
-              <InputLabel id="industry-label">Industry</InputLabel>
-              <Select
-                labelId="industry-label"
-                id="industry"
-                name="industry"
-                value={formData.industry}
-                onChange={handleChange}
-                label="Industry"
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {industryOptions.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12}>
-            <MuiTextField
-              margin="dense"
-              name="address"
-              label="Address"
-              type="text"
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              value={formData.address}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <MuiTextField
-              margin="dense"
-              name="website"
-              label="Website"
-              type="url"
-              fullWidth
-              variant="outlined"
-              value={formData.website}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <MuiTextField
-              margin="dense"
-              name="logo"
-              label="Logo URL"
-              type="url"
-              fullWidth
-              variant="outlined"
-              value={formData.logo}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <MuiTextField
-              margin="dense"
-              name="description"
-              label="Description"
-              type="text"
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleClose} color="primary">
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSubmit} 
-          color="primary" 
-          variant="contained"
-          disabled={isCheckingCompany}
-        >
-          {isCheckingCompany ? 'Checking...' : 'Add Company'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+                {/* ADDITIONAL INFORMATION SECTION */}
+                <Box>
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>
+                        ADDITIONAL INFORMATION
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <MuiTextField 
+                            name="address" 
+                            label="Address" 
+                            fullWidth 
+                            multiline 
+                            rows={2} 
+                            variant="outlined" 
+                            value={formData.address} 
+                            onChange={handleChange} 
+                        />
+                        
+                        <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 3
+                        }}>
+                            <MuiTextField 
+                                name="website" 
+                                label="Website URL" 
+                                type="url" 
+                                fullWidth 
+                                variant="outlined" 
+                                value={formData.website} 
+                                onChange={handleChange} 
+                            />
+                            <MuiTextField 
+                                name="logo" 
+                                label="Logo URL" 
+                                type="url" 
+                                fullWidth 
+                                variant="outlined" 
+                                value={formData.logo} 
+                                onChange={handleChange} 
+                            />
+                        </Box>
+                        
+                        <MuiTextField 
+                            name="description" 
+                            label="Company Description" 
+                            fullWidth 
+                            multiline 
+                            rows={3} 
+                            variant="outlined" 
+                            value={formData.description} 
+                            onChange={handleChange} 
+                        />
+                    </Box>
+                </Box>
+            </DialogContent>
+            
+            <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}`, gap: 2 }}>
+                <Button onClick={handleDialogClose} size="large">Cancel</Button>
+                <Button 
+                    onClick={handleSubmit} 
+                    variant="contained" 
+                    size="large"
+                    disabled={isCheckingCompany} 
+                    startIcon={isCheckingCompany ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+                >
+                    {isCheckingCompany ? 'Checking...' : 'Add Company'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 };
 
 const AddCompanyButton = () => {
@@ -1478,7 +1645,11 @@ const JobList = (props) => (
             <TextField source="salary" />
             <TextField source="total_vacancy" />
             <TextField source="filled_vacancy" />
-            <TextField source="status" />
+            <FunctionField
+                label="Status"
+                source="status"
+                render={(record) => <JobStatusIndicator status={record.status} />}
+            />
         </StyledDatagrid>
     </List>
 );
