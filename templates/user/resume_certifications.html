@@ -18,6 +18,94 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/balloon-css/balloon.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/resume.css') }}">
   
+  <style>
+    /* Custom Modal Styles */
+    .delete-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .delete-modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 0;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      padding: 20px;
+      border-radius: 12px 12px 0 0;
+      text-align: center;
+    }
+    
+    .modal-body {
+      padding: 30px 20px;
+      text-align: center;
+    }
+    
+    .modal-footer {
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #f3f4f6;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    
+    .modal-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 100px;
+    }
+    
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+    
+    .btn-delete:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      transform: translateY(-2px);
+    }
+    
+    .btn-cancel {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
+    .btn-cancel:hover {
+      background: #e5e7eb;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
   <!-- Flash Messages -->
@@ -32,6 +120,29 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="delete-modal">
+    <div class="delete-modal-content">
+      <div class="modal-header">
+        <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+        <h3 class="text-xl font-bold">Confirm Delete</h3>
+      </div>
+      <div class="modal-body">
+        <p class="text-gray-700 text-lg mb-2">Are you sure you want to delete</p>
+        <p id="deleteItemName" class="font-bold text-gray-900 text-lg"></p>
+        <p class="text-gray-500 text-sm mt-3">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelDelete" class="modal-btn btn-cancel">
+          <i class="fas fa-times mr-2"></i>Cancel
+        </button>
+        <button id="confirmDelete" class="modal-btn btn-delete">
+          <i class="fas fa-trash mr-2"></i>Delete
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Header -->
@@ -59,7 +170,6 @@
   </header>
   
   <!-- Main Layout -->
-
 <main>
   <!-- Navigation Sidebar -->
   <div class="navigation" id="side-navigation">
@@ -119,7 +229,7 @@
           <form action="{{ url_for('user.resume_certifications') }}" method="POST">
             <div class="mb-4">
               <label for="certification_name" class="text-gray-700 font-medium">Skill Name:</label>
-              <input type="text" name="certification_name" id="certification_name" class="form-control mt-2" placeholder="Enter Skill/Certification" required>
+              <input type="text" name="certification_name" id="certification_name" class="form-control mt-2" placeholder="Enter Skill Name" required>
             </div>
             <div class="flex justify-between flex-responsive">
               <button type="submit" class="btn btn-primary">
@@ -148,10 +258,10 @@
                       </a>
                     </div>
                     <div>
-                      <form action="{{ url_for('user.delete_resume', resume_id=resume_cert.id) }}" 
-                            method="POST" style="display: inline;" 
-                            onsubmit="return confirm('Are you sure you want to delete this resume?')">
-                        <button type="submit" class="action-btn delete-btn">
+                      <form id="deleteResumeForm_{{ resume_cert.id }}" action="{{ url_for('user.delete_resume', resume_id=resume_cert.id) }}" 
+                            method="POST" style="display: inline;">
+                        <button type="button" class="action-btn delete-btn" 
+                                onclick="showDeleteModal('resume', '{{ resume_cert.resume_path.split('/')[-1] }}', 'deleteResumeForm_{{ resume_cert.id }}')">
                           <i class="fas fa-trash mr-1"></i> Delete
                         </button>
                       </form>
@@ -192,10 +302,10 @@
                         </span>
                       {% endif %}
                       
-                      <form action="{{ url_for('user.delete_certification', certification_id=cert.id) }}" 
-                            method="POST" style="display: inline;" 
-                            onsubmit="return confirmDeleteCertification('{{ cert.certification_name }}')">
-                        <button type="submit" class="action-btn delete-btn">
+                      <form id="deleteCertForm_{{ cert.id }}" action="{{ url_for('user.delete_certification', certification_id=cert.id) }}" 
+                            method="POST" style="display: inline;">
+                        <button type="button" class="action-btn delete-btn" 
+                                onclick="showDeleteModal('skill', '{{ cert.certification_name }}', 'deleteCertForm_{{ cert.id }}')">
                           <i class="fas fa-trash mr-1"></i> Delete
                         </button>
                       </form>
@@ -218,10 +328,50 @@
   
   <!-- JavaScript -->
   <script>
-    // Function to confirm certification deletion with name
-    function confirmDeleteCertification(certificationName) {
-      return confirm(`Are you sure you want to delete the certification "${certificationName}"?`);
+    // Delete Modal Variables
+    let currentDeleteForm = null;
+    
+    // Function to show delete modal
+    function showDeleteModal(type, itemName, formId) {
+      const modal = document.getElementById('deleteModal');
+      const itemNameElement = document.getElementById('deleteItemName');
+      
+      itemNameElement.textContent = `"${itemName}"?`;
+      currentDeleteForm = formId;
+      modal.style.display = 'block';
     }
+    
+    // Function to hide delete modal
+    function hideDeleteModal() {
+      const modal = document.getElementById('deleteModal');
+      modal.style.display = 'none';
+      currentDeleteForm = null;
+    }
+    
+    // Event listeners for modal buttons
+    document.getElementById('cancelDelete').addEventListener('click', hideDeleteModal);
+    
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+      if (currentDeleteForm) {
+        document.getElementById(currentDeleteForm).submit();
+      }
+      hideDeleteModal();
+    });
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('deleteModal');
+      if (event.target === modal) {
+        hideDeleteModal();
+      }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        hideDeleteModal();
+      }
+    });
     
     // Toggle certification form
     const addCertificationBtn = document.getElementById('add-certification-btn');
@@ -232,6 +382,7 @@
     addCertificationBtn.addEventListener('click', () => {
       certificationFormContainer.classList.remove('hidden');
       addCertificationBtn.classList.add('hidden');
+      certificationNameInput.focus();
     });
     
     cancelBtn.addEventListener('click', () => {

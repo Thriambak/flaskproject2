@@ -48,9 +48,14 @@ import {
   Link,
   CircularProgress,
   Select, 
-  InputLabel, 
+  InputLabel,
+  Skeleton,
   FormControl, 
 } from "@mui/material";
+import {useCallback } from "react";
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import SchoolIcon from '@mui/icons-material/School';
+import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -899,7 +904,7 @@ const FilterDropdown = () => {
             case 'users':
                 return [
                     { label: "Name", value: "name:", icon: <PersonIcon /> },
-                    { label: "Email", value: "email:", icon: <EmailIcon /> }
+                    { label: "Email", value: "email:", icon: <EmailIcon /> },
                 ];
             case 'companies':
                 return [
@@ -1000,300 +1005,269 @@ const industryOptions = [
   "Activities of Extraterritorial Organizations and Bodies"
 ];
 const AddCompanyDialog = ({ open, handleClose }) => {
-  const [create] = useCreate();
-  const notify = useNotify();
-  const refresh = useRefresh();
-  const dataProvider = useDataProvider();
+    const [create] = useCreate();
+    const notify = useNotify();
+    const refresh = useRefresh();
+    const dataProvider = useDataProvider();
+    const theme = useTheme();
 
-  const [formData, setFormData] = useState({
-    company_name: '',
-    email: '',
-    address: '',
-    website: '',
-    logo: '',
-    description: '',
-    industry: '',
-    password: '',
-  });
+    const [formData, setFormData] = useState({ company_name: '', email: '', address: '', website: '', logo: '', description: '', industry: '', password: '' });
+    const [passwordError, setPasswordError] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [companyNameError, setCompanyNameError] = useState('');
+    const [isCheckingCompany, setIsCheckingCompany] = useState(false);
 
-  const [passwordError, setPasswordError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [companyNameError, setCompanyNameError] = useState('');
-  const [isCheckingCompany, setIsCheckingCompany] = useState(false);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        if (name === 'password') setPasswordError('');
+        if (name === 'email') setEmailError('');
+        if (name === 'company_name') setCompanyNameError('');
+    };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (e.target.name === 'password') {
-      setPasswordError('');
-    } else if (e.target.name === 'email') {
-      setEmailError('');
-    } else if (e.target.name === 'company_name') {
-      setCompanyNameError('');
-    }
-  };
+    const validatePassword = (password) => {
+        if (password.includes(' ')) return 'Password cannot contain spaces.';
+        if (!/^[a-zA-Z0-9@#$%^&+=]+$/.test(password)) return 'Password can only contain letters, numbers, and @#$%^&+=';
+        if (password.length < 8) return 'Password must be at least 8 characters long.';
+        return '';
+    };
 
-  const validatePassword = (password) => {
-    if (password.includes(' ')) {
-      return 'Password cannot contain spaces.';
-    }
-    if (!/^[a-zA-Z0-9@#$%^&+=]+$/.test(password)) {
-      return 'Password can only contain letters, numbers, and special characters @#$%^&+=';
-    }
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long.';
-    }
-    return '';
-  };
+    const validateEmail = (email) => {
+        if (!email) return 'Email address is required.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
+        return '';
+    };
 
-  const validateEmail = (email) => {
-    if (!email) {
-      return 'Email address is required.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return 'Please enter a valid email address.';
-    }
-    return '';
-  };
+    const validateCompanyName = (companyName) => {
+        if (!companyName) return 'Company Name is required.';
+        return '';
+    };
 
-  const validateCompanyName = (companyName) => {
-    if (!companyName) {
-      return 'Company Name is required.';
-    }
-    return '';
-  };
+    const checkCompanyNameExists = async (companyName) => {
+        try {
+            const { data } = await dataProvider.getList('companies', { pagination: { page: 1, perPage: 1000 }, sort: { field: 'id', order: 'ASC' }, filter: {} });
+            return data.some(company => company.company_name.toLowerCase() === companyName.toLowerCase());
+        } catch (error) {
+            console.error('Error checking company name:', error);
+            throw new Error('Unable to verify company name. Please try again.');
+        }
+    };
+    
+    const resetForm = () => {
+        setFormData({ company_name: '', email: '', address: '', website: '', logo: '', description: '', industry: '', password: '' });
+        setPasswordError('');
+        setEmailError('');
+        setCompanyNameError('');
+    };
+    
+    const handleDialogClose = () => {
+        resetForm();
+        handleClose();
+    };
 
-  const checkCompanyNameExists = async (companyName) => {
-    try {
-      const { data } = await dataProvider.getList('companies', {
-        pagination: { page: 1, perPage: 1000 },
-        sort: { field: 'id', order: 'ASC' },
-        filter: {}
-      });
-      return data.some(company => 
-        company.company_name.toLowerCase() === companyName.toLowerCase()
-      );
-    } catch (error) {
-      console.error('Error checking company name:', error);
-      throw new Error('Unable to verify company name. Please try again.');
-    }
-  };
+    const handleSubmit = async () => {
+        const passwordValidationMessage = validatePassword(formData.password);
+        const emailValidationMessage = validateEmail(formData.email);
+        const companyNameValidationMessage = validateCompanyName(formData.company_name);
+        if (passwordValidationMessage) setPasswordError(passwordValidationMessage);
+        if (emailValidationMessage) setEmailError(emailValidationMessage);
+        if (companyNameValidationMessage) setCompanyNameError(companyNameValidationMessage);
+        if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) return;
 
-  const handleSubmit = async () => {
-    const passwordValidationMessage = validatePassword(formData.password);
-    const emailValidationMessage = validateEmail(formData.email);
-    const companyNameValidationMessage = validateCompanyName(formData.company_name);
-
-    if (passwordValidationMessage) {
-      setPasswordError(passwordValidationMessage);
-    }
-    if (emailValidationMessage) {
-      setEmailError(emailValidationMessage);
-    }
-    if (companyNameValidationMessage) {
-      setCompanyNameError(companyNameValidationMessage);
-    }
-
-    if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
-      return;
-    }
-
-    setIsCheckingCompany(true);
-    try {
-      const companyExists = await checkCompanyNameExists(formData.company_name);
-      if (companyExists) {
-        setCompanyNameError('A company with this name already exists. Please choose a different name.');
+        setIsCheckingCompany(true);
+        try {
+            const companyExists = await checkCompanyNameExists(formData.company_name);
+            if (companyExists) {
+                setCompanyNameError('A company with this name already exists.');
+                setIsCheckingCompany(false);
+                return;
+            }
+        } catch (error) {
+            setIsCheckingCompany(false);
+            notify(`Error: ${error.message}`, { type: 'error' });
+            return;
+        }
         setIsCheckingCompany(false);
-        return;
-      }
-    } catch (error) {
-      setIsCheckingCompany(false);
-      notify(`Error: ${error.message}`, { type: 'error' });
-      return;
-    }
-    setIsCheckingCompany(false);
 
-    try {
-      const dataToCreate = {
-        ...formData,
-        is_banned: false,
-      };
+        try {
+            await create('companies', { data: { ...formData, is_banned: false } });
+            notify('Company added successfully!', { type: 'success' });
+            refresh();
+            handleDialogClose();
+        } catch (error) {
+            notify(`Error adding company: ${error.message}`, { type: 'error' });
+        }
+    };
 
-      await create('companies', { data: dataToCreate });
-      notify('Company added successfully!', { type: 'success' });
-      refresh();
-      handleClose();
-      setFormData({
-        company_name: '',
-        email: '',
-        address: '',
-        website: '',
-        logo: '',
-        description: '',
-        industry: '',
-        password: '',
-      });
-      setPasswordError('');
-      setEmailError('');
-      setCompanyNameError('');
-    } catch (error) {
-      notify(`Error adding company: ${error.message}`, { type: 'error' });
-      console.error("Error adding company:", error);
-    }
-  };
+    return (
+        <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+            <Box sx={{
+                p: 3,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <AddBusinessIcon sx={{ fontSize: 40 }}/>
+                <Box>
+                    <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                        Create New Company
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Fill out the form to register a new company profile.
+                    </Typography>
+                </Box>
+            </Box>
+            
+            <DialogContent sx={{ p: 3 }}>
+                {/* PRIMARY DETAILS SECTION */}
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>
+                        PRIMARY DETAILS
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 3,
+                        mb: 3
+                    }}>
+                        <MuiTextField 
+                            autoFocus 
+                            name="company_name" 
+                            label="Company Name" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.company_name} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!companyNameError} 
+                            helperText={companyNameError} 
+                        />
+                        <MuiTextField 
+                            name="email" 
+                            label="Email Address" 
+                            type="email" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!emailError} 
+                            helperText={emailError} 
+                        />
+                    </Box>
+                    
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 3
+                    }}>
+                        <MuiTextField 
+                            name="password" 
+                            label="Password" 
+                            type="password" 
+                            fullWidth 
+                            variant="outlined" 
+                            value={formData.password} 
+                            onChange={handleChange} 
+                            required 
+                            error={!!passwordError} 
+                            helperText={passwordError || "8+ characters, no spaces"} 
+                        />
+                        <FormControl fullWidth variant="outlined">
+                            <InputLabel id="industry-label">Industry</InputLabel>
+                            <Select 
+                                labelId="industry-label" 
+                                id="industry" 
+                                name="industry" 
+                                value={formData.industry} 
+                                onChange={handleChange} 
+                                label="Industry"
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {industryOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
 
-  return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" scroll="paper">
-      <DialogTitle>Add New Company</DialogTitle>
-      <DialogContent sx={{ padding: 0, overflowY: 'auto', maxHeight: '70vh', maxWidth:'70vw' }}>
-        <DialogContentText sx={{ px: 3, pt: 2, mb: 2 }}>
-          Please fill in the details for the new company.
-        </DialogContentText>
-        <Grid container spacing={2} sx={{ px: 3, py: 2, alignItems: 'center' }}>
-          <Grid sx={{ width: '50%', pr: 1 }}>
-            <MuiTextField
-              autoFocus
-              margin="dense"
-              name="company_name"
-              label="Company Name"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={formData.company_name}
-              onChange={handleChange}
-              required
-              error={!!companyNameError}
-              helperText={companyNameError}
-              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '50%', pl: 1 }}>
-            <MuiTextField
-              margin="dense"
-              name="email"
-              label="Email Address"
-              type="email"
-              fullWidth
-              variant="outlined"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              error={!!emailError}
-              helperText={emailError}
-              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '50%', pr: 1 }}>
-            <MuiTextField
-              margin="dense"
-              name="password"
-              label="Password"
-              type="password"
-              fullWidth
-              variant="outlined"
-              value={formData.password}
-              onChange={handleChange}
-              error={!!passwordError}
-              helperText={passwordError || "Must be at least 8 characters and contain letters, numbers, or @#$%^&+="}
-              required
-              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '50%', pl: 1 }}>
-            <FormControl fullWidth margin="dense" variant="outlined">
-              <InputLabel id="industry-label">Industry</InputLabel>
-              <Select
-                labelId="industry-label"
-                id="industry"
-                name="industry"
-                value={formData.industry}
-                onChange={handleChange}
-                label="Industry"
-                sx={{ height: '56px' }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {industryOptions.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid sx={{ width: '100%' }}>
-            <MuiTextField
-              margin="dense"
-              name="address"
-              label="Address"
-              type="text"
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              value={formData.address}
-              onChange={handleChange}
-              sx={{ '& .MuiOutlinedInput-root': { minHeight: '96px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '50%', pr: 1 }}>
-            <MuiTextField
-              margin="dense"
-              name="website"
-              label="Website"
-              type="url"
-              fullWidth
-              variant="outlined"
-              value={formData.website}
-              onChange={handleChange}
-              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '50%', pl: 1 }}>
-            <MuiTextField
-              margin="dense"
-              name="logo"
-              label="Logo URL"
-              type="url"
-              fullWidth
-              variant="outlined"
-              value={formData.logo}
-              onChange={handleChange}
-              sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-            />
-          </Grid>
-          <Grid sx={{ width: '100%' }}>
-            <MuiTextField
-              margin="dense"
-              name="description"
-              label="Description"
-              type="text"
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              value={formData.description}
-              onChange={handleChange}
-              sx={{ '& .MuiOutlinedInput-root': { minHeight: '144px' } }}
-            />
-          </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions sx={{ p: '16px 24px', justifyContent: 'flex-end', gap: 1 }}>
-        <Button onClick={handleClose} color="primary">
-          CANCEL
-        </Button>
-        <Button 
-          onClick={handleSubmit} 
-          color="primary" 
-          variant="contained"
-          disabled={isCheckingCompany}
-        >
-          ADD COMPANY
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+                {/* ADDITIONAL INFORMATION SECTION */}
+                <Box>
+                    <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>
+                        ADDITIONAL INFORMATION
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <MuiTextField 
+                            name="address" 
+                            label="Address" 
+                            fullWidth 
+                            multiline 
+                            rows={2} 
+                            variant="outlined" 
+                            value={formData.address} 
+                            onChange={handleChange} 
+                        />
+                        
+                        <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 3
+                        }}>
+                            <MuiTextField 
+                                name="website" 
+                                label="Website URL" 
+                                type="url" 
+                                fullWidth 
+                                variant="outlined" 
+                                value={formData.website} 
+                                onChange={handleChange} 
+                            />
+                            <MuiTextField 
+                                name="logo" 
+                                label="Logo URL" 
+                                type="url" 
+                                fullWidth 
+                                variant="outlined" 
+                                value={formData.logo} 
+                                onChange={handleChange} 
+                            />
+                        </Box>
+                        
+                        <MuiTextField 
+                            name="description" 
+                            label="Company Description" 
+                            fullWidth 
+                            multiline 
+                            rows={3} 
+                            variant="outlined" 
+                            value={formData.description} 
+                            onChange={handleChange} 
+                        />
+                    </Box>
+                </Box>
+            </DialogContent>
+            
+            <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}`, gap: 2 }}>
+                <Button onClick={handleDialogClose} size="large">Cancel</Button>
+                <Button 
+                    onClick={handleSubmit} 
+                    variant="contained" 
+                    size="large"
+                    disabled={isCheckingCompany} 
+                    startIcon={isCheckingCompany ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+                >
+                    {isCheckingCompany ? 'Checking...' : 'Add Company'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 };
 const AddCompanyButton = () => {
   const theme = useTheme();
@@ -1560,9 +1534,22 @@ const App = () => (
         layout={CustomLayout}
         title="Admin Portal"
     >
-        <Resource name="users" list={UserList} options={{ label: 'Job Seekers' }} />
-        <Resource name="companies" list={CompanyList} />
-        <Resource name="jobs" list={JobList} />
+        <Resource 
+            name="users" 
+            list={UserList} 
+            icon={PeopleAltIcon} 
+            options={{ label: 'Job Seekers' }} 
+        />
+        <Resource 
+            name="companies" 
+            list={CompanyList} 
+            icon={BusinessIcon} 
+        />
+        <Resource 
+            name="jobs" 
+            list={JobList} 
+            icon={WorkIcon} 
+        />
     </Admin>
 );
 
