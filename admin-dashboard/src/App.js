@@ -49,15 +49,13 @@ import {
   Link,
   CircularProgress,
   Select, 
-  InputLabel, 
-  FormControl,
-  Chip,
-  List as MuiList,
-  ListItem,
-  ListItemAvatar,
-  Avatar,
+  InputLabel,
+  Skeleton,
+  FormControl, 
 } from "@mui/material";
+import {useCallback } from "react";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import SchoolIcon from '@mui/icons-material/School';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -81,13 +79,6 @@ import EventIcon from '@mui/icons-material/Event';
 import FactoryIcon from '@mui/icons-material/Factory';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import SchoolIcon from '@mui/icons-material/School';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PostAddIcon from '@mui/icons-material/PostAdd';
-import SendIcon from '@mui/icons-material/Send';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 // import RefreshIcon from '@mui/icons-material/Refresh'; // REMOVED: RefreshIcon is no longer needed
 import { 
     Dialog, // MUI Dialog
@@ -486,128 +477,6 @@ const metricIcons = {
     applications: <AssignmentIcon sx={{ fontSize: 40, color: 'white' }} />
 };
 
-// Recent Activity Feed Component
-const RecentActivityFeed = () => {
-    const theme = useTheme();
-    const [activities, setActivities] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // Fetch recent activities - you'll need to create this endpoint
-        fetch(`${API_BASE_URL}/recent-activities`)
-            .then((res) => res.json())
-            .then((data) => {
-                setActivities(data.slice(0, 10)); // Show only last 10 activities
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error("Error fetching recent activities:", error);
-                setLoading(false);
-            });
-    }, []);
-
-    const getActivityIcon = (type) => {
-        switch(type) {
-            case 'user_registration':
-                return <PersonAddIcon sx={{ color: theme.palette.primary.main }} />;
-            case 'company_registration':
-                return <AddBusinessIcon sx={{ color: theme.palette.secondary.main }} />;
-            case 'job_posting':
-                return <PostAddIcon sx={{ color: theme.palette.success.main }} />;
-            case 'application_submission':
-                return <SendIcon sx={{ color: theme.palette.info.main }} />;
-            default:
-                return <EventIcon sx={{ color: theme.palette.text.secondary }} />;
-        }
-    };
-
-    const formatActivityText = (activity) => {
-        switch(activity.type) {
-            case 'user_registration':
-                return `${activity.user_name} registered as a job seeker`;
-            case 'company_registration':
-                return `${activity.company_name} registered as a company`;
-            case 'job_posting':
-                return `${activity.company_name} posted a new job: ${activity.job_title}`;
-            case 'application_submission':
-                return `${activity.user_name} applied for ${activity.job_title}`;
-            default:
-                return activity.description || 'Unknown activity';
-        }
-    };
-
-    const formatTimeAgo = (timestamp) => {
-        const now = new Date();
-        const time = new Date(timestamp);
-        const diffInMinutes = Math.floor((now - time) / (1000 * 60));
-        
-        if (diffInMinutes < 1) return 'Just now';
-        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-        return `${Math.floor(diffInMinutes / 1440)}d ago`;
-    };
-
-    if (loading) {
-        return (
-            <Card sx={{ height: 400 }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom>Recent Activity</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                        <CircularProgress />
-                    </Box>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    return (
-        <Card sx={{ height: 400, overflow: 'hidden' }}>
-            <CardContent sx={{ p: 0, height: '100%' }}>
-                <Box sx={{ p: 3, pb: 1 }}>
-                    <Typography variant="h6" gutterBottom>Recent Activity</Typography>
-                </Box>
-                <MuiList sx={{ height: 'calc(100% - 80px)', overflow: 'auto', p: 0 }}>
-                    {activities.length === 0 ? (
-                        <ListItem>
-                            <Typography variant="body2" color="text.secondary">
-                                No recent activities found
-                            </Typography>
-                        </ListItem>
-                    ) : (
-                        activities.map((activity, index) => (
-                            <ListItem key={index} sx={{ py: 1.5, px: 3 }}>
-                                <ListItemAvatar>
-                                    <Avatar sx={{ bgcolor: 'transparent', width: 32, height: 32 }}>
-                                        {getActivityIcon(activity.type)}
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography 
-                                        variant="body2" 
-                                        sx={{ 
-                                            mb: 0.5,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                        }}
-                                    >
-                                        {formatActivityText(activity)}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {formatTimeAgo(activity.timestamp)}
-                                    </Typography>
-                                </Box>
-                            </ListItem>
-                        ))
-                    )}
-                </MuiList>
-            </CardContent>
-        </Card>
-    );
-};
-
 const Dashboard = () => {
     const theme = useTheme();
     const [metrics, setMetrics] = useState({
@@ -688,84 +557,74 @@ const Dashboard = () => {
 
             <Divider sx={{ my: 4, bgcolor: 'divider', height: 2 }} />
 
-            <Grid container spacing={3}>
-                {/* Activity Trends Chart */}
-                <Grid item xs={12} md={8}>
-                    <Box sx={{ 
-                        height: 400,
-                        bgcolor: 'background.paper',
-                        borderRadius: 3,
-                        p: 3,
-                        boxShadow: 1
-                    }}>
-                        <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
-                            Activity Trends
-                        </Typography>
-                        <ResponsiveContainer width="100%" height="90%">
-                            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                                <XAxis 
-                                    dataKey="x" 
-                                    label={{ 
-                                        value: "Date", 
-                                        position: "bottom",
-                                        offset: 0,
-                                        fill: theme.palette.text.secondary
-                                    }}
-                                    tick={{ fill: theme.palette.text.secondary }}
-                                />
-                                <YAxis 
-                                    label={{ 
-                                        value: "Activity", 
-                                        angle: -90, 
-                                        position: "left",
-                                        fill: theme.palette.text.secondary
-                                    }}
-                                    tick={{ fill: theme.palette.text.secondary }}
-                                />
-                                <Tooltip 
-                                    contentStyle={{
-                                        backgroundColor: theme.palette.background.paper,
-                                        color: theme.palette.text.primary,
-                                        borderRadius: '8px',
-                                        borderColor: theme.palette.divider,
-                                        boxShadow: theme.shadows[3],
-                                    }}
-                                    cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
-                                />
-                                <Legend 
-                                    wrapperStyle={{ paddingTop: 20 }}
-                                    iconSize={16}
-                                    iconType="circle"
-                                />
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="applications"
-                                    name="Applications"
-                                    stroke={theme.palette.primary.main} 
-                                    strokeWidth={2}
-                                    activeDot={{ r: 6 }}
-                                    dot={{ r: 3 }}
-                                />
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="registrations" 
-                                    name="Registrations"
-                                    stroke="#388e3c" // A distinct, theme-friendly green
-                                    strokeWidth={2}
-                                    activeDot={{ r: 6 }}
-                                    dot={{ r: 3 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </Box>
-                </Grid>
-
-                {/* Recent Activity Feed */}
-                <Grid item xs={12} md={4}>
-                    <RecentActivityFeed />
-                </Grid>
-            </Grid>
+            <Box sx={{ 
+                height: 400,
+                bgcolor: 'background.paper',
+                borderRadius: 3,
+                p: 3,
+                boxShadow: 1
+            }}>
+                <Typography variant="h6" sx={{ mb: 3, color: 'text.primary' }}>
+                    Activity Trends
+                </Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                        <XAxis 
+                            dataKey="x" 
+                            label={{ 
+                                value: "Date", 
+                                position: "bottom",
+                                offset: 0,
+                                fill: theme.palette.text.secondary
+                            }}
+                            tick={{ fill: theme.palette.text.secondary }}
+                        />
+                        <YAxis 
+                            label={{ 
+                                value: "Activity", 
+                                angle: -90, 
+                                position: "left",
+                                fill: theme.palette.text.secondary
+                            }}
+                            tick={{ fill: theme.palette.text.secondary }}
+                        />
+                        <Tooltip 
+                            contentStyle={{
+                                backgroundColor: theme.palette.background.paper,
+                                color: theme.palette.text.primary,
+                                borderRadius: '8px',
+                                borderColor: theme.palette.divider,
+                                boxShadow: theme.shadows[3],
+                            }}
+                            cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
+                        />
+                        <Legend 
+                            wrapperStyle={{ paddingTop: 20 }}
+                            iconSize={16}
+                            iconType="circle"
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="applications"
+                            name="Applications"
+                            stroke={theme.palette.primary.main} 
+                            strokeWidth={2}
+                            activeDot={{ r: 6 }}
+                            dot={{ r: 3 }}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="registrations" 
+                            name="Registrations"
+                            stroke="#388e3c" // A distinct, theme-friendly green
+                            strokeWidth={2}
+                            activeDot={{ r: 6 }}
+                            dot={{ r: 3 }}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </Box>
         </Box>
     );
 };
@@ -957,55 +816,6 @@ const ClickableNameField = ({ source, resource }) => {
     );
 };
 
-// Job Status Visual Indicator Component
-const JobStatusIndicator = ({ status }) => {
-    const getStatusProps = (status) => {
-        switch(status?.toLowerCase()) {
-            case 'open':
-                return {
-                    color: 'success',
-                    icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
-                    label: 'Open'
-                };
-            case 'closed':
-                return {
-                    color: 'error',
-                    icon: <CancelIcon sx={{ fontSize: 16 }} />,
-                    label: 'Closed'
-                };
-            case 'paused':
-                return {
-                    color: 'warning',
-                    icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />,
-                    label: 'Paused'
-                };
-            default:
-                return {
-                    color: 'default',
-                    icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} />,
-                    label: status || 'Unknown'
-                };
-        }
-    };
-
-    const statusProps = getStatusProps(status);
-
-    return (
-        <Chip
-            icon={statusProps.icon}
-            label={statusProps.label}
-            color={statusProps.color}
-            variant="outlined"
-            size="small"
-            sx={{ 
-                fontWeight: 600,
-                '& .MuiChip-icon': {
-                    marginLeft: '8px'
-                }
-            }}
-        />
-    );
-};
 
 const FilterDropdown = () => {
     const { resource, filterValues, setFilters } = useListContext();
@@ -1027,13 +837,12 @@ const FilterDropdown = () => {
                 return [
                     { label: "Name", value: "name:", icon: <PersonIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-                    { label: "College", value: "college_name:", icon: <SchoolIcon /> }
                 ];
             case 'companies':
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-                    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+            { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
@@ -1645,11 +1454,7 @@ const JobList = (props) => (
             <TextField source="salary" />
             <TextField source="total_vacancy" />
             <TextField source="filled_vacancy" />
-            <FunctionField
-                label="Status"
-                source="status"
-                render={(record) => <JobStatusIndicator status={record.status} />}
-            />
+            <TextField source="status" />
         </StyledDatagrid>
     </List>
 );
@@ -1663,9 +1468,22 @@ const App = () => (
         layout={CustomLayout}
         title="Admin Portal"
     >
-        <Resource name="users" list={UserList} options={{ label: 'Job Seekers' }} />
-        <Resource name="companies" list={CompanyList} />
-        <Resource name="jobs" list={JobList} />
+        <Resource 
+            name="users" 
+            list={UserList} 
+            icon={PeopleAltIcon} 
+            options={{ label: 'Job Seekers' }} 
+        />
+        <Resource 
+            name="companies" 
+            list={CompanyList} 
+            icon={BusinessIcon} 
+        />
+        <Resource 
+            name="jobs" 
+            list={JobList} 
+            icon={WorkIcon} 
+        />
     </Admin>
 );
 
