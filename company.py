@@ -416,6 +416,7 @@ def company_application_review():
                 job = application.job
                 if job.filled_vacancy > 0:
                     job.filled_vacancy -= 1
+                    job.status = 'open'
                 db.session.commit()
 
             application.status = new_status

@@ -383,7 +383,7 @@
                 <!-- Apply Now Button -->
                 {% if job.job_id in applied_job_ids %}
                   <button type="button" class="btn btn-applied" disabled>
-                    <i class="fas fa-check"></i> Applied
+                    <i class="fas fa-check" style="color: #9c1607;"></i> Applied
                   </button>
                 {% else %}
                   <form action="{{ url_for('user.apply_for_job', job_id=job.job_id) }}" method="POST">
