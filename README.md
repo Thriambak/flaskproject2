@@ -1,4 +1,4 @@
-# Data Migration
+# Database Migration
 
 ```sql
 flask db init
