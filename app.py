@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, session, redirect
+from flask import Flask, render_template, g, session, redirect, flash
 from flask import jsonify, request, make_response, url_for
 from datetime import datetime, timedelta
 import sqlite3
@@ -52,6 +52,48 @@ app.register_blueprint(college_blueprint, url_prefix='/college')
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# This function runs before each request to handle session timeout AND ban checks
+@app.before_request
+def before_request_handler():
+    session.permanent = True
+    if 'login_id' in session:
+        # Exclude static files from these checks for efficiency
+        if request.endpoint and 'static' in request.endpoint:
+            return
+
+        now = datetime.utcnow()
+        # 1. Check for session inactivity
+        if 'last_activity' in session:
+            last_activity = session['last_activity']
+            if last_activity.tzinfo is not None:
+                last_activity = last_activity.replace(tzinfo=None)
+            if now - last_activity > app.config['PERMANENT_SESSION_LIFETIME']:
+                session.clear()
+                flash('You have been logged out due to inactivity.', 'info')
+                return redirect(url_for('auth.login'))
+
+        # 2. Check for banned status on every request
+        role = session.get('role')
+        login_id = session.get('login_id')
+        is_banned = False
+
+        if role == 'user':
+            user = User.query.filter_by(login_id=login_id).first()
+            if user and user.is_banned:
+                is_banned = True
+        elif role == 'company':
+            company = Company.query.filter_by(login_id=login_id).first()
+            if company and company.is_banned:
+                is_banned = True
+        
+        if is_banned:
+            session.clear()
+            flash('Your account has been suspended. Please contact support.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # If all checks pass, update the last activity time
+        session['last_activity'] = now
 
 # Initialize Flask-Home
 @app.route('/')
