@@ -1,4 +1,4 @@
-# flaskproject2
+# Database Migration
 
 ```sql
 flask db init
