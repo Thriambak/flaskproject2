@@ -38,7 +38,6 @@ app.config.from_object(Config)
 # Set the session lifetime to 1 hour (3600 seconds) for inactivity logout
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=5)
 
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use your mail server
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
