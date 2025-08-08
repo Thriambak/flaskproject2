@@ -20,6 +20,8 @@ import uuid
 from sqlalchemy import or_
 from datetime import datetime
 import pytz
+import re
+
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS
 
@@ -32,6 +34,10 @@ if not os.path.exists(Config.UPLOAD_FOLDER):
 
 # Load configuration from Config object          
 app.config.from_object(Config)
+
+# Set the session lifetime to 1 hour (3600 seconds) for inactivity logout
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=5)
+
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use your mail server
 app.config['MAIL_PORT'] = 587

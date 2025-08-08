@@ -27,6 +27,7 @@ import {
   useCreate,
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
+  useLogout,
 } from "react-admin";
 import {
   Card,
@@ -52,7 +53,7 @@ import {
   Skeleton,
   FormControl, 
 } from "@mui/material";
-import {useCallback } from "react";
+import {useCallback, useRef } from "react";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import SchoolIcon from '@mui/icons-material/School';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
@@ -102,7 +103,8 @@ const authProvider = {
     return Promise.reject(new Error('Invalid credentials'));
 },
     logout: () => {
-    localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
+        localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
+        sessionStorage.removeItem('redirected'); // Clear refresh flag on logout
     return Promise.resolve();
 },
     checkError: ({ status }) => {
@@ -113,7 +115,27 @@ const authProvider = {
         return Promise.resolve();
     },
     checkAuth: () => {
-    return localStorage.getItem('isAuthenticated') ? Promise.resolve() : Promise.reject();
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+
+        if (isAuthenticated) {
+            // If authenticated, clear any refresh flag and proceed
+            sessionStorage.removeItem('redirected');
+            return Promise.resolve();
+        }
+
+        // If not authenticated, check if we've already tried to refresh this session
+        const hasRefreshed = sessionStorage.getItem('redirected');
+
+        if (!hasRefreshed) {
+            // If we haven't refreshed yet, set the flag and reload the page once
+            sessionStorage.setItem('redirected', 'true');
+            window.location.reload();
+            // Return a pending promise to prevent the app from rendering briefly
+            return new Promise(() => {}); 
+        }
+
+        // If we have already refreshed, reject to trigger the normal login redirect
+        return Promise.reject();
     },
     getPermissions: () => Promise.resolve(),
 };
@@ -155,9 +177,48 @@ const CustomAppBar = () => (
 );
 
 // Custom Layout with fixed AppBar
-const CustomLayout = (props) => (
-    <Layout {...props} appBar={CustomAppBar} />
-);
+const CustomLayout = (props) => {
+    const logout = useLogout();
+    const timer = useRef(null);
+    const notify = useNotify();
+
+    const logoutUser = useCallback(() => {
+        logout();
+        notify('You have been logged out due to inactivity.', { type: 'info' });
+    }, [logout, notify]);
+
+    const resetTimer = useCallback(() => {
+        if (timer.current) {
+            clearTimeout(timer.current);
+        }
+        // Set timeout to 1 hour (60 minutes * 60 seconds * 1000 milliseconds)
+        timer.current = setTimeout(logoutUser, 60 * 60 * 1000);
+    }, [logoutUser]);
+
+    useEffect(() => {
+        const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+
+        // Set the initial timer
+        resetTimer();
+
+        // Add event listeners to reset the timer on user activity
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        // Cleanup function to remove listeners and timer when the component unmounts
+        return () => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+            }
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [resetTimer]);
+
+    return <Layout {...props} appBar={CustomAppBar} />;
+};
 
 // Custom Login Page Component
 const CustomLoginPage = () => {

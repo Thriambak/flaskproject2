@@ -233,6 +233,7 @@ def login():
         session['login_id'] = login.id
         session['username'] = login.username
         session['role'] = login.role
+        session['last_activity'] = datetime.utcnow()
         session.permanent = True  # Make session permanent
 
         # Redirect based on role
