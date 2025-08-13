@@ -196,6 +196,9 @@
    padding: 15px;
    border-radius: 8px;
    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   max-width: 85%;
    animation: fadeInOut 3s ease-in-out forwards;
  }
  .alert-success.flash-message {
@@ -306,6 +309,7 @@
    letter-spacing: 2px;
    word-wrap: break-word;
    overflow-wrap: break-word;
+   max-width: 85%;
    hyphens: auto;
  }
  .activity .job-posting .job-type {

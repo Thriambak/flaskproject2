@@ -263,6 +263,9 @@
       color: #0a3d62;
       margin: 0;
       text-transform: uppercase;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 85%;
       letter-spacing: 2px;
     }
     .activity .job-posting .job-type {

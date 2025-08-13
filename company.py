@@ -224,8 +224,8 @@ def company_post_new_job():
         # Continue with existing validations only if no duplicate found
         if not message:
             # Validate inputs
-            if len(title) < 3 or len(title) > 255:
-                message = "Job Title must be between 3-255 characters!"
+            if len(title) < 3 or len(title) > 250:
+                message = "Job Title must be between 3-250 characters!"
                 message_type = "error"
             elif len(description) < 10 or len(description) > 2000:
                 message = "Job Description must be between 10-2000 characters!"
@@ -708,10 +708,17 @@ def company_notification():
                     notification.hidden = True  # Soft delete
                     db.session.commit()
                     flash('Notification hidden successfully.', 'success')
+        # Redirect back to the same page to show the changes
+        page = request.args.get('page', 1, type=int)
+        return redirect(url_for('company.company_notification', page=page))
 
-
-    # Fetch notifications for the company
-    notifications = Notification.query.filter_by(company_id=user_id,hidden=False).order_by(Notification.timestamp.desc()).all()
+    # Get the page number from the URL, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 5  # Number of notifications per page
+    # Fetch a paginated list of notifications for the company
+    notifications_pagination = Notification.query.filter_by(company_id=user_id, hidden=False)\
+                                    .order_by(Notification.timestamp.desc())\
+                                    .paginate(page=page, per_page=per_page, error_out=False)
     
     pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
         .join(Job, JobApplication.job_id == Job.job_id)\
@@ -759,7 +766,7 @@ def company_notification():
         Notification.timestamp >= one_day_ago
     ).order_by(Notification.timestamp.desc()).all()
 
-    return render_template('/company/notification.html', notifications=notifications, profile=profile,
+    return render_template('/company/notification.html', notifications=notifications_pagination, profile=profile,
         pending_applications_count=pending_applications_count, total_successful=total_successful, 
         total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
         live_feed_notifications=live_feed_notifications)

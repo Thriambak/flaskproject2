@@ -27,6 +27,7 @@ import {
   useCreate,
   useDataProvider, // Import useDataProvider
   BulkDeleteWithConfirmButton,
+  defaultTheme,
   useLogout,
 } from "react-admin";
 import {
@@ -220,6 +221,15 @@ const CustomLayout = (props) => {
     return <Layout {...props} appBar={CustomAppBar} />;
 };
 
+/* <<< CREATE A DEDICATED LIGHT THEME FOR THE LOGIN PAGE >>>
+const loginPageTheme = createTheme({
+  ...defaultTheme,
+  palette: {
+    ...defaultTheme.palette,
+    mode: 'light', // This forces the light mode
+  },
+});*/
+
 // Custom Login Page Component
 const CustomLoginPage = () => {
     const theme = useTheme();
@@ -283,6 +293,7 @@ const CustomLoginPage = () => {
         </Box>
     );
 };
+
 
 const customDataProvider = {
     getList: async (resource, params) => {
@@ -1586,6 +1597,15 @@ const JobList = (props) => (
     </List>
 );
 
+// <<< DEFINE A SINGLE LIGHT THEME FOR THE ENTIRE APP >>>
+const lightTheme = {
+    ...defaultTheme,
+    palette: {
+        ...defaultTheme.palette,
+        mode: 'light',
+    },
+};
+
 const App = () => (
     <Admin 
         dataProvider={customDataProvider} 
@@ -1594,6 +1614,8 @@ const App = () => (
         loginPage={CustomLoginPage}
         layout={CustomLayout}
         title="Admin Portal"
+        theme={lightTheme} // Set the default theme
+        darkTheme={lightTheme} // Force the light theme even in dark mode
     >
         <Resource 
             name="users" 

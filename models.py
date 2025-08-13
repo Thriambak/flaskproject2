@@ -120,13 +120,13 @@ class Job(db.Model):
     __tablename__ = 'jobs'
 
     job_id = db.Column(Uuid, primary_key=True, default=uuid.uuid4, unique=True)
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(250), nullable=False)
     description = db.Column(db.Text, nullable=False)
     job_type = db.Column(db.String(20), nullable=False)  # full-time, part-time, contract, internship
     skills = db.Column(db.Text)
     years_of_exp = db.Column(db.Integer, nullable=False)
     certifications = db.Column(db.Text)
-    location = db.Column(db.String(100))
+    location = db.Column(db.Text)
     salary = db.Column(db.String(50))
     total_vacancy = db.Column(db.Integer, nullable=False)
     filled_vacancy = db.Column(db.Integer, nullable=False)

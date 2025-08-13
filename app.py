@@ -36,7 +36,7 @@ if not os.path.exists(Config.UPLOAD_FOLDER):
 app.config.from_object(Config)
 
 # Set the session lifetime to 1 hour (3600 seconds) for inactivity logout
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=5)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Use your mail server
 app.config['MAIL_PORT'] = 587
@@ -68,14 +68,15 @@ def before_request_handler():
             return
 
         now = datetime.utcnow()
+        
         # 1. Check for session inactivity
         if 'last_activity' in session:
             last_activity = session['last_activity']
             if last_activity.tzinfo is not None:
                 last_activity = last_activity.replace(tzinfo=None)
             if now - last_activity > app.config['PERMANENT_SESSION_LIFETIME']:
-                session.clear()
                 flash('You have been logged out due to inactivity.', 'info')
+                # session.clear()
                 return redirect(url_for('auth.login'))
 
         # 2. Check for banned status on every request

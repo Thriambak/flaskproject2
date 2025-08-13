@@ -215,6 +215,7 @@ main {
     display: flex;
     align-items: flex-start;
     transition: transform 0.2s, box-shadow 0.2s;
+    gap: 15px; /* Add gap between icon, content, and actions */
 }
 
 .notification:hover {
@@ -225,12 +226,14 @@ main {
 .notification-icon {
     font-size: 24px;
     color: #005f73;
-    margin-right: 15px;
-    padding-top: 10px;
+    /* margin-right: 15px; */
+    padding-top: 5px;
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .notification-content {
     flex-grow: 1;
+    min-width: 0; /* Add min-width to allow content to shrink and wrap */
 }
 
 .notification-content h4 {
@@ -247,14 +250,16 @@ main {
     word-wrap: break-word;
     white-space: normal;
     overflow-wrap: break-word;
-    max-width: 95%;
+    max-width: 100%;
 }
 
 .notification-actions {
     display: flex;
     flex-direction: row;  /* Change from column to row */
     gap: 10px;
-    margin-left: 10px;
+    /*  margin-left: 10px; */
+    margin-left: auto; /* Pushes buttons to the far right */
+    flex-shrink: 0; /* Prevent button group from shrinking */
 }
 
 .notification-actions button {
@@ -297,6 +302,44 @@ main {
 
 .notification.read .mark-read {
     display: none;
+}
+
+.pagination {
+    margin-top: auto; /* Pushes pagination to the bottom */
+    padding-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px; /* Space between buttons and text */
+}
+
+.pagination .button {
+    background-color: #0a9396;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color .3s, transform 0.2s;
+}
+
+.pagination .button:hover {
+    background-color: #007f84;
+    transform: translateY(-2px);
+}
+
+.pagination .button.disabled {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pagination .page-info {
+    color: #333;
+    font-weight: bold;
+    font-size: 15px;
 }
 
 /* Responsive design */

@@ -49,8 +49,8 @@
                 <h2>Notifications</h2>
             </div>
             <div class="notifications-container">
-                {% if notifications %}
-                    {% for notification in notifications %}
+                {% if notifications.items %}
+                    {% for notification in notifications.items %}
                     <div class="notification {% if notification.read_status %}read{% endif %}">
                         <div class="notification-icon">
                             <i class="fas fa-bell"></i>
@@ -82,6 +82,28 @@
                     <p class="no-notifications">You have no notifications at the moment.</p>
                 {% endif %}
             </div>
+            {% if notifications.pages > 1 %}
+            <div class="pagination">
+                <!-- Previous Page Button -->
+                {% if notifications.has_prev %}
+                    <a class="button" href="{{ url_for('company.company_notification', page=notifications.prev_num) }}">&laquo; Previous</a>
+                {% else %}
+                    <span class="button disabled">&laquo; Previous</span>
+                {% endif %}
+
+                <!-- Page Number Info -->
+                <span class="page-info">
+                    Page {{ notifications.page }} of {{ notifications.pages }}
+                </span>
+
+                <!-- Next Page Button -->
+                {% if notifications.has_next %}
+                    <a class="button" href="{{ url_for('company.company_notification', page=notifications.next_num) }}">Next &raquo;</a>
+                {% else %}
+                    <span class="button disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </main>
     <script>

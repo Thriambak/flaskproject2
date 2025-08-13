@@ -197,8 +197,8 @@
             const formUrl = document.getElementById("form-url").value.trim();
             
             // Validate job title
-            if (jobTitle.length < 3 || jobTitle.length > 255) {
-                showPopup("Job Title must be between 3-255 characters!", "error");
+            if (jobTitle.length < 3 || jobTitle.length > 250) {
+                showPopup("Job Title must be between 3-250 characters!", "error");
                 return false;
             }
             
@@ -211,6 +211,12 @@
             // Validate experience
             if (exp < 0 || exp > 50) {
                 showPopup("Years of Experience must be between 0-50!", "error");
+                return false;
+            }
+
+            // Validate location
+            if (location.length > 500) {
+                showPopup("Location must be less than 500 characters!", "error");
                 return false;
             }
             
