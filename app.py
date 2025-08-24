@@ -125,6 +125,7 @@ def get_user_details(id):
     }
     return jsonify(user_data)
 
+# == CORRECTED USERS GET ROUTE WITH SORTING ==
 @app.route('/users', methods=['GET'])
 def get_users():
     query = User.query
@@ -145,7 +146,22 @@ def get_users():
             User.email.ilike(search_term)
         ))
     
-    users = query.order_by(User.updated_at.desc()).all()
+    # --- SORTING LOGIC ADDED ---
+    sort_by = request.args.get('sort')
+    order = request.args.get('order')
+
+    if sort_by == 'name':
+        if order == 'desc':
+            query = query.order_by(User.name.desc())
+        else:
+            query = query.order_by(User.name.asc())
+    else:
+        # Default sort order if no valid sort parameter is provided
+        query = query.order_by(User.updated_at.desc())
+
+    users = query.all()
+    # --- END OF SORTING LOGIC ---
+
     users_data = [
         {
             'id': user.id, 
@@ -280,7 +296,7 @@ def get_company_details(id):
     }
     return jsonify(company_data)
 
-
+# == CORRECTED COMPANIES GET ROUTE WITH SORTING ==
 @app.route('/companies', methods=['GET'])
 def get_companies():
     query = Company.query
@@ -293,8 +309,8 @@ def get_companies():
             query = query.filter(Company.company_name.ilike(f"%{name_term}%"))
         elif "email:" in search_term:
             email_term = search_term.split("email:")[1].strip()
-            query = query = query.filter(Company.email.ilike(f"%{email_term}%"))
-        elif "industry:" in search_term:  # Add industry search support
+            query = query.filter(Company.email.ilike(f"%{email_term}%"))
+        elif "industry:" in search_term:
             industry_term = search_term.split("industry:")[1].strip()
             query = query.filter(Company.industry.ilike(f"%{industry_term}%"))
         else:
@@ -304,14 +320,30 @@ def get_companies():
             Company.email.ilike(search_term),
             Company.industry.ilike(search_term)
         ))
-    companies = query.order_by(Company.updated_at.desc()).all()
+    
+    # --- SORTING LOGIC ADDED ---
+    sort_by = request.args.get('sort')
+    order = request.args.get('order')
+
+    if sort_by == 'company_name':
+        if order == 'desc':
+            query = query.order_by(Company.company_name.desc())
+        else:
+            query = query.order_by(Company.company_name.asc())
+    else:
+        # Default sort order
+        query = query.order_by(Company.updated_at.desc())
+
+    companies = query.all()
+    # --- END OF SORTING LOGIC ---
+
     companies_data = [
         {
             'id': company.id,
             'company_name': company.company_name,
             'email': company.email,
             'industry': company.industry,
-            'is_banned': company.is_banned # <-- ADD THIS LINE
+            'is_banned': company.is_banned
         } 
         for company in companies
     ]
@@ -321,7 +353,6 @@ def get_companies():
     response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
     return response
 
-# Updated route in app.py
 # Updated route in app.py
 @app.route('/companies', methods=['POST'])
 def create_company():
@@ -488,6 +519,7 @@ def submit_company_profile():
         return jsonify({"success": False, "message": f"Error creating company profile: {str(e)}"}), 500
 
 # ========== JOBS API ==========
+# == CORRECTED JOBS GET ROUTE WITH SORTING ==
 @app.route('/jobs', methods=['GET'])
 def get_jobs():
     # Join Job with Login and Company tables to get company name
@@ -525,8 +557,21 @@ def get_jobs():
                 Company.company_name.ilike(search_term)
             ))
     
-    # Execute query and get results
-    results = query.order_by(Job.updated_at.desc()).all()
+    # --- SORTING LOGIC ADDED ---
+    sort_by = request.args.get('sort')
+    order = request.args.get('order')
+
+    if sort_by == 'title':
+        if order == 'desc':
+            query = query.order_by(Job.title.desc())
+        else:
+            query = query.order_by(Job.title.asc())
+    else:
+        # Default sort order
+        query = query.order_by(Job.updated_at.desc())
+    
+    results = query.all()
+    # --- END OF SORTING LOGIC ---
     
     jobs_data = [{
         'id': job.job_id,
@@ -614,6 +659,7 @@ def update_job(job_id):
     return jsonify({"message": "Job updated successfully!"})
 
 # == UPDATED JOB DELETE ROUTE (SINGLE) ==
+@app.route('/jobs/<uuid:job_id>', methods=['DELETE'])
 def delete_job(job_id):
     job = Job.query.get(job_id)
     if not job:
