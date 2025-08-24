@@ -1486,7 +1486,7 @@ const BanToggle = ({ record, resource }) => {
 };
 
 // =============================================================================
-// == UPDATED UserList COMPONENT ==
+// == CORRECTED UserList COMPONENT ==
 // =============================================================================
 const UserList = (props) => (
     <List 
@@ -1502,17 +1502,18 @@ const UserList = (props) => (
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<UserBulkActionButtons />} rowClick={false}>
-            {/* <TextField source="id" sortable={false} /> */}
-            {/* MODIFIED: Replaced TextField with our new ClickableNameField */}
+            {/* The "Name" column is sortable by the 'name' field */}
             <FunctionField
                 label="Name"
                 sortBy="name"
                 render={() => <ClickableNameField source="name" resource="users" />}
             />
-            <TextField source="email" />
-            <TextField source="college_name" label="College" />
+            {/* All other columns are NOT sortable */}
+            <TextField source="email" sortable={false} />
+            <TextField source="college_name" label="College" sortable={false} />
             <FunctionField
                 label="Ban Status"
+                sortable={false}
                 render={(record) => <BanToggle record={record} resource="users" />}
             />
         </StyledDatagrid>
@@ -1520,7 +1521,7 @@ const UserList = (props) => (
 );
 
 // =============================================================================
-// == UPDATED CompanyList COMPONENT ==
+// == CORRECTED CompanyList COMPONENT ==
 // =============================================================================
 const CompanyList = (props) => (
     <List 
@@ -1536,24 +1537,27 @@ const CompanyList = (props) => (
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<CompanyBulkActionButtons />} rowClick={false}>
-            {/* <TextField source="id" /> */}
-            {/* MODIFIED: Replaced TextField with our new ClickableNameField */}
+            {/* The "Company Name" column is sortable by the 'company_name' field */}
              <FunctionField
                 label="Company Name"
                 sortBy="company_name"
                 render={() => <ClickableNameField source="company_name" resource="companies" />}
             />
-            <TextField source="email" />
+            {/* All other columns are NOT sortable */}
+            <TextField source="email" sortable={false} />
             <TextField source="industry" sortable={false} />
             <FunctionField
                 label="Ban Status"
+                sortable={false}
                 render={(record) => <BanToggle record={record} resource="companies" />}
             />
         </StyledDatagrid>
     </List>
 );
 
-
+// =============================================================================
+// == CORRECTED JobList COMPONENT ==
+// =============================================================================
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -1568,31 +1572,23 @@ const JobList = (props) => (
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            {/* <TextField source="id" sortable={false} /> */}
+            {/* The "Title" column is sortable by the 'title' field */}
             <TextField
                 source="title"
-                render={(params) => (
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                        {params.record.title}
-                    </Typography>
-                )}
+                label="Job Title"
             />
+            {/* All other columns are NOT sortable */}
             <TextField 
                 source="company_name" 
                 label="Company"
                 sortable={false}
-                render={(params) => (
-                    <Typography variant="body2" sx={{ color: 'primary.main' }}>
-                        {params.record.company_name}
-                    </Typography>
-                )}
             />
-            <TextField source="job_type" />
-            <TextField source="location" />
-            <TextField source="salary" />
-            <TextField source="total_vacancy" />
-            <TextField source="filled_vacancy" />
-            <TextField source="status" />
+            <TextField source="job_type" sortable={false} />
+            <TextField source="location" sortable={false} />
+            <TextField source="salary" sortable={false} />
+            <TextField source="total_vacancy" sortable={false} />
+            <TextField source="filled_vacancy" sortable={false} />
+            <TextField source="status" sortable={false} />
         </StyledDatagrid>
     </List>
 );
