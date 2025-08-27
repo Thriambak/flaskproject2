@@ -221,76 +221,80 @@ const CustomLayout = (props) => {
     return <Layout {...props} appBar={CustomAppBar} />;
 };
 
-/* <<< CREATE A DEDICATED LIGHT THEME FOR THE LOGIN PAGE >>>
+// <<< CREATE A DEDICATED LIGHT THEME FOR THE LOGIN PAGE >>>
 const loginPageTheme = createTheme({
   ...defaultTheme,
   palette: {
     ...defaultTheme.palette,
     mode: 'light', // This forces the light mode
   },
-});*/
+});
 
 // Custom Login Page Component
 const CustomLoginPage = () => {
     const theme = useTheme();
     
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 2
-            }}
-        >
-            <Paper
-                elevation={10}
+        <ThemeProvider theme={loginPageTheme}>
+            <Box
                 sx={{
-                    padding: 4,
-                    borderRadius: 4,
-                    maxWidth: 400,
-                    width: '100%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)'
+                    minHeight: '100vh',
+                    // Use the specific color values from our light theme
+                    background: `linear-gradient(135deg, ${loginPageTheme.palette.primary.main} 0%, ${loginPageTheme.palette.secondary.main} 100%)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 2
                 }}
             >
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <AdminPanelSettingsIcon 
-                        sx={{ 
-                            fontSize: 60, 
-                            color: theme.palette.primary.main,
-                            mb: 2
-                        }} 
-                    />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                        Admin Portal
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Sign in to access your dashboard
-                    </Typography>
-                </Box>
-                
-                <LoginForm 
-                    sx={{ justifyItems: 'center', 
-                        '& .MuiTextField-root': {
-                            mb: 1,
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: 2,
-                            }
-                        },
-                        '& .MuiButton-root': {
-                            borderRadius: 2,
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            fontWeight: 600
-                        }
+                <Paper
+                    elevation={10}
+                    sx={{
+                        padding: 4,
+                        borderRadius: 4,
+                        maxWidth: 400,
+                        width: '100%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(10px)'
                     }}
-                />
-            </Paper>
-        </Box>
+                >
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                        <AdminPanelSettingsIcon 
+                            sx={{ 
+                                fontSize: 60, 
+                                color: 'primary.main',
+                                mb: 2
+                            }} 
+                        />
+                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                            Admin Portal
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Sign in to access your dashboard
+                        </Typography>
+                    </Box>
+                    
+                    <LoginForm 
+                        sx={{ 
+                            justifyItems: 'center', 
+                            '& .MuiTextField-root': {
+                                mb: 1,
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                }
+                            },
+                            '& .MuiButton-root': {
+                                borderRadius: 2,
+                                py: 1.5,
+                                textTransform: 'none',
+                                fontSize: '1rem',
+                                fontWeight: 600
+                            }
+                        }}
+                    />
+                </Paper>
+            </Box>
+        </ThemeProvider>
     );
 };
 
@@ -1610,8 +1614,8 @@ const App = () => (
         loginPage={CustomLoginPage}
         layout={CustomLayout}
         title="Admin Portal"
-        theme={lightTheme} // Set the default theme
-        darkTheme={lightTheme} // Force the light theme even in dark mode
+        // theme={lightTheme} // Set the default theme
+        // darkTheme={lightTheme} // Force the light theme even in dark mode
     >
         <Resource 
             name="users" 
