@@ -109,7 +109,7 @@
                                     data-userid="{{ application.user_id }}"
                                     data-banned="{{ 'true' if application.is_banned else 'false' }}">
                                     <td>{{ application.candidate_name }}</td>
-                                    <td>{{ application.job_post }}</td>
+                                    <td class="truncate" title="{{ application.job_post }}">{{ application.job_post }}</td>
                                     <td>{{ application.status }}</td>
                                 </tr>
                                 {% endfor %}

@@ -416,6 +416,22 @@ td.status-Interviewed, tr[data-status="Interviewed"] td:nth-child(3) {
     background-color: #ebcccc; /* Slightly darker red on hover */
 }
 
+/* Add these styles to your existing CSS file */
+#applications-table {
+    width: 100%;
+    table-layout: fixed; /* Crucial for making max-width work on cells */
+    border-collapse: collapse;
+}
+
+.truncate {
+    max-width: 250px; /* Adjust this width as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Adding vertical-align for better alignment if content wraps in other cells */
+    vertical-align: middle; 
+}
+
 /* Modal styles */
 .modal {
     display: none;

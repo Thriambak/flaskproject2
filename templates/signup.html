@@ -68,7 +68,7 @@
                 </div>
             {% endif %}
             
-            <form action="{{ url_for('auth.signup') }}" method="POST">
+            <form id="signup-form" action="{{ url_for('auth.signup') }}" method="POST">
                 <div class="form-group">
                     <label for="username"><p style="color: red; display: inline;">* </p>Username</label>
                     <input type="text" id="username" name="username" minlength="3" maxlength="30"
@@ -128,6 +128,54 @@ Password can only contain letters, numbers, and special characters @#$% ^&+=">
                     setTimeout(() => msg.remove(), 1000);
                 });
             }, 8000); // Error messages stay for 8 seconds
+        });
+
+        const signupForm = document.getElementById('signup-form');
+        // Define the fields to save (excluding password for security)
+        const signupFormFields = ['username', 'email', 'role'];
+
+        function saveSignupToSession() {
+            const formData = {};
+            signupFormFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    formData[fieldId] = element.value;
+                }
+            });
+            sessionStorage.setItem('signupFormData', JSON.stringify(formData));
+        }
+
+        function loadSignupFromSession() {
+            const savedData = sessionStorage.getItem('signupFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                signupFormFields.forEach(fieldId => {
+                    const element = document.getElementById(fieldId);
+                    if (element && formData[fieldId]) {
+                        element.value = formData[fieldId];
+                    }
+                });
+            }
+        }
+
+        function clearSignupSessionData() {
+            sessionStorage.removeItem('signupFormData');
+        }
+
+        // Add event listeners when the page is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSignupFromSession();
+
+            // Attach event listeners to all fields to save on input
+            signupFormFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.addEventListener('input', saveSignupToSession);
+                }
+            });
+
+            // Clear session data upon successful submission
+            signupForm.addEventListener('submit', clearSignupSessionData);
         });
 
         // Password toggle function

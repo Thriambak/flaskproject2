@@ -97,7 +97,7 @@
                                     data-status="{{ activity.job_application_status }}">
                                     <td>{{ activity.student_name }}</td>
                                     <td>{{ activity.company_name }}</td>
-                                    <td>{{ activity.job_title }}</td>
+                                    <td class="truncate" title="{{ activity.job_title }}">{{ activity.job_title }}</td>
                                     <td>{{ activity.job_application_status }}</td>
                                 </tr>
                                 {% endfor %}

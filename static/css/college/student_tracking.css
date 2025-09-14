@@ -341,6 +341,20 @@ table tbody tr:last-child {
     background-color: #ebcccc; /* Slightly darker red on hover */
 }
 
+#student-table {
+    width: 100%;
+    table-layout: fixed; /* This is crucial for controlling column widths */
+    border-collapse: collapse;
+}
+
+.truncate {
+    max-width: 250px; /* Adjust this width as needed for your design */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle; /* Ensures good alignment if other cells wrap */
+}
+
 .pagination {
     display: flex;
     justify-content: center;

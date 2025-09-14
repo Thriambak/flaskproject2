@@ -198,7 +198,7 @@
             {% endif %}
             {% endwith %}
             
-            <form action="{{ url_for('auth.login') }}" method="POST">
+            <form id="login-form" action="{{ url_for('auth.login') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" required>
@@ -243,6 +243,41 @@
             }, 4000);
         });
 
+        const loginForm = document.getElementById('login-form');
+        const usernameField = document.getElementById('username');
+
+        // Function to save username to sessionStorage
+        function saveLoginToSession() {
+            if (usernameField) {
+                sessionStorage.setItem('loginUsername', usernameField.value);
+            }
+        }
+
+        // Function to load username from sessionStorage
+        function loadLoginFromSession() {
+            const savedUsername = sessionStorage.getItem('loginUsername');
+            if (usernameField && savedUsername) {
+                usernameField.value = savedUsername;
+            }
+        }
+
+        // Function to clear saved username
+        function clearLoginSessionData() {
+            sessionStorage.removeItem('loginUsername');
+        }
+
+        // Add event listeners when the page is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLoginFromSession();
+
+            if (usernameField) {
+                usernameField.addEventListener('input', saveLoginToSession);
+            }
+
+            // Clear session data upon successful submission
+            loginForm.addEventListener('submit', clearLoginSessionData);
+        });
+
         // Password toggle function
         function togglePassword() {
             var passwordField = document.getElementById("password");
@@ -280,7 +315,6 @@
         window.addEventListener('DOMContentLoaded', function() {
             if (typeof(Storage) !== "undefined") {
                 localStorage.clear();
-                sessionStorage.clear();
             }
         });
     </script>

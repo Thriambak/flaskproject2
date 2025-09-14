@@ -110,7 +110,7 @@
                                     data-login-id="{{ user.login_id }}"
                                     data-banned="{{ 'true' if user.is_banned else 'false' }}">
                                     <td>{{ user.name }}</td>
-                                    <td>{{ user.job_title }}</td>
+                                    <td class="truncate" title="{{ user.job_title }}">{{ user.job_title }}</td>
                                     <td>{{ user.status }}</td>
                                 </tr>
                                 {% endfor %}
@@ -399,6 +399,8 @@
                     const status = this.getAttribute('data-status');
                     
                     console.log("Row clicked:", name, id, loginId, job, status);
+
+                    updateTemplateOptions(status);
                     
                     const details = `
                         <p style="font-family: monospace;font-size: 14.5px;"><strong>Name: </strong>${name}</p>
@@ -466,6 +468,38 @@
             const templateDropdown = document.getElementById('template-dropdown');
             const messageBox = document.getElementById('message-box');
             messageBox.value = templateDropdown.value;
+        }
+
+        // New function to enable/disable templates based on application status
+        function updateTemplateOptions(status) {
+            const templateDropdown = document.getElementById('template-dropdown');
+            const options = templateDropdown.querySelectorAll('option');
+
+            // Reset the dropdown and message box each time a new candidate is selected
+            templateDropdown.value = "";
+            document.getElementById('message-box').value = "";
+
+            options.forEach(option => {
+                // The first option ("Select Template") should always be enabled
+                if (option.value === "") {
+                    option.disabled = false;
+                    return;
+                }
+
+                // Define which templates are for which status
+                const isPendingTemplate = option.value.includes('Thank you for applying') || option.value.includes('schedule an interview');
+                const isInterviewedTemplate = option.value.includes('Congratulations!') || option.value.includes('regret to inform you');
+
+                // Apply the logic
+                if (status === 'Pending') {
+                    option.disabled = !isPendingTemplate;
+                } else if (status === 'Interviewed') {
+                    option.disabled = !isInterviewedTemplate;
+                } else { 
+                    // For 'Hired', 'Rejected', or any other status, disable all templates
+                    option.disabled = true;
+                }
+            });
         }
 
         // Initialize pagination and other functionality
