@@ -262,12 +262,14 @@ main {
     transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
+
 .job-card p {
     word-wrap: break-word; /* Ensures long words or URLs break onto the next line */
     white-space: normal;   /* Prevents text from staying on one line */
     overflow-wrap: break-word; /* Alternative for better browser support */
     max-width: 95%;
 }
+
 
 .job-card:hover {
     background: linear-gradient(135deg, #f0f0f0, #ffffff);
@@ -315,12 +317,39 @@ main {
     font-size: 14px;
     color: #555;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
 }
 
 .job-details li i {
     color: #0a9396;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+job-details p {
+    margin: 0;
+    padding: 0;
+    min-width: 0; 
+}
+
+.truncate {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom; 
+    max-width: 95%; /* Adjust as needed */
+}
+
+.job-card > p.truncate {
+    display: block; /* Make it a block element to respect width */
+    width: 100%;   /* Take the full width of the card */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 15px; /* Add some space below the description */
 }
 
 .application-status {

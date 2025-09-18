@@ -47,7 +47,7 @@
 
         <div class="activity">
             <h2>College Profile</h2>
-            <form class="profile-form" method="POST" action="{{ url_for('college.college_profile') }}" onsubmit="return validateForm()">
+            <form id="profile-form" class="profile-form" method="POST" action="{{ url_for('college.college_profile') }}" onsubmit="return validateForm()">
                 {% if colleges %}
                     <input type="hidden" id="logId" name="logId" value="{{ colleges.id }}">
 
@@ -82,7 +82,7 @@
                     </div>                    
 
                     <div class="form-submit">
-                        <button type="submit">Save Profile</button>
+                        <button type="submit">Update Profile</button>
                     </div>
 
                 {% else %}
@@ -92,6 +92,52 @@
         </div>
     </main>
     <script>
+        const profileForm = document.getElementById('profile-form');
+        const profileFormFields = [
+            'college-name', 'contact-email', 'college-description', 'college-address',
+            'college-logo', 'college-website'
+        ];
+
+        function saveProfileToSession() {
+            const formData = {};
+            profileFormFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    formData[fieldId] = element.value;
+                }
+            });
+            sessionStorage.setItem('collegeProfileFormData', JSON.stringify(formData));
+        }
+
+        function loadProfileFromSession() {
+            const savedData = sessionStorage.getItem('collegeProfileFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                profileFormFields.forEach(fieldId => {
+                    const element = document.getElementById(fieldId);
+                    // Only load data if the field is empty to avoid overwriting db values on refresh
+                    if (element && !element.value && formData[fieldId]) {
+                        element.value = formData[fieldId];
+                    }
+                });
+            }
+        }
+
+        function clearProfileSessionData() {
+            sessionStorage.removeItem('collegeProfileFormData');
+        }
+
+        // Add event listeners to save data on input
+        profileFormFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.addEventListener('input', saveProfileToSession);
+            }
+        });
+
+        // Load data when the page is ready
+        document.addEventListener('DOMContentLoaded', loadProfileFromSession);
+
         let initialFormData = {};
 
         window.onload = function() {
@@ -147,6 +193,10 @@
                 showPopup("Invalid email format!", "error");
                 return false;
             }
+            if (currentFormData["college-website"] && !currentFormData["college-website"].match(/^https?:\/\//)) {
+                showPopup("Please enter a valid website URL (e.g., https://example.com).", "error");
+                return false;
+            }
             if (currentFormData["college-description"].length > 1000) {
                 showPopup("Description must be under 1000 characters!", "error");
                 return false;
@@ -156,6 +206,7 @@
                 return false;
             }
 
+            clearProfileSessionData();
             return true; // Allow form submission
         }
 

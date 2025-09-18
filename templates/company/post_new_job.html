@@ -57,18 +57,18 @@
                 <i class="fas fa-lock"></i> This job is closed and cannot be edited.
             </div>
             {% endif %}
-            <form class="job-posting-form" action="/company/company_post_new_job" method="POST" onsubmit="return validateForm()">
+            <form id="job-form" class="job-posting-form" action="/company/company_post_new_job" method="POST" onsubmit="return validateForm()">
                 {% if job_id %}
                     <input type="hidden" id="jobId" name="jobId" value="{{ job_id }}">
                 {% endif %}
                 <div class="form-group">
                     <label for="job-title"><p style="color: red; display: inline;">* </p>Job Title:</label>
-                    <input type="text" id="job-title" name="job-title" placeholder="Enter job title" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.title if form_data else '' }}" required {% if is_closed %}disabled{% endif %}>
+                    <input type="text" id="job-title" name="job-title" placeholder="Enter job title" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.title if form_data else '' }}" required {% if is_closed %}disabled{% endif %} maxlength="250">
                 </div>
 
                 <div class="form-group">
                     <label for="description"><p style="color: red; display: inline;">* </p>Job Description:</label>
-                    <textarea id="description" name="description" placeholder="Enter job description" rows="3" style="font-family: monospace;font-size: 14.5px;" required {% if is_closed %}disabled{% endif %}>{{ form_data.description if form_data else '' }}</textarea>
+                    <textarea id="description" name="description" placeholder="Enter job description" rows="3" style="font-family: monospace;font-size: 14.5px;" required {% if is_closed %}disabled{% endif %} maxlength="2000">{{ form_data.description if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
@@ -83,7 +83,7 @@
         
                 <div class="form-group">
                     <label for="skill-sets">Expected Skill Sets:</label>
-                    <textarea id="skill-sets" name="skill-sets" placeholder="e.g., Python, JavaScript, React, SQL, Git (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.skills if form_data else '' }}</textarea>
+                    <textarea id="skill-sets" name="skill-sets" placeholder="e.g., Python, JavaScript, React, SQL, Git (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %} maxlength="1000">{{ form_data.skills if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
@@ -93,17 +93,17 @@
 
                 <div class="form-group">
                     <label for="certifications">Required Certifications:</label>
-                    <textarea id="certifications" name="certifications" placeholder="e.g., AWS Certified Developer, PMP, Scrum Master, Oracle Certified (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %}>{{ form_data.certifications if form_data else '' }}</textarea>
+                    <textarea id="certifications" name="certifications" placeholder="e.g., AWS Certified Developer, PMP, Scrum Master, Oracle Certified (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %} maxlength="1000">{{ form_data.certifications if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="salary">Salary:</label>
-                    <input type="text" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.salary if form_data else '' }}" {% if is_closed %}disabled{% endif %}>
+                    <input type="text" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.salary if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="50">
                 </div>
         
                 <div class="form-group">
                     <label for="locations">Preferred Locations:</label>
-                    <input type="text" id="locations" name="locations" placeholder="Enter preferred locations" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.locations if form_data else '' }}" {% if is_closed %}disabled{% endif %}>
+                    <input type="text" id="locations" name="locations" placeholder="Enter preferred locations" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.locations if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="200">
                 </div>
 
                 <div class="form-group">
@@ -118,22 +118,27 @@
 
                 <div class="form-group">
                     <label for="form-url">Questionnaire Form URL:</label>
-                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.form_url if form_data else '' }}" {% if is_closed %}disabled{% endif %}>
+                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.form_url if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="2000">
                 </div>
                 
                 <!-- Add Questionnaire Button -->
                 <div class="action-buttons">
                 {% if form_data.form_url %}
-                    <button type="button" class="questionnaire-btn" onclick="window.location.href='{{ form_data.form_url if form_data else '' }}'" {% if is_closed %}disabled{% endif %}>
+                    <button type="button" class="questionnaire-btn" onclick="window.open('{{ form_data.form_url }}', '_blank')" {% if is_closed %}disabled{% endif %}>
                         <i class="fas fa-question-circle"></i> Update Questionnaire
                     </button>
-                    <button type="submit" class="submit-btn" style="background-color: #28a745;" {% if is_closed %}disabled{% endif %}><i class="fas fa-save"></i> Update Job</button>
                 {% else %}
-                    <button type="button" class="questionnaire-btn" onclick="window.location.href='https:/forms.google.com'">
+                    <button type="button" class="questionnaire-btn" onclick="window.open('https://forms.google.com', '_blank')">
                         <i class="fas fa-question-circle"></i> Add Questionnaire
                     </button>
-                    <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
                 {% endif %}
+
+                <!-- Post Job Button-->
+                 {% if job_id %}
+                    <button type="submit" class="submit-btn" style="background-color: #28a745;" {% if is_closed %}disabled{% endif %}><i class="fas fa-save"></i> Update Job</button>
+                 {% else %}
+                    <button type="submit" class="submit-btn"><i class="fas fa-paper-plane"></i> Post Job</button>
+                 {% endif %}
                 </div>
             </form>
         </div>
@@ -187,6 +192,61 @@
             setTimeout(() => { popup.style.display = "none"; }, 3000);
         }
 
+        const form = document.getElementById('job-form');
+        const formFields = [
+            'job-title', 'description', 'job-type', 'skill-sets', 'exp', 
+            'certifications', 'salary', 'locations', 'vacancy', 'deadline', 'form-url'
+        ];
+
+        // Function to save form data to sessionStorage
+        function saveToSession() {
+            const formData = {};
+            formFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    formData[fieldId] = element.value;
+                }
+            });
+            sessionStorage.setItem('jobFormData', JSON.stringify(formData));
+        }
+
+        // Function to load form data from sessionStorage
+        function loadFromSession() {
+            const savedData = sessionStorage.getItem('jobFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                formFields.forEach(fieldId => {
+                    const element = document.getElementById(fieldId);
+                    // Only load data if the field is empty (respecting server-side pre-population for edits)
+                    if (element && !element.value && formData[fieldId]) {
+                        element.value = formData[fieldId];
+                    }
+                });
+            }
+        }
+        
+        // Function to clear saved form data
+        function clearSessionData() {
+            sessionStorage.removeItem('jobFormData');
+        }
+
+        // Event listener to run when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Do not load from session if we are editing a job (job_id exists)
+            // This prevents overwriting pre-filled data with old session data.
+            {% if not job_id %}
+                loadFromSession();
+            {% endif %}
+
+            // Add event listeners to save data on input
+            formFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.addEventListener('input', saveToSession);
+                }
+            });
+        });
+
         function validateForm() {
             // Get form values
             const jobTitle = document.getElementById("job-title").value.trim();
@@ -195,6 +255,10 @@
             const vacancy = document.getElementById("vacancy").value.trim();
             const deadline = document.getElementById("deadline").value;
             const formUrl = document.getElementById("form-url").value.trim();
+            const locations = document.getElementById("locations").value.trim();
+            const salary = document.getElementById("salary").value.trim();
+            const skills = document.getElementById("skill-sets").value.trim();
+            const certifications = document.getElementById("certifications").value.trim();
             
             // Validate job title
             if (jobTitle.length < 3 || jobTitle.length > 250) {
@@ -207,26 +271,48 @@
                 showPopup("Job Description must be between 10-2000 characters!", "error");
                 return false;
             }
+
+            // Validate skills
+            if (skills.length > 1000) {
+                showPopup("Skills must not exceed 1000 characters!", "error");
+                return false;
+            }
             
             // Validate experience
-            if (exp < 0 || exp > 50) {
-                showPopup("Years of Experience must be between 0-50!", "error");
+            if (exp === '' || isNaN(exp) || exp < 0 || exp > 50) {
+                showPopup("Years of Experience must be a number between 0-50!", "error");
                 return false;
             }
 
+            // Validate certifications
+            if (certifications.length > 1000) {
+                showPopup("Certifications must not exceed 1000 characters!", "error");
+                return false;
+            }
+
+            // Validate salary
+            if (salary.length > 50) {
+                showPopup("Salary must not exceed 50 characters!", "error");
+                return false;
+            }
+            
             // Validate location
-            if (location.length > 100) {
-                showPopup("Location must be less than 100 characters!", "error");
+            if (locations.length > 1000) {
+                showPopup("Location must not exceed 1000 characters!", "error");
                 return false;
             }
             
             // Validate vacancy
-            if (vacancy < 1 || vacancy > 1000) {
-                showPopup("Vacancy must be between 1-1000!", "error");
+            if (vacancy === '' || isNaN(vacancy) || vacancy < 1 || vacancy > 1000) {
+                showPopup("Vacancy must be a number between 1-1000!", "error");
                 return false;
             }
             
             // Validate deadline
+            if (!deadline) {
+                showPopup("Please select an application deadline!", "error");
+                return false;
+            }
             const currentDate = new Date("{{ current_date }}");
             const deadlineDate = new Date(deadline);
             if (deadlineDate < currentDate) {
@@ -241,6 +327,7 @@
                 return false;
             }
             
+            clearSessionData();
             return true;
         }
         

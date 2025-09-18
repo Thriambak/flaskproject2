@@ -179,6 +179,9 @@ def college_profile():
         elif not re.match(r"^\S+@\S+\.\S+$", email):
             message = "Invalid email format!"
             message_type = "error"
+        elif website and not re.match(r"^https?://", website):
+            message = "Please enter a valid website URL (starting with http:// or https://)."
+            message_type = "error"
         elif len(description) > 1000:
             message = "Description must be under 1000 characters!"
             message_type = "error"
@@ -330,7 +333,7 @@ def generate_coupon():
     # Get college profile using login_id instead of college_id
     college_profile = College.query.filter_by(login_id=login_id).first()
     # Fetch all active coupons from the database using the college profile
-    coupons = Coupon.query.filter_by(college_id=college_profile.id).all()
+    coupons = Coupon.query.filter_by(college_id=college_profile.id).order_by(Coupon.created_at.desc()).all()
     
     if request.method == 'POST':
         faculty_id = request.form['faculty_id']

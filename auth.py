@@ -110,7 +110,8 @@ def signup():
         
         # Username validation
         # Allowed: single word (alphanumeric), email, or 10-digit phone number
-        username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
+        # username_pattern = r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9]+$|^[0-9]{10}$'
+        username_pattern = r'^(?![0-9]+@)[a-zA-Z0-9]+$|^[0-9]{10}$'
         if not re.match(username_pattern, username):
             flash('Username must be a single word (letters/numbers only) and a valid email.', 'danger')
             return redirect(url_for('auth.signup'))

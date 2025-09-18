@@ -47,7 +47,7 @@
 
         <div class="activity">
             <h2>Company Profile</h2>
-            <form class="profile-form" method="POST" action="{{ url_for('company.company_profile') }}" onsubmit="return validateForm()">
+            <form id="profile-form" class="profile-form" method="POST" action="{{ url_for('company.company_profile') }}" onsubmit="return validateForm()">
                 {% if companies %}
                     <input type="hidden" id="logId" name="logId" value="{{ companies.id }}">
 
@@ -92,7 +92,7 @@
                     </div>                    
 
                     <div class="form-submit">
-                        <button type="submit">Save Profile</button>
+                        <button type="submit">Update Profile</button>
                     </div>
 
                 {% else %}
@@ -102,6 +102,55 @@
         </div>
     </main>
     <script>
+        const profileForm = document.getElementById('profile-form');
+        const profileFormFields = [
+            'company-name', 'contact-email', 'company-description', 'company-address',
+            'industries', 'company-logo', 'company-website'
+        ];
+
+        function saveProfileToSession() {
+            const formData = {};
+            profileFormFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    formData[fieldId] = element.value;
+                }
+            });
+            sessionStorage.setItem('companyProfileFormData', JSON.stringify(formData));
+        }
+
+        function loadProfileFromSession() {
+            const savedData = sessionStorage.getItem('companyProfileFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                profileFormFields.forEach(fieldId => {
+                    const element = document.getElementById(fieldId);
+                    // Only load data if the field is empty to avoid overwriting db values
+                    if (element && !element.value && formData[fieldId]) {
+                        element.value = formData[fieldId];
+                    }
+                });
+            }
+        }
+
+        function clearProfileSessionData() {
+            sessionStorage.removeItem('companyProfileFormData');
+        }
+
+        // Add event listeners to save data on input
+        profileFormFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.addEventListener('input', saveProfileToSession);
+            }
+        });
+
+        // Load data when the page loads
+        // Unlike the 'new job' form, it's safe to always try loading here
+        // because the fields are already pre-populated by the server.
+        // Our script only fills empty fields.
+        loadProfileFromSession();
+
         let initialFormData = {};
 
         window.onload = function() {
@@ -159,6 +208,10 @@
                 showPopup("Invalid email format!", "error");
                 return false;
             }
+            if (currentFormData["company-website"] && !currentFormData["company-website"].match(/^https?:\/\//)) {
+                showPopup("Please enter a valid website URL (e.g., https://example.com).", "error");
+                return false;
+            }
             if (currentFormData["company-description"].length > 1000) {
                 showPopup("Description must be under 1000 characters!", "error");
                 return false;
@@ -168,6 +221,7 @@
                 return false;
             }
 
+            clearProfileSessionData();
             return true; // Allow form submission
         }
 

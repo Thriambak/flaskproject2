@@ -68,52 +68,64 @@
                     <div class="job-card closed">
                     {% endif %}
                         <div class="job-header">
-                            <h3 style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</h3>
+                            <h3 class="truncate" title="{{ job.title }}" style="overflow-wrap: break-word; max-width: 90%;">{{ job.title }}</h3>
                             {% if job.status == "open" %}
                                 <span class="status vacant">Open</span>
                             {% else %}
                                 <span class="status filled">Closed</span>
                             {% endif %}
                         </div>
-                        <p>{{ job.description }}</p>
+                        <p class="truncate" title="{{ job.description }}">{{ job.description }}</p>
                         <ul class="job-details">
                             {% if job.skills %}
-                                <li><i class="fas fa-tools" style="padding-left: 0.25%;"></i> <p style="padding-left: 0.23%;">Expected Skills: {{ job.skills }}</p></li>
+                                <li>
+                                    <i class="fas fa-tools" style="padding-left: 0.25%;"></i>
+                                    <p style="padding-left: 0.1%;">Expected Skills: <span class="truncate" title="{{ job.skills }}">{{ job.skills }}</span></p>
+                                </li>
                             {% endif %}
                             
                             {% if job.years_of_exp is not none %}
-                                <li><i class="fas fa-trophy" style="padding-left: 0.2%;"></i> <p style="padding-left: 0.17%;">Years of Experience: {{ job.years_of_exp }}</p></li>
+                                <li><i class="fas fa-trophy" style="padding-left: 0.2%;"></i> <p style="padding-left: 0.15%;">Years of Experience: {{ job.years_of_exp }}</p></li>
                             {% endif %}
                             
                             {% if job.certifications %}
-                                <li><i class="fas fa-certificate" style="padding-left: 0.275%;"></i> <p style="padding-left: 0.25%;">Required Certifications: {{ job.certifications }}</p></li>
+                               <li>
+                                    <i class="fas fa-certificate" style="padding-left: 0.1%;"></i>
+                                    <p style="padding-left: 0.1%;">Required Certifications: <span class="truncate" title="{{ job.certifications }}">{{ job.certifications }}</span></p>
+                                </li>
                             {% endif %}
                             
                             {% if job.location %}
-                                <li><i class="fas fa-map-marker-alt" style="padding-left: 0.47%;"></i> <p style="padding-left: 0.43%;">Location: {{ job.location }}</p></li>
+                                <li>
+                                    <i class="fas fa-map-marker-alt" style="padding-left: 0.1%;"></i>
+                                    <p style="padding-left: 0.1%;">Location: <span class="truncate" title="{{ job.location }}">{{ job.location }}</span></p>
+                                </li>
                             {% endif %}
                             
                             {% if job.salary %}
-                                <li><i class="fas fa-dollar-sign" style="padding-left: 0.56%;"></i> <p style="padding-left: 0.5%;">Salary: ₹{{ job.salary }}</p></li>
+                                <li><i class="fas fa-dollar-sign" style="padding-left: 0.15%;"></i> <p style="padding-left: 0.1%;">Salary: ₹{{ job.salary }}</p></li>
                             {% endif %}
                             
                             {% if job.job_type %}
-                                <li><i class="fas fa-briefcase" style="padding-left: 0.275%;"></i> <p style="padding-left: 0.25%;">Job Type: {{ job.job_type }}</p></li>
+                                <li><i class="fas fa-briefcase" style="padding-left: 0.15%;"></i> <p style="padding-left: 0.1%;">Job Type: {{ job.job_type }}</p></li>
                             {% endif %}
                             
                             {% if job.deadline %}
-                                <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.37%;">Apply Before: <span class="job-date" data-utc="{{ job.deadline.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
+                                <li><i class="fas fa-calendar" style="padding-left: 0.15%;"></i> <p style="padding-left: 0.15%;">Apply Before: <span class="job-date" data-utc="{{ job.deadline.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
                             {% endif %}
                             
                             {% if job.form_url %}
-                                <li><i class="fas fa-link" style="padding-left: 0.05%;"></i><p>Questionnaire URL: <a href="{{ job.form_url }}" style="text-decoration: none;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p></li>
+                                <li>
+                                    <i class="fas fa-link" style="padding-left: 0.05%;"></i>
+                                    <p>Questionnaire URL: <a href="{{ job.form_url }}" class="truncate" title="{{ job.form_url }}" style="text-decoration: none;" target="_blank" onclick="event.stopPropagation();">{{ job.form_url }}</a></p>
+                                </li>
                             {% endif %}
 
                             {% if job.total_vacancy %}
-                                <li><i class="fas fa-users" style="padding-left: 0.1%;"></i><p style="padding-left: 0.1%;">Vacancy: {{ job.total_vacancy }}</p></li>
+                                <li><i class="fas fa-users" style="padding-left: 0.1%;"></i><p style="padding-left: 0.15%;">Vacancy: {{ job.total_vacancy }}</p></li>
                             {% endif %}
                             
-                            <li><i class="fas fa-calendar" style="padding-left: 0.35%;"></i> <p style="padding-left: 0.4%;">Posted: <span class="job-date" data-utc="{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
+                            <li><i class="fas fa-calendar" style="padding-left: 0.1%;"></i> <p style="padding-left: 0.15%;">Posted: <span class="job-date" data-utc="{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}"></span></p></li>
                         </ul>
                         <div class="application-status">
                             <h4>Application Status</h4>

@@ -360,23 +360,27 @@ const customDataProvider = {
                 data = json.data;
                 total = json.total;
             } else {
-                // Default fallback
-                data = json;
-                total = Array.isArray(json) ? json.length : 1;
+                // Default fallback - ensure we always return an array
+                data = json ? (Array.isArray(json) ? json : [json]) : [];
+                total = data.length;
             }
             
-            const formattedData = data.map(item => ({
+            // Ensure data is always an array, even when empty
+            const safeData = Array.isArray(data) ? data : [];
+            const formattedData = safeData.map(item => ({
                 id: item.id || item.job_id || item.company_id,
                 ...item
             }));
 
-            return { data: formattedData, total };
+            return { data: formattedData, total: total || 0 };
         } catch (error) {
             console.error("Error fetching data:", error);
+            // Always return valid structure, even on error
             return { data: [], total: 0 };
         }
     },
 
+    // ... rest of the methods remain the same
     getOne: async (resource, params) => {
         try {
             const response = await fetch(`${API_BASE_URL}/${resource}/${params.id}`, {
@@ -981,12 +985,13 @@ const FilterDropdown = () => {
                 return [
                     { label: "Name", value: "name:", icon: <PersonIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
+                    { label: "College", value: "college:", icon: <SchoolIcon /> }, // Changed to "college:" - adjust based on your actual field
                 ];
             case 'companies':
                 return [
                     { label: "Company Name", value: "company_name:", icon: <BusinessIcon /> },
                     { label: "Email", value: "email:", icon: <EmailIcon /> },
-            { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
+                    { label: "Industry", value: "industry:", icon: <FactoryIcon /> }
                 ];
             case 'jobs':
                 return [
@@ -1399,26 +1404,69 @@ const ListActions = (props) => {
     );
 };
 
-const StyledDatagrid = ({ children, ...props }) => (
-    <Datagrid
-        {...props}
-        sx={{
-            '& .RaDatagrid-headerCell': {
-                bgcolor: 'background.default',
-                fontWeight: 700,
-            },
-            '& .RaDatagrid-rowCell': {
-                py: 2,
-            },
-            '& .RaDatagrid-row:hover': {
-                bgcolor: 'action.hover'
-            }
-        }}
-        rowClick="edit" // NOTE: This can be removed if you only want click interaction on the name field
-    >
-        {children}
-    </Datagrid>
-);
+const StyledDatagrid = ({ children, ...props }) => {
+    const { data, isLoading, error } = useListContext();
+    
+    return (
+        <>
+            <Datagrid
+                {...props}
+                sx={{
+                    '& .RaDatagrid-headerCell': {
+                        bgcolor: 'background.default',
+                        fontWeight: 700,
+                    },
+                    '& .RaDatagrid-rowCell': {
+                        py: 2,
+                    },
+                    '& .RaDatagrid-row:hover': {
+                        bgcolor: 'action.hover'
+                    }
+                }}
+                rowClick="edit"
+            >
+                {children}
+            </Datagrid>
+            
+            {/* Show empty state when no data but not loading */}
+            {!isLoading && !error && (!data || data.length === 0) && (
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    py: 8,
+                    px: 3,
+                    textAlign: 'center',
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderTop: 'none'
+                }}>
+                    <Box sx={{ 
+                        width: 80, 
+                        height: 80, 
+                        borderRadius: '50%', 
+                        bgcolor: 'action.hover',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mb: 3
+                    }}>
+                        <FilterListIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
+                    </Box>
+                    <Typography variant="h6" color="text.primary" gutterBottom>
+                        No data found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
+                        There are no records to display at the moment. Use the "Add" button or adjust your filters to see results.
+                    </Typography>
+                </Box>
+            )}
+        </>
+    );
+};
+
 
 const BanToggle = ({ record, resource }) => {
     const [update, { isLoading }] = useUpdate();
@@ -1503,16 +1551,15 @@ const UserList = (props) => (
                 sx={{ maxWidth: 400 }}
             />
         ]} 
+        empty={false} // This prevents React Admin from showing its own empty component
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<UserBulkActionButtons />} rowClick={false}>
-            {/* The "Name" column is sortable by the 'name' field */}
             <FunctionField
                 label="Name"
                 sortBy="name"
                 render={() => <ClickableNameField source="name" resource="users" />}
             />
-            {/* All other columns are NOT sortable */}
             <TextField source="email" sortable={false} />
             <TextField source="college_name" label="College" sortable={false} />
             <FunctionField
@@ -1524,9 +1571,6 @@ const UserList = (props) => (
     </List>
 );
 
-// =============================================================================
-// == CORRECTED CompanyList COMPONENT ==
-// =============================================================================
 const CompanyList = (props) => (
     <List 
         actions={<ListActions resource="companies" />}
@@ -1538,16 +1582,15 @@ const CompanyList = (props) => (
                 sx={{ maxWidth: 400 }}
             />
         ]}
+        empty={false} // This prevents React Admin from showing its own empty component
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<CompanyBulkActionButtons />} rowClick={false}>
-            {/* The "Company Name" column is sortable by the 'company_name' field */}
-             <FunctionField
+            <FunctionField
                 label="Company Name"
                 sortBy="company_name"
                 render={() => <ClickableNameField source="company_name" resource="companies" />}
             />
-            {/* All other columns are NOT sortable */}
             <TextField source="email" sortable={false} />
             <TextField source="industry" sortable={false} />
             <FunctionField
@@ -1559,9 +1602,6 @@ const CompanyList = (props) => (
     </List>
 );
 
-// =============================================================================
-// == CORRECTED JobList COMPONENT ==
-// =============================================================================
 const JobList = (props) => (
     <List 
         actions={<ListActions />}
@@ -1573,15 +1613,14 @@ const JobList = (props) => (
                 sx={{ maxWidth: 500 }}
             />
         ]} 
+        empty={false} // This prevents React Admin from showing its own empty component
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            {/* The "Title" column is sortable by the 'title' field */}
             <TextField
                 source="title"
                 label="Job Title"
             />
-            {/* All other columns are NOT sortable */}
             <TextField 
                 source="company_name" 
                 label="Company"
