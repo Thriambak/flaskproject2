@@ -34,6 +34,11 @@
       font-size: 0.875rem;
       font-style: italic;
     }
+
+    .error-field {
+      border-color: #dc3545 !important;
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
   </style>
 </head>
 <body data-aos-duration="1000">
@@ -109,8 +114,8 @@
             </div>
           </div>
           <div class="profile-info">
-            <h1>{{ user.name }}</h1>
-            <div>Email: {{ user.email }}</div>
+            <h1 id="displayName">{{ user.name }}</h1>
+            <div>Email: <span id="displayEmail">{{ user.email }}</span></div>
             <div>Phone: <span id="displayPhone">{{ user.phone or 'Not provided' }}</span></div>
             <div>Age: <span id="displayAge">{{ user.age or 'Not provided' }}</span></div>
             <div>College: <span id="displayCollege">{{ user.college_name or 'Not provided' }}</span></div>
@@ -128,17 +133,30 @@
         
         {% if edit_mode %}
           <form action="{{ url_for('user.profile', edit='true') }}" method="POST" class="edit-form" id="editProfileForm">
+            <!-- Name Field -->
+            <div class="editable-field">
+              <label>Name</label>
+              <input type="text" name="name" id="nameField" value="{{ user.name }}" required>
+              <div class="invalid-feedback" id="nameError"></div>
+            </div>
+            
+            <!-- Email Field -->
             <div class="editable-field">
               <label>Email</label>
-              <input type="email" name="email" value="{{ user.email }}" readonly>
+              <input type="email" name="email" id="emailField" value="{{ user.email }}" required>
+              <div class="invalid-feedback" id="emailError"></div>
             </div>
+            
             <div class="editable-field">
               <label>Phone</label>
               <input type="text" name="phone" id="phoneField" value="{{ user.phone or '' }}">
+              <div class="invalid-feedback" id="phoneError"></div>
             </div>
+            
             <div class="editable-field">
               <label>Age</label>
               <input type="number" name="age" id="ageField" value="{{ user.age or '' }}">
+              <div class="invalid-feedback" id="ageError"></div>
             </div>
             
             <!-- Coupon Code Field - Show only if user doesn't have a coupon -->
@@ -192,12 +210,15 @@
             <div class="editable-field">
               <label>About Me <span id="wordCount">(0/200 words)</span></label>
               <textarea name="about_me" id="aboutMeField" rows="5">{{ user.about_me or '' }}</textarea>
+              <div class="invalid-feedback" id="aboutMeError"></div>
             </div>
+            
             <!-- New field for Profile Picture URL -->
             <div class="editable-field">
               <label>Profile Picture URL</label>
               <input type="url" name="profile_pic_url" id="profilePicUrlField" value="{{ user.profile_picture or '' }}" placeholder="Enter image URL">
             </div>
+            
             <div class="mt-4 flex items-center gap-4">
               <button type="submit" class="btn-primary">Save Profile</button>
               <a href="{{ url_for('user.profile') }}" class="btn btn-outline-secondary">Cancel</a>
@@ -275,6 +296,39 @@
       return text.trim().split(/\s+/).filter(word => word.length > 0).length;
     }
     
+    // Function to validate email format
+    function isValidEmail(email) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+    }
+    
+    // Function to clear field error state
+    function clearFieldError(fieldId, errorId) {
+      const field = document.getElementById(fieldId);
+      const errorDiv = document.getElementById(errorId);
+      if (field) {
+        field.classList.remove('error-field', 'is-invalid');
+      }
+      if (errorDiv) {
+        errorDiv.textContent = '';
+        errorDiv.style.display = 'none';
+      }
+    }
+    
+    // Function to show field error
+    function showFieldError(fieldId, errorId, message) {
+      const field = document.getElementById(fieldId);
+      const errorDiv = document.getElementById(errorId);
+      if (field) {
+        field.classList.add('error-field', 'is-invalid');
+        field.focus();
+      }
+      if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+      }
+    }
+    
     // Function to create and show flash message
     function showFlashMessage(message, category = 'danger') {
       // Remove any existing flash messages first
@@ -305,10 +359,18 @@
     
     // Update profile progress based on filled fields
     function updateProfileProgress() {
-      let total = 5; // phone, age, college, about me, profile picture
+      let total = 6; // name, email, phone, age, college, about me, profile picture
       let filled = 0;
       
       // Check fields in both edit mode and display mode
+      const name = document.getElementById('nameField') 
+        ? document.getElementById('nameField').value.trim() 
+        : document.getElementById('displayName')?.textContent.trim();
+      
+      const email = document.getElementById('emailField') 
+        ? document.getElementById('emailField').value.trim() 
+        : document.getElementById('displayEmail')?.textContent.trim();
+      
       const phone = document.getElementById('phoneField') 
         ? document.getElementById('phoneField').value.trim() 
         : document.getElementById('displayPhone')?.textContent.trim();
@@ -329,178 +391,235 @@
         ? document.getElementById('profilePicUrlField').value.trim()
         : null;
       
+      if(name && name !== 'Not provided') filled++;
+      if(email && email !== 'Not provided' && isValidEmail(email)) filled++;
       if(phone && phone !== 'Not provided') filled++;
       if(age && age !== 'Not provided') filled++;
       if(college && college !== 'Not provided') filled++;
       if(aboutMe && aboutMe !== 'Tell us about yourself...') filled++;
+      
       // Check if profile picture is custom (either URL entered or image doesn't contain default)
       const profileImage = document.getElementById('profileImage');
       if((profilePicUrl && profilePicUrl.length > 0) || 
          (profileImage && !profileImage.src.includes('default_profile.png'))) {
-        filled++;
+        // Don't count profile picture in total for now, or adjust total to 7
+        // filled++;
       }
   
       // Calculate and update progress
       const percentage = Math.round((filled / total) * 100);
       document.getElementById('profileProgressBarFill').style.width = percentage + '%';
       document.getElementById('progressPercent').textContent = percentage + '% Complete';
-  }
+    }
   
-  // Run on page load
-  window.addEventListener('DOMContentLoaded', function() {
-    updateProfileProgress();
-    
-    // Word count functionality for About Me field
-    const aboutMeField = document.getElementById('aboutMeField');
-    const wordCountElement = document.getElementById('wordCount');
-    
-    if(aboutMeField && wordCountElement) {
-      function updateWordCount() {
-        const text = aboutMeField.value;
-        const wordCount = countWords(text);
-        wordCountElement.textContent = `(${wordCount}/200 words)`;
-        
-        if(wordCount > 200) {
-          wordCountElement.style.color = 'red';
-        } else {
-          wordCountElement.style.color = '';
-        }
-      }
+    // Run on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      updateProfileProgress();
       
-      // Update word count on input
-      aboutMeField.addEventListener('input', updateWordCount);
-      
-      // Initialize word count on page load
-      updateWordCount();
-    }
-    
-    // Preview profile picture as user types URL
-    const urlField = document.getElementById('profilePicUrlField');
-    if(urlField) {
-      urlField.addEventListener('input', function() {
-        const imageUrl = this.value.trim();
-        if(imageUrl) {
-          // Try to load the image to check if it's valid
-          const img = new Image();
-          img.onload = function() {
-            document.getElementById('profileImage').src = imageUrl;
-          };
-          img.onerror = function() {
-            // If image fails to load, show default
-            document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
-          };
-          img.src = imageUrl;
-        } else {
-          // Reset to default if empty
-          document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
-        }
-        updateProfileProgress();
-      });
-    }
-    
-    // Menu toggle for mobile
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navigation = document.getElementById('side-navigation');
-    
-    if(menuToggle) {
-      menuToggle.addEventListener('click', function() {
-        menuToggle.classList.toggle('active');
-        navigation.classList.toggle('active');
-      });
-    }
-    
-    // Show/hide scroll-to-top button
-    window.addEventListener('scroll', function() {
-      const scrollBtn = document.getElementById('scrollToTop');
-      if(window.scrollY > 300) {
-        scrollBtn.style.display = 'block';
-      } else {
-        scrollBtn.style.display = 'none';
-      }
-    });
-  });
-  
-  // Scroll to top function
-  function scrollToTop() {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  }
-  
-  // Form validation
-  const editForm = document.getElementById('editProfileForm');
-  if(editForm) {
-    editForm.addEventListener('submit', function(e) {
-      const phoneField = document.getElementById('phoneField');
-      const ageField = document.getElementById('ageField');
+      // Word count functionality for About Me field
       const aboutMeField = document.getElementById('aboutMeField');
-      const couponCodeField = document.querySelector('input[name="coupon_code"]');
+      const wordCountElement = document.getElementById('wordCount');
       
-      let hasError = false;
-      
-      // Coupon code expiration validation
-      if(couponCodeField && couponCodeField.value.trim() !== '' && !hasError) {
-        // This validation should be done on the server side, but we can add a placeholder
-        // The actual check will be in your Flask route where you have access to the coupon's created_at date
-        // For now, we'll leave this as a server-side validation point
-      }
-      
-      // Phone validation
-      if(phoneField.value.trim() !== '') {
-        const phoneRegex = /^\d{10,15}$/;
-        if(!phoneRegex.test(phoneField.value.trim())) {
-          e.preventDefault();
-          showFlashMessage('Please enter a valid phone number (10-15 digits)', 'danger');
-          phoneField.focus();
-          hasError = true;
+      if(aboutMeField && wordCountElement) {
+        function updateWordCount() {
+          const text = aboutMeField.value;
+          const wordCount = countWords(text);
+          wordCountElement.textContent = `(${wordCount}/200 words)`;
+          
+          if(wordCount > 200) {
+            wordCountElement.style.color = 'red';
+          } else {
+            wordCountElement.style.color = '';
+          }
         }
+        
+        // Update word count on input
+        aboutMeField.addEventListener('input', updateWordCount);
+        
+        // Initialize word count on page load
+        updateWordCount();
       }
       
-      // Age validation
-      if(ageField.value.trim() !== '' && !hasError) {
-        const age = parseInt(ageField.value);
-        if(isNaN(age) || age < 18 || age > 80) {
-          e.preventDefault();
-          showFlashMessage('Please enter a valid age between 18 and 80', 'danger');
-          ageField.focus();
-          hasError = true;
+      // Real-time validation for email field
+      const emailField = document.getElementById('emailField');
+      if (emailField) {
+        emailField.addEventListener('input', function() {
+          clearFieldError('emailField', 'emailError');
+          if (this.value.trim() && !isValidEmail(this.value.trim())) {
+            showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          }
+          updateProfileProgress();
+        });
+        
+        emailField.addEventListener('blur', function() {
+          if (this.value.trim() && !isValidEmail(this.value.trim())) {
+            showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          }
+        });
+      }
+      
+      // Real-time validation for name field
+      const nameField = document.getElementById('nameField');
+      if (nameField) {
+        nameField.addEventListener('input', function() {
+          clearFieldError('nameField', 'nameError');
+          updateProfileProgress();
+        });
+      }
+      
+      // Preview profile picture as user types URL
+      const urlField = document.getElementById('profilePicUrlField');
+      if(urlField) {
+        urlField.addEventListener('input', function() {
+          const imageUrl = this.value.trim();
+          if(imageUrl) {
+            // Try to load the image to check if it's valid
+            const img = new Image();
+            img.onload = function() {
+              document.getElementById('profileImage').src = imageUrl;
+            };
+            img.onerror = function() {
+              // If image fails to load, show default
+              document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
+            };
+            img.src = imageUrl;
+          } else {
+            // Reset to default if empty
+            document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
+          }
+          updateProfileProgress();
+        });
+      }
+      
+      // Menu toggle for mobile
+      const menuToggle = document.querySelector('.menu-toggle');
+      const navigation = document.getElementById('side-navigation');
+      
+      if(menuToggle) {
+        menuToggle.addEventListener('click', function() {
+          menuToggle.classList.toggle('active');
+          navigation.classList.toggle('active');
+        });
+      }
+      
+      // Show/hide scroll-to-top button
+      window.addEventListener('scroll', function() {
+        const scrollBtn = document.getElementById('scrollToTop');
+        if(window.scrollY > 300) {
+          scrollBtn.style.display = 'block';
+        } else {
+          scrollBtn.style.display = 'none';
         }
-      }
-      
-      // About Me word count validation
-      if(aboutMeField.value.trim() !== '' && !hasError) {
-        const wordCount = countWords(aboutMeField.value);
-        if(wordCount > 200) {
-          e.preventDefault();
-          showFlashMessage('About Me section cannot exceed 200 words. Current count: ' + wordCount + ' words', 'danger');
-          aboutMeField.focus();
-          hasError = true;
-        }
-      }
-      
-      // If there are errors, prevent form submission
-      if(hasError) {
-        return false;
-      }
-      
-      // If all validations pass, form will submit
-      return true;
+      });
     });
-  }
   
-  // Auto-hide flash messages after 5 seconds
-  setTimeout(function() {
-    const flashMessages = document.querySelectorAll('.flash-message');
-    flashMessages.forEach(function(message) {
-      message.style.transition = 'opacity 0.5s ease-out';
-      message.style.opacity = '0';
-      setTimeout(function() {
-        message.remove();
-      }, 500);
-    });
-  }, 5000);
-</script>
+    // Scroll to top function
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  
+    // Form validation
+    const editForm = document.getElementById('editProfileForm');
+    if(editForm) {
+      editForm.addEventListener('submit', function(e) {
+        const nameField = document.getElementById('nameField');
+        const emailField = document.getElementById('emailField');
+        const phoneField = document.getElementById('phoneField');
+        const ageField = document.getElementById('ageField');
+        const aboutMeField = document.getElementById('aboutMeField');
+        const couponCodeField = document.querySelector('input[name="coupon_code"]');
+        
+        let hasError = false;
+        
+        // Clear all previous errors
+        clearFieldError('nameField', 'nameError');
+        clearFieldError('emailField', 'emailError');
+        clearFieldError('phoneField', 'phoneError');
+        clearFieldError('ageField', 'ageError');
+        clearFieldError('aboutMeField', 'aboutMeError');
+        
+        // Name validation
+        if (!nameField.value.trim()) {
+          e.preventDefault();
+          showFieldError('nameField', 'nameError', 'Name is required');
+          hasError = true;
+        } else if (nameField.value.trim().length < 2) {
+          e.preventDefault();
+          showFieldError('nameField', 'nameError', 'Name must be at least 2 characters long');
+          hasError = true;
+        } else if (nameField.value.trim().length > 100) {
+          e.preventDefault();
+          showFieldError('nameField', 'nameError', 'Name cannot exceed 100 characters');
+          hasError = true;
+        }
+        
+        // Email validation
+        if (!emailField.value.trim()) {
+          e.preventDefault();
+          showFieldError('emailField', 'emailError', 'Email is required');
+          hasError = true;
+        } else if (!isValidEmail(emailField.value.trim())) {
+          e.preventDefault();
+          showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          hasError = true;
+        }
+        
+        // Phone validation (if provided)
+        if(phoneField.value.trim() !== '' && !hasError) {
+          const phoneRegex = /^\d{10,15}$/;
+          if(!phoneRegex.test(phoneField.value.trim())) {
+            e.preventDefault();
+            showFieldError('phoneField', 'phoneError', 'Please enter a valid phone number (10-15 digits)');
+            hasError = true;
+          }
+        }
+        
+        // Age validation (if provided)
+        if(ageField.value.trim() !== '' && !hasError) {
+          const age = parseInt(ageField.value);
+          if(isNaN(age) || age < 18 || age > 80) {
+            e.preventDefault();
+            showFieldError('ageField', 'ageError', 'Please enter a valid age between 18 and 80');
+            hasError = true;
+          }
+        }
+        
+        // About Me word count validation (if provided)
+        if(aboutMeField.value.trim() !== '' && !hasError) {
+          const wordCount = countWords(aboutMeField.value);
+          if(wordCount > 200) {
+            e.preventDefault();
+            showFieldError('aboutMeField', 'aboutMeError', `About Me section cannot exceed 200 words. Current count: ${wordCount} words`);
+            hasError = true;
+          }
+        }
+        
+        // If there are errors, prevent form submission and show flash message
+        if(hasError) {
+          showFlashMessage('Please correct the errors in the form before submitting', 'danger');
+          return false;
+        }
+        
+        // If all validations pass, form will submit
+        return true;
+      });
+    }
+  
+    // Auto-hide flash messages after 5 seconds
+    setTimeout(function() {
+      const flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(message) {
+        message.style.transition = 'opacity 0.5s ease-out';
+        message.style.opacity = '0';
+        setTimeout(function() {
+          message.remove();
+        }, 500);
+      });
+    }, 5000);
+  </script>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

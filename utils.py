@@ -13,3 +13,4 @@ def login_required(f):
 # File validation
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'docx', 'jpg', 'png'}
+

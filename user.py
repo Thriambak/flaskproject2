@@ -324,7 +324,6 @@ def analytics():
     )
 from flask import session, render_template, flash, redirect, url_for
 from models import Communication, User, db  # make sure db is imported from your app
-
 @user_blueprint.route('/notifications', methods=['GET'])
 @no_cache
 @login_required
@@ -341,15 +340,26 @@ def notifications():
         flash("User not found.", "danger")
         return redirect(url_for('auth.login'))
 
+    # Paginate the notifications query
+    page = request.args.get('page', 1, type=int)
+    per_page = 5  # Changed from unlimited to 5 per page
+
     # Use the user's login_id for querying communications and filter out hidden ones if needed.
-    notifications = Communication.query.filter_by(user_id=user.login_id, hidden=False)\
-        .order_by(Communication.timestamp.desc()).all()
+    notifications_query = Communication.query.filter_by(user_id=user.login_id, hidden=False)\
+        .order_by(Communication.timestamp.desc())
+    
+    notifications_pagination = notifications_query.paginate(page=page, per_page=per_page, error_out=False)
+    notifications = notifications_pagination.items
+    total_pages = notifications_pagination.pages
+    
     unread_count = Communication.query.filter_by(user_id=user.login_id, read_status=False, hidden=False).count()
 
     return render_template(
         '/user/notification.html',
         notifications=notifications,
-        unread_count=unread_count
+        unread_count=unread_count,
+        page=page,
+        total_pages=total_pages
     )
 
 @user_blueprint.route('/mark_notification_read/<uuid:notification_id>', methods=['POST'], endpoint='mark_single_notification_read')
@@ -524,8 +534,8 @@ def application_history():
 from sqlalchemy import or_
 from sqlalchemy import or_, func
 from flask import request, session, render_template
-
 from datetime import datetime, timedelta
+import re
 
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @no_cache
@@ -554,6 +564,65 @@ def profile():
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
     
     if request.method == 'POST':
+        # NEW: Handle name and email validation and updates
+        name_input = request.form.get('name', '').strip()
+        email_input = request.form.get('email', '').strip()
+        
+        # Validate name
+        if not name_input:
+            flash("Name is required.", "error")
+            return render_template('/user/profile.html',
+                                   user=user,
+                                   resumes=resumes,
+                                   certifications=certifications,
+                                   user_coupon=user_coupon,
+                                   edit_mode=True)
+        elif len(name_input) < 2:
+            flash("Name must be at least 2 characters long.", "error")
+            return render_template('/user/profile.html',
+                                   user=user,
+                                   resumes=resumes,
+                                   certifications=certifications,
+                                   user_coupon=user_coupon,
+                                   edit_mode=True)
+        elif len(name_input) > 100:
+            flash("Name cannot exceed 100 characters.", "error")
+            return render_template('/user/profile.html',
+                                   user=user,
+                                   resumes=resumes,
+                                   certifications=certifications,
+                                   user_coupon=user_coupon,
+                                   edit_mode=True)
+        
+        # Validate email
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not email_input:
+            flash("Email is required.", "error")
+            return render_template('/user/profile.html',
+                                   user=user,
+                                   resumes=resumes,
+                                   certifications=certifications,
+                                   user_coupon=user_coupon,
+                                   edit_mode=True)
+        elif not re.match(email_regex, email_input):
+            flash("Please enter a valid email address (name@domain.com).", "error")
+            return render_template('/user/profile.html',
+                                   user=user,
+                                   resumes=resumes,
+                                   certifications=certifications,
+                                   user_coupon=user_coupon,
+                                   edit_mode=True)
+        elif email_input != user.email:  # Check for uniqueness only if email changed
+            existing_email_user = User.query.filter_by(email=email_input).first()
+            if existing_email_user:
+                flash("This email is already registered to another user.", "error")
+                return render_template('/user/profile.html',
+                                       user=user,
+                                       resumes=resumes,
+                                       certifications=certifications,
+                                       user_coupon=user_coupon,
+                                       edit_mode=True)
+        
         # Validate phone number uniqueness if provided
         phone_input = request.form.get('phone', '').strip()
         if phone_input:
@@ -628,6 +697,10 @@ def profile():
             user.college_name = manual_college or user.college_name
         
         # Update other fields only if coupon validation passed
+        # NEW: Update name and email
+        user.name = name_input
+        user.email = email_input
+        
         # Update phone (already validated above)
         user.phone = phone_input if phone_input else None
         

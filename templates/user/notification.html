@@ -98,7 +98,7 @@
       <div id="notifications-list">
         {% if notifications %}
           {% for notification in notifications %}
-          <div class="notification-item {% if not notification.read_status %}unread{% else %}read{% endif %} animate__animated animate__fadeInUp">
+          <div class="notification-item notification-item-paginated {% if not notification.read_status %}unread{% else %}read{% endif %} animate__animated animate__fadeInUp">
             <div class="flex items-start">
               <i class="notification-icon fas fa-info-circle"></i>
               <div class="ml-4 flex-1">
@@ -130,10 +130,28 @@
             </div>
           </div>
           {% endfor %}
+          
+          <!-- No notifications message -->
+          <div id="no-notifications-message" style="display: none;">
+            <p>No matching notifications available.</p>
+          </div>
+          
+          <!-- Pagination Controls -->
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page  {{ page if page > 0 else 0 }} of {{ total_pages if total_pages > 0 else 0 }}</span>
+            <button id="next-page" disabled>Next &raquo;</button>
+          </div>
         {% else %}
           <div class="text-center text-gray-600 mt-8">
             <i class="fas fa-bell-slash text-5xl text-gray-300"></i>
             <p class="mt-4 font-semibold">You have no notifications at the moment.</p>
+          </div>
+          <!-- Pagination for empty state -->
+          <div class="pagination">
+            <button id="prev-page" disabled>&laquo; Previous</button>
+            <span id="page-info">Page 0 of 0</span>
+            <button id="next-page" disabled>Next &raquo;</button>
           </div>
         {% endif %}
       </div>
@@ -144,6 +162,10 @@
   <script>
     // Global filter state: 'all', 'read', or 'unread'
     let currentFilter = 'all';
+
+    // Pagination variables - Fix for empty state
+    let currentPage = {{ page if page > 0 else 1 }};
+    const totalPages = {{ total_pages if total_pages else 0 }};
 
     // Convert timestamps to Indian Standard Time
     function convertToIST() {
@@ -199,7 +221,7 @@
     // Combine search and filter criteria - Updated to include company name in search
     function filterAndSearchNotifications() {
       const searchInput = document.getElementById("search").value.toLowerCase();
-      const notifications = document.querySelectorAll("#notifications-list .notification-item");
+      const notifications = document.querySelectorAll("#notifications-list .notification-item-paginated");
       
       notifications.forEach(notification => {
         const message = notification.querySelector(".notification-message").innerText.toLowerCase();
@@ -216,6 +238,41 @@
         notification.style.display = (matchesSearch && matchesFilter) ? "block" : "none";
       });
     }
+
+    // Initialize pagination
+    window.addEventListener('load', function() {
+      const notifications = document.querySelectorAll('.notification-item-paginated');
+      // Show all notifications sent by server (server already handles pagination)
+      notifications.forEach(notification => {
+        notification.style.display = 'block';
+      });
+      updatePagination();
+    });
+
+    // Update pagination controls
+    function updatePagination() {
+      const displayTotalPages = totalPages || 0;
+      const displayCurrentPage = totalPages === 0 ? 0 : currentPage;
+      document.getElementById('page-info').textContent = `Page ${displayCurrentPage} of ${displayTotalPages}`;
+      
+      document.getElementById('prev-page').disabled = currentPage === 1 || totalPages === 0;
+      document.getElementById('next-page').disabled = currentPage >= totalPages || totalPages === 0;
+    }
+
+    // Pagination controls
+    document.getElementById('prev-page').addEventListener('click', function() {
+      if (currentPage > 1) {
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.notifications") }}?page=' + (currentPage - 1);
+      }
+    });
+    
+    document.getElementById('next-page').addEventListener('click', function() {
+      if (currentPage < totalPages) {
+        // Use server-side pagination
+        window.location.href = '{{ url_for("user.notifications") }}?page=' + (currentPage + 1);
+      }
+    });
     
     // Toggle dropdown for profile menu
     document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
@@ -263,6 +320,24 @@
         }, 500);
       });
     }, 1200);
+
+    // Function to resize properly for better readability on different screens
+    function resizeHandler() {
+      const availableWidth = window.innerWidth;
+      
+      // Check if we're in mobile view
+      if (availableWidth <= 768) {
+        document.body.classList.add('mobile-view');
+      } else {
+        document.body.classList.remove('mobile-view');
+      }
+    }
+    
+    // Initial resize
+    resizeHandler();
+    
+    // Resize on window resize
+    window.addEventListener('resize', resizeHandler);
 
     // Initialize IST conversion when page loads
     document.addEventListener('DOMContentLoaded', function() {
