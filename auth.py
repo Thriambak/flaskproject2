@@ -13,6 +13,7 @@ from sqlalchemy import func
 from functools import wraps
 import re
 import os
+import uuid
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -235,6 +236,7 @@ def login():
         session['username'] = login.username
         session['role'] = login.role
         session['last_activity'] = datetime.utcnow()
+        session['session_token'] = login.session_token
         session.permanent = True  # Make session permanent
 
         # Redirect based on role
@@ -368,6 +370,37 @@ def verify_otp():
     # Render the verify_otp page and pass remaining time to template
     return render_template('verify_otp.html', remaining_time=int(remaining_time.total_seconds()))
 
+@auth_blueprint.route('/resend-otp', methods=['POST'])
+@no_cache
+def resend_otp():
+    """Resend OTP to user's email if still in forgot-password flow."""
+    if 'email' not in session:
+        flash("Session expired. Please request a new OTP.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    email = session['email']
+    user = User.query.filter_by(email=email).first() or \
+           College.query.filter_by(email=email).first() or \
+           Company.query.filter_by(email=email).first() or \
+           Admin.query.filter_by(email=email).first()
+
+    if not user:
+        flash("No account found for this email.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    # Generate and send new OTP
+    otp = ''.join(random.choices(string.digits, k=6))
+    session['otp'] = otp
+    session['otp_time'] = datetime.utcnow().isoformat()
+
+    msg = Message("Password Reset OTP (Resent)", recipients=[email])
+    msg.body = f"Your new OTP for password reset is: {otp}. It will expire in 10 minutes."
+    mail.send(msg)
+
+    flash("A new OTP has been sent to your email.", "info")
+    return redirect(url_for('auth.verify_otp'))
+
+
 @auth_blueprint.route('/otp-timer')
 @no_cache
 def otp_timer():
@@ -433,6 +466,7 @@ def reset_password():
             login_entry = Login.query.filter_by(id=user.login_id).first()
             if login_entry:
                 login_entry.password_hash = hashed_password
+                login_entry.session_token = uuid.uuid4()
                 db.session.commit()
 
                 # Clear session data

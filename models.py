@@ -24,6 +24,8 @@ class Login(db.Model):
     role = db.Column(db.Enum('user', 'company', 'admin', 'college', name='role_enum'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    session_token = db.Column(Uuid, default=uuid.uuid4, nullable=False)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 

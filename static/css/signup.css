@@ -218,7 +218,7 @@ nav ul li a {
 .alert-success, .success { background-color: #2ecc71; color: #fff; }
 .alert-error, .danger { background-color: #e74c3c; color: #fff; }
 .alert-warning, .warning { background-color: #f39c12; color: #fff; }
-.alert-info, .info { background-color: #3498db; color: #fff; }
+.alert-info, .info { background-color: #4b5358; color: #fff; }
 
 @keyframes fadeInOut {
     0% { opacity: 0; transform: translateY(10px); }

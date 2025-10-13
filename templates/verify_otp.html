@@ -168,6 +168,13 @@
                     <button type="submit">Verify OTP</button>
                 </div>
             </form>
+            <div class="form-group" style="width:100%;">
+                <form action="{{ url_for('auth.resend_otp') }}" method="POST" id="resend-form" formnovalidate>
+                    <button type="submit" style="width:100%; padding:10px; background-color:#f39c12; color:#fff; border:none; border-radius:5px; cursor:pointer; margin-top:10px;">
+                        Resend OTP
+                    </button>
+                </form>
+            </div>
         </div>
         
         <!-- Flash messages container with fixed positioning -->

@@ -66,6 +66,27 @@ def before_request_handler():
         # Exclude static files from these checks for efficiency
         if request.endpoint and 'static' in request.endpoint:
             return
+        
+        # Helper function to correctly log out while preserving the flash message
+        def logout_and_flash(message, category):
+            flash(message, category)
+            # Manually remove only the keys related to authentication.
+            session.pop('login_id', None)
+            session.pop('username', None)
+            session.pop('role', None)
+            session.pop('user_id', None)
+            session.pop('company_id', None)
+            session.pop('college_id', None)
+            session.pop('last_activity', None)
+            session.pop('session_token', None) # Also remove the token
+            return redirect(url_for('auth.login'))
+
+        # 0. Check for session validity by comparing tokens
+        login_entry = Login.query.filter_by(id=session['login_id']).first() # Use get_or_404 for simplicity
+        
+        # If the token in the user's cookie doesn't match the one in the DB, log them out.
+        if login_entry.session_token != session.get('session_token'):
+            return logout_and_flash('Your session has expired because your password was changed. Please log in again.', 'info')
 
         now = datetime.utcnow()
         
