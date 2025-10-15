@@ -93,53 +93,80 @@ import './App.css';
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
-// Authentication Provider
+// CLEANED Authentication Provider
 const authProvider = {
-    login: ({ username, password }) => {
-    if (username === 'admin' && password === 'admin') {
-        // Store a flag or token in localStorage
-        localStorage.setItem('isAuthenticated', 'true'); // Or store a token like 'myAuthToken'
+    login: async ({ username, password }) => {
+        const request = new Request(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            body: JSON.stringify({ username, password }),
+            headers: new Headers({ 
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'ReactAdmin'
+            }),
+            credentials: 'include'
+        });
+        
+        try {
+            const response = await fetch(request);
+            
+            // Debug: Log response headers
+            console.log('Login response headers:', {
+                'set-cookie': response.headers.get('set-cookie'),
+                'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+            });
+            
+            if (response.status < 200 || response.status >= 300) {
+                throw new Error('Invalid credentials');
+            }
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Login error:', error);
+            return Promise.reject(new Error('Invalid credentials'));
+        }
+    },
+    
+    logout: async () => {
+        try {
+            await fetch(`${API_BASE_URL}/auth/logout`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'ReactAdmin' },
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         return Promise.resolve();
-    }
-    return Promise.reject(new Error('Invalid credentials'));
-},
-    logout: () => {
-        localStorage.removeItem('isAuthenticated'); // Or removeItem('myAuthToken')
-        sessionStorage.removeItem('redirected'); // Clear refresh flag on logout
-    return Promise.resolve();
-},
+    },
+    
     checkError: ({ status }) => {
         if (status === 401 || status === 403) {
-            window.isAuthenticated = false;
             return Promise.reject();
         }
         return Promise.resolve();
     },
-    checkAuth: () => {
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-        if (isAuthenticated) {
-            // If authenticated, clear any refresh flag and proceed
-            sessionStorage.removeItem('redirected');
+    
+    checkAuth: async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/api/check-session`, {
+                credentials: 'include'
+            });
+            
+            // Debug: Log cookies being sent
+            console.log('CheckAuth cookies:', document.cookie);
+            
+            if (!response.ok) {
+                return Promise.reject();
+            }
             return Promise.resolve();
+        } catch (error) {
+            console.error('CheckAuth error:', error);
+            return Promise.reject();
         }
-
-        // If not authenticated, check if we've already tried to refresh this session
-        const hasRefreshed = sessionStorage.getItem('redirected');
-
-        if (!hasRefreshed) {
-            // If we haven't refreshed yet, set the flag and reload the page once
-            sessionStorage.setItem('redirected', 'true');
-            window.location.reload();
-            // Return a pending promise to prevent the app from rendering briefly
-            return new Promise(() => {}); 
-        }
-
-        // If we have already refreshed, reject to trigger the normal login redirect
-        return Promise.reject();
     },
+    
     getPermissions: () => Promise.resolve(),
 };
+
 
 // Custom User Menu with proper positioning
 const CustomUserMenu = () => (
@@ -336,7 +363,8 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
-                }
+                },
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -388,7 +416,8 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
-                }
+                },
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -411,6 +440,7 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: 'include',
                 body: JSON.stringify(params.data),
             });
 
@@ -433,6 +463,7 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: 'include',
                 body: JSON.stringify(params.data),
             });
 
@@ -455,6 +486,7 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: 'include',
                 body: JSON.stringify(params.data),
             });
 
@@ -476,6 +508,7 @@ const customDataProvider = {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: 'include',
                 body: JSON.stringify({ ids: params.ids }),
             });
 
@@ -546,6 +579,7 @@ const Dashboard = () => {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
+                credentials: 'include',
                 signal: controller.signal
             });
             
@@ -1636,7 +1670,7 @@ const JobList = (props) => (
     </List>
 );
 
-// <<< DEFINE A SINGLE LIGHT THEME FOR THE ENTIRE APP >>>
+/* <<< DEFINE A SINGLE LIGHT THEME FOR THE ENTIRE APP >>>
 const lightTheme = {
     ...defaultTheme,
     palette: {
@@ -1644,7 +1678,7 @@ const lightTheme = {
         mode: 'light',
     },
 };
-
+*/
 const App = () => (
     <Admin 
         dataProvider={customDataProvider} 
@@ -1653,6 +1687,7 @@ const App = () => (
         loginPage={CustomLoginPage}
         layout={CustomLayout}
         title="Admin Portal"
+        requireAuth
         // theme={lightTheme} // Set the default theme
         // darkTheme={lightTheme} // Force the light theme even in dark mode
     >

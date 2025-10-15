@@ -23,9 +23,31 @@ import pytz
 import re
 
 app = Flask(__name__)
-CORS(app)  # ✅ Enable CORS
 
-app.secret_key = 'your_secret_key'  # Required for session pip install mysql-connector-python
+
+# SECRET KEY - Set first
+app.secret_key = 'your_secret_key'  # Change to secure random key in production
+
+# SESSION CONFIGURATION - Minimal required settings
+app.config['SESSION_COOKIE_NAME'] = 'admin_session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_DOMAIN'] = '127.0.0.1'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+
+# CORS CONFIGURATION - Minimal required settings
+CORS(app, 
+     resources={
+         r"/*": {
+             "origins": ["http://127.0.0.1:3000"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "X-Requested-With"],
+             "supports_credentials": True
+         }
+     },
+     supports_credentials=True
+)
 
 
 # Ensure upload folder exists

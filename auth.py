@@ -11,8 +11,6 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from functools import wraps
-import re
-import os
 import uuid
 
 auth_blueprint = Blueprint('auth', __name__)
@@ -90,14 +88,14 @@ def signup():
         username = request.form['username']
         password = request.form['password']
         # confirm_password = request.form.get('confirm_password')
-        role = request.form.get('role', 'user')  # Default to 'user'
+        role = request.form.get('role', 'user') # Default to 'user'
         email = request.form['email']
 
         # Confirm password check
         '''if password != confirm_password:
             flash('Passwords do not match. Please try again.', 'danger')
             return redirect(url_for('auth.signup'))'''
-        
+
         # Forbidden Username Validation
         username_lower = username.lower()
         if username_lower == 'admin' or username_lower == 'administrator':
@@ -168,6 +166,8 @@ def signup():
         elif role == 'college':
             new_college = College(login_id=new_login.id, college_name=username, email=email)
             db.session.add(new_college)
+            '''elif role == 'admin':
+            pass'''
         else:
             flash('Invalid profile type specified.', 'danger')
             return redirect(url_for('auth.signup'))
@@ -178,14 +178,6 @@ def signup():
 
     return render_template('signup.html')
 
-
-@auth_blueprint.route('/check-session', methods=['POST'])
-def check_session():
-    """Check if user session is valid - for AJAX calls"""
-    if 'login_id' in session:
-        return jsonify({'authenticated': True})
-    return jsonify({'authenticated': False})
-
 @auth_blueprint.route('/clear-history')
 def clear_history():
     """Clear browser history and redirect to login"""
@@ -195,113 +187,163 @@ def clear_history():
     response.headers['Expires'] = '0'
     return response
 
+# For React-Admin integration
+@auth_blueprint.route('/api/check-session', methods=['GET'])
+def check_api_session():
+    """API endpoint for React-Admin to check auth status."""
+    print(f"DEBUG check-session: session keys = {list(session.keys())}")
+    print(f"DEBUG check-session: login_id = {session.get('login_id')}")
+    print(f"DEBUG check-session: role = {session.get('role')}")
+    print(f"DEBUG check-session: cookies = {request.cookies}")
+    
+    if 'login_id' in session and session.get('role') == 'admin':
+        print("DEBUG check-session: AUTHENTICATED ✅")
+        return jsonify({'isAuthenticated': True}), 200
+    
+    print("DEBUG check-session: NOT AUTHENTICATED ❌")
+    return jsonify({'isAuthenticated': False}), 401
+
 # Update your existing login route to include cache control headers
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        # Check for API request
+        is_api_request = request.headers.get('X-Requested-With') == 'ReactAdmin'
+        print(f"DEBUG: is_api_request = {is_api_request}")
+        
+        # Handle JSON data from React-Admin
+        if request.is_json:
+            data = request.get_json()
+            username = data.get('username')
+            password = data.get('password')
+            print(f"DEBUG: Received JSON - username='{username}', password='{password}'")
+        else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+            print(f"DEBUG: Received form - username='{username}'")
 
-        # Check if the user exists in the Login table
-        login = Login.query.filter_by(username=username).first()
-        if not login or not login.check_password(password):
-            resp = make_response(render_template('login.html', error='Invalid username or password.'))
-            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-            resp.headers['Pragma'] = 'no-cache'
-            resp.headers['Expires'] = '0'
-            return resp
+        # Handle Admin API Login for React-Admin
+        if is_api_request and username == 'admin':
+            print("DEBUG: Entering admin API login flow")
+            
+            login_user = Login.query.filter_by(username='admin', role='admin').first()
+            
+            if not login_user:
+                print("DEBUG: Admin user NOT FOUND in database")
+                return jsonify({'error': 'Admin user not found in database'}), 401
+            
+            print(f"DEBUG: Admin user FOUND - id={login_user.id}, username={login_user.username}")
+            print(f"DEBUG: Checking password...")
+            
+            password_valid = login_user.check_password(password)
+            print(f"DEBUG: Password valid = {password_valid}")
+            
+            if not password_valid:
+                print("DEBUG: PASSWORD CHECK FAILED")
+                return jsonify({'error': 'Invalid credentials'}), 401
+            
+            print("DEBUG: Login successful, setting session")
+            
+            # Set Flask session for admin
+            session['login_id'] = login_user.id
+            session['username'] = login_user.username
+            session['role'] = login_user.role
+            session['last_activity'] = datetime.utcnow()
+            session['session_token'] = login_user.session_token
+            session.permanent = True
+            
+            print(f"DEBUG: Session set - login_id={session['login_id']}, role={session['role']}")
+            
+            # Return simple JSON response (CORS handled by Flask-CORS globally)
+            return jsonify({'message': 'Login successful'}), 200
+        
+        # --- Handle Standard Web Form Logins for All Other Users ---
+        login_user = Login.query.filter_by(username=username).first()
+        if not login_user or not login_user.check_password(password):
+            flash('Invalid username or password.', 'danger')
+            return redirect(url_for('auth.login'))
 
-        # Now check the `is_banned` status for the user or company
-        if login.role in ['user', 'company']:
-            # Check if the user or company is banned
-            if login.role == 'user':
-                user = User.query.filter_by(login_id=login.id).first()
+        # Ban check for user and company roles
+        if login_user.role in ['user', 'company']:
+            if login_user.role == 'user':
+                user = User.query.filter_by(login_id=login_user.id).first()
                 if user and user.is_banned:
-                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
-                    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                    resp.headers['Pragma'] = 'no-cache'
-                    resp.headers['Expires'] = '0'
-                    return resp
-            elif login.role == 'company':
-                company = Company.query.filter_by(login_id=login.id).first()
+                    flash("Cannot login. Your account has been suspended.", 'danger')
+                    return redirect(url_for('auth.login'))
+            elif login_user.role == 'company':
+                company = Company.query.filter_by(login_id=login_user.id).first()
                 if company and company.is_banned:
-                    resp = make_response(render_template('login.html', error="Cannot login. Contact support."))
-                    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                    resp.headers['Pragma'] = 'no-cache'
-                    resp.headers['Expires'] = '0'
-                    return resp
+                    flash("Cannot login. Your account has been suspended.", 'danger')
+                    return redirect(url_for('auth.login'))
 
-        # Store session details
-        session['login_id'] = login.id
-        session['username'] = login.username
-        session['role'] = login.role
+        # Store session details for successful login
+        session['login_id'] = login_user.id
+        session['username'] = login_user.username
+        session['role'] = login_user.role
         session['last_activity'] = datetime.utcnow()
-        session['session_token'] = login.session_token
-        session.permanent = True  # Make session permanent
+        session['session_token'] = login_user.session_token
+        session.permanent = True
 
         # Redirect based on role
-        if login.role == 'user':
-            user = User.query.filter_by(login_id=login.id).first()
+        if login_user.role == 'user':
+            user = User.query.filter_by(login_id=login_user.id).first()
             if not user:
-                resp = make_response(render_template('login.html', error='User details not found.'))
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                resp.headers['Pragma'] = 'no-cache'
-                resp.headers['Expires'] = '0'
-                return resp
+                flash('User details not found.', 'danger')
+                return redirect(url_for('auth.login'))
             session['user_id'] = user.id  
             return redirect(url_for('user.user_dashboard'))
-        elif login.role == 'company':
-            company = Company.query.filter_by(login_id=login.id).first()
+            
+        elif login_user.role == 'company':
+            company = Company.query.filter_by(login_id=login_user.id).first()
             if not company:
-                resp = make_response(render_template('login.html', error='Company details not found.'))
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                resp.headers['Pragma'] = 'no-cache'
-                resp.headers['Expires'] = '0'
-                return resp
+                flash('Company details not found.', 'danger')
+                return redirect(url_for('auth.login'))
             return redirect(url_for('company.company_dashboard'))
-        elif login.role == 'admin':
-            admin = Admin.query.filter_by(login_id=login.id).first()
-            if not admin:
-                resp = make_response(render_template('login.html', error='Admin details not found.'))
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                resp.headers['Pragma'] = 'no-cache'
-                resp.headers['Expires'] = '0'
-                return resp
-            return redirect(url_for('admin_routes.admin_dashboard'))
-        elif login.role == 'college':
-            college = College.query.filter_by(login_id=login.id).first()
-            session['college_id'] = college.id
+            
+        elif login_user.role == 'college':
+            college = College.query.filter_by(login_id=login_user.id).first()
             if not college:
-                resp = make_response(render_template('login.html', error='College details not found.'))
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                resp.headers['Pragma'] = 'no-cache'
-                resp.headers['Expires'] = '0'
-                return resp
+                flash('College details not found.', 'danger')
+                return redirect(url_for('auth.login'))
+            session['college_id'] = college.id
             return redirect(url_for('college.college_dashboard'))
+        
+        # Fallback for any other case
+        flash('Invalid role for this login portal.', 'danger')
+        return redirect(url_for('auth.login'))
     
-    # For GET requests, return login page with cache control headers
-    resp = make_response(render_template('login.html'))
-    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    resp.headers['Pragma'] = 'no-cache'
-    resp.headers['Expires'] = '0'
-    return resp
+    # For GET requests
+    return render_template('login.html')
 
 @auth_blueprint.route('/logout')
 @no_cache
 def logout():
+    is_api_request = request.headers.get('X-Requested-With') == 'ReactAdmin'
+    
+    # Clear session
     session.pop('login_id', None)
     session.pop('username', None)
     session.pop('role', None)
     session.pop('user_id', None)
     session.pop('college_id', None)
-    session.pop('company_id', None)  # Fixed typo: was 'comapany_id'
-    session.clear()  # Clears all session variables
+    session.pop('company_id', None)
+    session.clear()
     
-    # Create a response object for the redirect
+    # For API requests, return JSON with cookie deletion
+    if is_api_request:
+        response = make_response(jsonify({'message': 'Logged out successfully'}), 200)
+        
+        # Delete the session cookie
+        response.delete_cookie('admin_session', domain='127.0.0.1', path='/')
+        
+        return response
+    
+    # For web form requests, redirect with cookie deletion
     response = make_response(redirect(url_for('auth.login')))
+    response.delete_cookie('admin_session', domain='127.0.0.1', path='/')
     
-    # Add comprehensive headers to clear the browser cache
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    # Add cache control headers
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     response.headers["Last-Modified"] = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
