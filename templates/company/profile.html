@@ -175,6 +175,31 @@
             setTimeout(() => { popup.style.display = "none"; }, 3000);
         }
 
+        function validateEmailStrict(value) {
+            // Same pattern as backend
+            return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
+        }
+
+        function isDangerousUrl(url) {
+            return /^(javascript:|data:)/i.test(url);
+        }
+
+        function hasMultipleUrls(url) {
+            return /\s/.test(url);
+        }
+
+        function isHttpUrl(url) {
+            return /^https?:\/\//i.test(url);
+        }
+
+        function containsScript(value) {
+            return /<\s*script[\s\S]*?>[\s\S]*?<\s*\/\s*script\s*>/i.test(value);
+        }
+
+        function containsDangerousProtocols(value) {
+            return /(javascript\s*:|data\s*:)/i.test(value);
+        }
+
         function validateForm() {
             let changed = false;
 
@@ -188,6 +213,15 @@
                 "industries": document.getElementById("industries").value.trim()
             };
 
+            const name = currentFormData["company-name"];
+            const desc = currentFormData["company-description"];
+            const addr = currentFormData["company-address"];
+
+            if (containsScript(name) || containsDangerousProtocols(name) || containsScript(desc) || containsScript(addr) || containsDangerousProtocols(desc) || containsDangerousProtocols(addr)) {
+                showPopup("Dangerous content is not allowed in Company Name, Description or Address.", "error");
+                return false;
+            }
+
             for (let key in currentFormData) {
                 if (currentFormData[key] !== initialFormData[key]) {
                     changed = true;
@@ -196,22 +230,60 @@
             }
 
             if (!changed) {
+                // Front-end feedback for unchanged submit
+                showPopup("No changes detected.", "info");
                 return false; // Prevent form submission if no changes
             }
 
-            // Form validation
-            if (currentFormData["company-name"].length < 3 || currentFormData["company-name"].length > 255) {
-                showPopup("Company Name must be between 3-255 characters!", "error");
+            // ---------------- Front-end validation ----------------
+            
+            if (currentFormData["company-name"].length < 3 || currentFormData["company-name"].length > 100) {
+                showPopup("Company Name must be between 3-100 characters!", "error");
                 return false;
             }
-            if (!currentFormData["contact-email"].match(/^\S+@\S+\.\S+$/)) {
+
+            if (!validateEmailStrict(currentFormData["contact-email"])) {
                 showPopup("Invalid email format!", "error");
                 return false;
             }
-            if (currentFormData["company-website"] && !currentFormData["company-website"].match(/^https?:\/\//)) {
-                showPopup("Please enter a valid website URL (e.g., https://example.com).", "error");
+
+            if (!currentFormData["industries"]) {
+                showPopup("Please select an industry type!", "error");
                 return false;
             }
+
+            const website = currentFormData["company-website"];
+            if (website) {
+                if (hasMultipleUrls(website)) {
+                    showPopup("Please enter only one website URL.", "error");
+                    return false;
+                }
+                if (!isHttpUrl(website)) {
+                    showPopup("Website URL must start with http:// or https://.", "error");
+                    return false;
+                }
+                if (isDangerousUrl(website)) {
+                    showPopup("Website URL scheme is not allowed.", "error");
+                    return false;
+                }
+            }
+
+            const logo = currentFormData["company-logo"];
+            if (logo) {
+                if (hasMultipleUrls(logo)) {
+                    showPopup("Please enter only one logo URL.", "error");
+                    return false;
+                }
+                if (!isHttpUrl(logo)) {
+                    showPopup("Logo URL must start with http:// or https://.", "error");
+                    return false;
+                }
+                if (isDangerousUrl(logo)) {
+                    showPopup("Logo URL scheme is not allowed.", "error");
+                    return false;
+                }
+            }
+
             if (currentFormData["company-description"].length > 1000) {
                 showPopup("Description must be under 1000 characters!", "error");
                 return false;

@@ -760,13 +760,22 @@ def company_profile():
     if request.method == 'POST' and companies:
         # Get form data
         company_id = request.form.get('logId')  # Hidden input for company ID
-        company_name = request.form['company-name'].strip()
-        email = request.form['contact-email'].strip()
-        description = request.form['company-description'].strip()
-        address = request.form['company-address'].strip()
-        website = request.form['company-website'].strip()
-        logo = request.form['company-logo'].strip()
-        industry = request.form['industries'].strip()
+        raw_company_name = request.form['company-name']
+        raw_email = request.form['contact-email']
+        raw_description = request.form.get('company-description', '')
+        raw_address = request.form.get('company-address', '')
+        raw_website = request.form.get('company-website', '')
+        raw_logo = request.form.get('company-logo', '')
+        raw_industry = request.form['industries']
+
+        # Normalised values used for comparison & storage
+        company_name = sanitize_text(raw_company_name.strip())
+        email = raw_email.strip()
+        description = sanitize_text(raw_description.strip())
+        address = sanitize_text(raw_address.strip())
+        website = raw_website.strip()
+        logo = raw_logo.strip()
+        industry = raw_industry.strip() if raw_industry else ''
 
         # Check if any change is made
         if (
@@ -778,44 +787,84 @@ def company_profile():
             logo == companies.logo and
             industry == companies.industry
         ):
-            return redirect(url_for('company.company_profile'))  # No changes, just reload page silently
-
-        # Validate Data
-        if not (3 <= len(company_name) <= 255):
-            message = "Company Name must be between 3-255 characters!"
-            message_type = "error"
-        elif not re.match(r"^\S+@\S+\.\S+$", email):
-            message = "Invalid email format!"
-            message_type = "error"
-        elif website and not re.match(r"^https?://", website):
-            flash("Please enter a valid website URL (starting with http:// or https://).", "error")
-        elif len(description) > 1000:
-            message = "Description must be under 1000 characters!"
-            message_type = "error"
-        elif len(address) > 500:
-            message = "Address must be under 500 characters!"
-            message_type = "error"
+            # return redirect(url_for('company.company_profile'))  # No changes, just reload page silently
+            message = "No changes detected."
+            message_type = "info"
         else:
-            # Update the company profile
-            companies.company_name = company_name
-            companies.description = description
-            companies.email = email
-            companies.address = address
-            companies.website = website
-            companies.logo = logo
-            companies.industry = industry
-            db.session.commit()
-            message = "Profile updated successfully!"
-            message_type = "success"
+        # Validate Data
+            if len(company_name) < 3 or len(company_name) > 100:
+                message = "Company Name must be between 3-100 characters!"
+                message_type = "error"
+            elif not re.match(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", email):
+                message = "Invalid email format!"
+                message_type = "error"
 
-    pending_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Pending')\
+            elif len(description) > 1000:
+                message = "Description must be under 1000 characters!"
+                message_type = "error"
+
+            elif len(address) > 500:
+                message = "Address must be under 500 characters!"
+                message_type = "error"
+
+            elif website:
+                # Disallow any whitespace → prevents entering multiple URLs
+                if re.search(r"\s", website):
+                    message = "Please enter only one website URL."
+                    message_type = "error"
+                # Reject dangerous schemes
+                elif not re.match(r"^https?://", website, re.IGNORECASE):
+                    message = "Website URL must start with http:// or https://."
+                    message_type = "error"
+                elif re.match(r"^(javascript:|data:)", website, re.IGNORECASE):
+                    message = "Website URL scheme is not allowed."
+                    message_type = "error"
+                elif website and not url_seems_reachable(website):
+                    message = "Website URL could not be reached. Please check the link."
+                    message_type = "error"
+
+            if not message and logo:
+                if re.search(r"\s", logo):
+                    message = "Please enter only one logo URL."
+                    message_type = "error"
+                elif not re.match(r"^https?://", logo, re.IGNORECASE):
+                    message = "Logo URL must start with http:// or https://."
+                    message_type = "error"
+                elif re.match(r"^(javascript:|data:)", logo, re.IGNORECASE):
+                    message = "Logo URL scheme is not allowed."
+                    message_type = "error"
+                elif logo and not url_seems_reachable(logo):
+                    message = "Logo URL could not be reached. Please check the link."
+                    message_type = "error"
+                else:
+                    # Basic host + TLD check (rejects http://test, allows http://test.com)
+                    if not re.match(
+                        r"^https?://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/.*)?$",
+                        logo,
+                        re.IGNORECASE,
+                    ):
+                        message = "Logo URL must contain a valid domain (e.g., http://example.com)."
+                        message_type = "error"
+            
+            if not message:
+                companies.company_name = company_name
+                companies.description = description
+                companies.email = email
+                companies.address = address
+                companies.website = website
+                companies.logo = logo
+                companies.industry = industry
+                db.session.commit()
+                message = "Profile updated successfully!"
+                message_type = "success"
+
+    pending_applications_count = db.session.query(db.func.count(JobApplication.id)) \
+        .join(Job, JobApplication.job_id == Job.job_id) \
+        .filter(Job.created_by == user_id, JobApplication.status == 'Pending') \
         .scalar()
-
-    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id))\
-        .join(Job, JobApplication.job_id == Job.job_id)\
-        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed')\
+    interviewed_applications_count = db.session.query(db.func.count(JobApplication.id)) \
+        .join(Job, JobApplication.job_id == Job.job_id) \
+        .filter(Job.created_by == user_id, JobApplication.status == 'Interviewed') \
         .scalar()
 
     jobs = Job.query.filter_by(created_by=user_id).all()
@@ -856,7 +905,45 @@ def company_profile():
         "Activities of Extraterritorial Organizations and Bodies"
     ]
 
-    return render_template('/company/profile.html', companies=companies, profile=companies, login_id=user_id,
-        pending_applications_count=pending_applications_count, total_successful=total_successful, 
-        total_unsuccessful=total_unsuccessful, interviewed_applications_count=interviewed_applications_count,
-        industries=industries, message=message, message_type=message_type)
+    return render_template(
+        'company/profile.html',
+        companies=companies,
+        profile=companies,
+        loginid=user_id,
+        pending_applications_count=pending_applications_count,
+        total_successful=total_successful,
+        total_unsuccessful=total_unsuccessful,
+        interviewed_applications_count=interviewed_applications_count,
+        industries=industries,
+        message=message,
+        message_type=message_type,
+    )
+
+import requests
+
+def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
+    try:
+        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
+        resp = requests.head(url, allow_redirects=True, timeout=timeout)
+        if resp.status_code >= 400:
+            # try GET once more for sites that treat HEAD oddly
+            resp = requests.get(url, allow_redirects=True, timeout=timeout)
+        # treat 2xx / 3xx as “exists”
+        return 200 <= resp.status_code < 400
+    except requests.RequestException:
+        return False
+
+def sanitize_text(value: str) -> str:
+    if not value:
+        return ''
+    # Remove <script>...</script>
+    value = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', value,
+                   flags=re.IGNORECASE | re.DOTALL)
+    # Remove javascript: or data: URLs inside attributes or text
+    value = re.sub(r'javascript\s*:', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'data\s*:[^ \t\r\n]*', '', value, flags=re.IGNORECASE)
+    # Remove on* event handlers
+    value = re.sub(r'on\w+\s*=\s*"[^\"]*"', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', value, flags=re.IGNORECASE)
+    value = value.replace('<', '').replace('>', '')
+    return value.strip()
