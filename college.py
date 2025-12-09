@@ -166,7 +166,6 @@ def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
     except requests.RequestException:
         return False
 
-
 def sanitize_text(value: str) -> str:
     if not value:
         return ''
@@ -178,7 +177,6 @@ def sanitize_text(value: str) -> str:
     value = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', value, flags=re.IGNORECASE)
     value = value.replace('<', '').replace('>', '')
     return value.strip()
-
 
 @college_blueprint.route('/college_profile', methods=['GET', 'POST'])
 @secure_route
@@ -219,7 +217,8 @@ def college_profile():
             website == colleges.website and
             logo == colleges.logo
         ):
-            return redirect(url_for('college.profile'))
+            message = "No changes detected."
+            message_type = "info"
 
         # ------------------------- VALIDATION -------------------------
 
@@ -247,12 +246,20 @@ def college_profile():
                 message = "Website contains unsafe content!"
                 message_type = "error"
 
-            elif not URL_REGEX.match(website):
-                message = "Please enter a valid website URL starting with http/https."
+            elif re.search(r"\s", website):
+                message = "Please enter only one website URL."
                 message_type = "error"
 
-            elif not url_seems_reachable(website):
-                message = "Website URL could not be reached."
+            elif not re.match(r"^https?", website, re.IGNORECASE):
+                message = "Website URL must start with http or https."
+                message_type = "error"
+
+            elif re.match(r"^(javascript|data)", website, re.IGNORECASE):
+                message = "Website URL scheme is not allowed."
+                message_type = "error"
+
+            elif website and not url_seems_reachable(website):
+                message = "Website URL could not be reached. Please check the link."
                 message_type = "error"
 
         # 4) Description
@@ -274,19 +281,37 @@ def college_profile():
             message_type = "error"
 
         # 6) Logo URL
-        elif logo:
+        if not message and logo:
             if contains_script(logo):
                 message = "Logo URL contains unsafe content!"
                 message_type = "error"
-            elif not URL_REGEX.match(logo):
-                message = "Please enter a valid logo URL starting with http/https."
-                message_type = "error"
-            elif not url_seems_reachable(logo):
-                message = "Logo URL could not be reached."
+            elif re.search(r"\s", logo):
+                message = "Please enter only one logo URL."
                 message_type = "error"
 
+            elif not re.match(r"^https?", logo, re.IGNORECASE):
+                message = "Logo URL must start with http or https."
+                message_type = "error"
+
+            elif re.match(r"^(javascript|data)", logo, re.IGNORECASE):  # Can remove data check to allow data URLs for logos ->r"^(javascript)"
+                message = "Logo URL scheme is not allowed."
+                message_type = "error"
+
+            elif logo and not url_seems_reachable(logo):
+                message = "Logo URL could not be reached. Please check the link."
+                message_type = "error"
+
+            else:
+                if not re.match(
+                    r"^https?://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/.*)?$",
+                    logo,
+                    re.IGNORECASE,
+                ):
+                    message = "Logo URL must contain a valid domain (e.g., http://example.com)."
+                    message_type = "error"
+
         # ------------------------- SAVE -------------------------
-        else:
+        if not message:
             colleges.college_name = college_name
             colleges.description = description
             colleges.email = email
@@ -306,6 +331,8 @@ def college_profile():
     coupon_count = db.session.query(db.func.count(Coupon.id)) \
         .filter(Coupon.college_id == colleges.id if colleges else 0) \
         .scalar()
+
+    print("DEBUG college_profile:", "msg=", message, "type=", message_type, "method=", request.method)
 
     return render_template(
         '/college/profile.html',

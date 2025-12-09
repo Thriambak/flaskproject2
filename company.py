@@ -830,7 +830,7 @@ def company_profile():
                 elif not re.match(r"^https?://", logo, re.IGNORECASE):
                     message = "Logo URL must start with http:// or https://."
                     message_type = "error"
-                elif re.match(r"^(javascript:|data:)", logo, re.IGNORECASE):
+                elif re.match(r"^(javascript:|data:)", logo, re.IGNORECASE): # Can remove data check to allow data URLs for logos ->r"^(javascript:)"
                     message = "Logo URL scheme is not allowed."
                     message_type = "error"
                 elif logo and not url_seems_reachable(logo):
