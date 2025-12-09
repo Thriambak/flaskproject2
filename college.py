@@ -138,13 +138,55 @@ def college_dashboard():
         selected_year=selected_year,
         college_profile=college_profile)
 
+
+
+
+EMAIL_REGEX = re.compile(
+    r"^(?!.*\.\.)(?!.*\.$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+)
+
+URL_REGEX = re.compile(
+    r"^(https?:\/\/)([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?$"
+)
+
+def contains_script(text):
+    return "<script" in text.lower() or "javascript:" in text.lower() or "data:" in text.lower()
+
+import re
+import requests
+
+# ----------------- SAME AS COMPANY PROFILE -----------------
+
+def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
+    try:
+        resp = requests.head(url, allow_redirects=True, timeout=timeout)
+        if resp.status_code >= 400:
+            resp = requests.get(url, allow_redirects=True, timeout=timeout)
+        return 200 <= resp.status_code < 400
+    except requests.RequestException:
+        return False
+
+
+def sanitize_text(value: str) -> str:
+    if not value:
+        return ''
+    value = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', value,
+                   flags=re.IGNORECASE | re.DOTALL)
+    value = re.sub(r'javascript\s*:', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'data\s*:[^ \t\r\n]*', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=\s*"[^"]*"', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', value, flags=re.IGNORECASE)
+    value = value.replace('<', '').replace('>', '')
+    return value.strip()
+
+
 @college_blueprint.route('/college_profile', methods=['GET', 'POST'])
 @secure_route
 def college_profile():
     user_id = session.get('login_id')
 
     if 'login_id' not in session or session.get('role') != 'college':
-        return redirect(url_for('auth.login'))  # Ensure only colleges can access
+        return redirect(url_for('auth.login'))
 
     colleges = College.query.filter_by(login_id=user_id).first()
 
@@ -152,16 +194,23 @@ def college_profile():
     message_type = None
 
     if request.method == 'POST' and colleges:
-        # Get form data
-        college_id = request.form.get('logId')  # Hidden input for college ID
-        college_name = request.form['college-name'].strip()
-        email = request.form['contact-email'].strip()
-        description = request.form['college-description'].strip()
-        address = request.form['college-address'].strip()
-        website = request.form['college-website'].strip()
-        logo = request.form['college-logo'].strip()
 
-        # Check if any change is made
+        # SANITIZE FIRST
+        raw_college_name = request.form['college-name']
+        raw_email = request.form['contact-email']
+        raw_description = request.form['college-description']
+        raw_address = request.form['college-address']
+        raw_website = request.form['college-website']
+        raw_logo = request.form['college-logo']
+
+        college_name = sanitize_text(raw_college_name.strip())
+        email = raw_email.strip()
+        description = sanitize_text(raw_description.strip())
+        address = sanitize_text(raw_address.strip())
+        website = raw_website.strip()
+        logo = raw_logo.strip()
+
+        # ------------------------- NO CHANGE -------------------------
         if (
             college_name == colleges.college_name and
             email == colleges.email and
@@ -170,55 +219,106 @@ def college_profile():
             website == colleges.website and
             logo == colleges.logo
         ):
-            return redirect(url_for('college.college_profile'))  # No changes, just reload page silently
+            return redirect(url_for('college.profile'))
 
-        # Validate Data
+        # ------------------------- VALIDATION -------------------------
+
+        # 1) Name
         if not (3 <= len(college_name) <= 255):
-            message = "College Name must be between 3-255 characters!"
+            message = "College Name must be between 3–255 characters!"
             message_type = "error"
-        elif not re.match(r"^\S+@\S+\.\S+$", email):
+
+        elif contains_script(raw_college_name):
+            message = "College Name contains unsafe characters!"
+            message_type = "error"
+
+        # 2) Email
+        elif not EMAIL_REGEX.match(email):
             message = "Invalid email format!"
             message_type = "error"
-        elif website and not re.match(r"^https?://", website):
-            message = "Please enter a valid website URL (starting with http:// or https://)."
+
+        elif contains_script(raw_email):
+            message = "Email contains unsafe characters!"
             message_type = "error"
+
+        # 3) Website
+        elif website:
+            if contains_script(website):
+                message = "Website contains unsafe content!"
+                message_type = "error"
+
+            elif not URL_REGEX.match(website):
+                message = "Please enter a valid website URL starting with http/https."
+                message_type = "error"
+
+            elif not url_seems_reachable(website):
+                message = "Website URL could not be reached."
+                message_type = "error"
+
+        # 4) Description
         elif len(description) > 1000:
             message = "Description must be under 1000 characters!"
             message_type = "error"
+
+        elif contains_script(raw_description):
+            message = "Description contains unsafe content!"
+            message_type = "error"
+
+        # 5) Address
         elif len(address) > 500:
             message = "Address must be under 500 characters!"
             message_type = "error"
+
+        elif contains_script(raw_address):
+            message = "Address contains unsafe content!"
+            message_type = "error"
+
+        # 6) Logo URL
+        elif logo:
+            if contains_script(logo):
+                message = "Logo URL contains unsafe content!"
+                message_type = "error"
+            elif not URL_REGEX.match(logo):
+                message = "Please enter a valid logo URL starting with http/https."
+                message_type = "error"
+            elif not url_seems_reachable(logo):
+                message = "Logo URL could not be reached."
+                message_type = "error"
+
+        # ------------------------- SAVE -------------------------
         else:
-            # Update the college profile
             colleges.college_name = college_name
             colleges.description = description
             colleges.email = email
             colleges.address = address
             colleges.website = website
             colleges.logo = logo
+
             db.session.commit()
+
             message = "Profile updated successfully!"
             message_type = "success"
 
-    # Get student count associated with this college
-    # This would need to be adjusted based on how students are associated with colleges in your system
-    student_count = db.session.query(db.func.count(User.id))\
-        .filter(User.college_name == colleges.college_name if colleges else '')\
-        .scalar()
-    
-    # Get coupon count for this college if needed
-    coupon_count = db.session.query(db.func.count(Coupon.id))\
-        .filter(Coupon.college_id == colleges.id if colleges else 0)\
+    student_count = db.session.query(db.func.count(User.id)) \
+        .filter(User.college_name == colleges.college_name if colleges else '') \
         .scalar()
 
-    return render_template('/college/profile.html', 
-        colleges=colleges, 
-        profile=colleges, 
+    coupon_count = db.session.query(db.func.count(Coupon.id)) \
+        .filter(Coupon.college_id == colleges.id if colleges else 0) \
+        .scalar()
+
+    return render_template(
+        '/college/profile.html',
+        colleges=colleges,
+        profile=colleges,
         login_id=user_id,
-        student_count=student_count, 
+        student_count=student_count,
         coupon_count=coupon_count,
-        message=message, 
-        message_type=message_type)
+        message=message,
+        message_type=message_type
+    )
+
+
 
 @college_blueprint.route('/college_studenttracking')
 @secure_route
