@@ -14,7 +14,7 @@ class Config:
     SECRET_KEY = 'your_secret_key'  # For session management and CSRF protection
     
     # Connection string for PostgreSQL
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:root123*@localhost/test'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:sql%40root@localhost/test'
     # MySql URI --> 'mysql+pymysql://username:password@localhost:3306/db_name'
     @staticmethod
     def init_app(app):

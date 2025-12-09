@@ -321,6 +321,7 @@ def college_collab():
 
 def generate_coupon_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
 @college_blueprint.route('/generate_coupon', methods=['GET', 'POST'])
 @secure_route
 def generate_coupon():
@@ -409,6 +410,7 @@ def generate_coupon():
         college_profile=college_profile,
         message=message,
         message_type=message_type)
+
 @college_blueprint.route('/college_endorsement')
 @secure_route
 def college_endorsement():
