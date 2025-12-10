@@ -223,8 +223,8 @@ def college_profile():
         # ------------------------- VALIDATION -------------------------
 
         # 1) Name
-        if not (3 <= len(college_name) <= 255):
-            message = "College Name must be between 3–255 characters!"
+        if not (3 <= len(college_name) <= 100):
+            message = "College Name must be between 3–100 characters!"
             message_type = "error"
 
         elif contains_script(raw_college_name):
@@ -332,7 +332,7 @@ def college_profile():
         .filter(Coupon.college_id == colleges.id if colleges else 0) \
         .scalar()
 
-    print("DEBUG college_profile:", "msg=", message, "type=", message_type, "method=", request.method)
+    # print("DEBUG college_profile:", "msg=", message, "type=", message_type, "method=", request.method)
 
     return render_template(
         '/college/profile.html',

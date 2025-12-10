@@ -90,7 +90,10 @@ def signup():
         # confirm_password = request.form.get('confirm_password')
         role = request.form.get('role', 'user') # Default to 'user'
         email = request.form['email']
-
+        
+        if role == 'admin':
+            role = 'user'  # Prevent admin signup via this route
+        
         # Confirm password check
         '''if password != confirm_password:
             flash('Passwords do not match. Please try again.', 'danger')
@@ -132,11 +135,17 @@ def signup():
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
             return redirect(url_for('auth.signup'))
+        if len(password) > 250:
+            flash('Password length is too long.', 'danger')
+            return redirect(url_for('auth.signup'))
        
         # Email validation
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             flash('Invalid email format. Please use a valid email (e.g., user@domain.com).', 'danger')
+            return redirect(url_for('auth.signup'))
+        if len(email) > 90:
+            flash('Password length is too long.', 'danger')
             return redirect(url_for('auth.signup'))
 
         # Check for existing username or email
@@ -166,8 +175,10 @@ def signup():
         elif role == 'college':
             new_college = College(login_id=new_login.id, college_name=username, email=email)
             db.session.add(new_college)
-            '''elif role == 'admin':
-            pass'''
+        elif role == 'admin':
+            new_admin = Admin(login_id=new_login.id, name=username, email=email)
+            db.session.add(new_admin)
+            # pass'''
         else:
             flash('Invalid profile type specified.', 'danger')
             return redirect(url_for('auth.signup'))
@@ -190,17 +201,17 @@ def clear_history():
 # For React-Admin integration
 @auth_blueprint.route('/api/check-session', methods=['GET'])
 def check_api_session():
-    """API endpoint for React-Admin to check auth status."""
+    """API endpoint for React-Admin to check auth status.
     print(f"DEBUG check-session: session keys = {list(session.keys())}")
     print(f"DEBUG check-session: login_id = {session.get('login_id')}")
     print(f"DEBUG check-session: role = {session.get('role')}")
     print(f"DEBUG check-session: cookies = {request.cookies}")
-    
+    """
     if 'login_id' in session and session.get('role') == 'admin':
-        print("DEBUG check-session: AUTHENTICATED ✅")
+        # print("DEBUG check-session: AUTHENTICATED ✅")
         return jsonify({'isAuthenticated': True}), 200
     
-    print("DEBUG check-session: NOT AUTHENTICATED ❌")
+    # print("DEBUG check-session: NOT AUTHENTICATED ❌")
     return jsonify({'isAuthenticated': False}), 401
 
 # Update your existing login route to include cache control headers
@@ -209,40 +220,40 @@ def login():
     if request.method == 'POST':
         # Check for API request
         is_api_request = request.headers.get('X-Requested-With') == 'ReactAdmin'
-        print(f"DEBUG: is_api_request = {is_api_request}")
+        # print(f"DEBUG: is_api_request = {is_api_request}")
         
         # Handle JSON data from React-Admin
         if request.is_json:
             data = request.get_json()
             username = data.get('username')
             password = data.get('password')
-            print(f"DEBUG: Received JSON - username='{username}', password='{password}'")
+            # print(f"DEBUG: Received JSON - username='{username}', password='{password}'")
         else:
             username = request.form.get('username')
             password = request.form.get('password')
-            print(f"DEBUG: Received form - username='{username}'")
+            # print(f"DEBUG: Received form - username='{username}'")
 
         # Handle Admin API Login for React-Admin
-        if is_api_request and username == 'admin':
-            print("DEBUG: Entering admin API login flow")
+        if is_api_request and username:
+            # print("DEBUG: Entering admin API login flow")
             
-            login_user = Login.query.filter_by(username='admin', role='admin').first()
+            login_user = Login.query.filter_by(username=username, role='admin').first()
             
             if not login_user:
-                print("DEBUG: Admin user NOT FOUND in database")
+                # print("DEBUG: Admin user NOT FOUND in database")
                 return jsonify({'error': 'Admin user not found in database'}), 401
             
-            print(f"DEBUG: Admin user FOUND - id={login_user.id}, username={login_user.username}")
-            print(f"DEBUG: Checking password...")
+            # print(f"DEBUG: Admin user FOUND - id={login_user.id}, username={login_user.username}")
+            # print(f"DEBUG: Checking password...")
             
             password_valid = login_user.check_password(password)
-            print(f"DEBUG: Password valid = {password_valid}")
+            # print(f"DEBUG: Password valid = {password_valid}")
             
             if not password_valid:
-                print("DEBUG: PASSWORD CHECK FAILED")
+                # print("DEBUG: PASSWORD CHECK FAILED")
                 return jsonify({'error': 'Invalid credentials'}), 401
             
-            print("DEBUG: Login successful, setting session")
+            # print("DEBUG: Login successful, setting session")
             
             # Set Flask session for admin
             session['login_id'] = login_user.id
@@ -252,7 +263,7 @@ def login():
             session['session_token'] = login_user.session_token
             session.permanent = True
             
-            print(f"DEBUG: Session set - login_id={session['login_id']}, role={session['role']}")
+            # print(f"DEBUG: Session set - login_id={session['login_id']}, role={session['role']}")
             
             # Return simple JSON response (CORS handled by Flask-CORS globally)
             return jsonify({'message': 'Login successful'}), 200

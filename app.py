@@ -106,6 +106,11 @@ def before_request_handler():
         # 0. Check for session validity by comparing tokens
         login_entry = Login.query.filter_by(id=session['login_id']).first() # Use get_or_404 for simplicity
         
+        if not login_entry:
+            # Session record not found
+            session.clear()
+            return redirect(url_for('auth.login'))
+        
         # If the token in the user's cookie doesn't match the one in the DB, log them out.
         if login_entry.session_token != session.get('session_token'):
             return logout_and_flash('Your session has expired because your password was changed. Please log in again.', 'info')

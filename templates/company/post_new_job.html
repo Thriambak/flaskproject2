@@ -148,7 +148,7 @@
                             // limit to 4 digits
                             if (c.length > 4) c = c.slice(0,4);
                             // clamp to max 9999
-                            if (c !== '' && parseInt(c,10) > 9999) c = '9999';
+                            if (c !== '' && parseInt(c,10) > 1000) c = '1000';
                             this.value = c;
                     ">
                 </div>
@@ -160,7 +160,7 @@
 
                 <div class="form-group">
                     <label for="form-url">Questionnaire Form URL:</label>
-                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.form_url if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="2000">
+                    <input type="url" id="form-url" name="form-url" placeholder="Enter Google Form URL" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.form_url if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="2500">
                 </div>
                 
                 <!-- Add Questionnaire Button -->
@@ -377,7 +377,7 @@
             }
 
             // Validate salary
-            if (salary.length > 50) {
+            if (salary.length > 20) {
                 showPopup("Salary must not exceed 50 characters!", "error");
                 return false;
             }
