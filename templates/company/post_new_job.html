@@ -88,17 +88,46 @@
 
                 <div class="form-group">
                     <label for="exp"><p style="color: red; display: inline;">* </p>Years of Experience:</label>
-                    <input type="number" id="exp" name="exp" placeholder="Enter expected experience" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.exp if form_data else '' }}" required {% if is_closed %}disabled{% endif %}>
+                    <input type="number" id="exp" name="exp" max="50" min="0" step="1" placeholder="Enter expected experience" 
+                        style="font-family: monospace; font-size: 14.5px;"
+                        value="{{ form_data.exp if form_data else '' }}" 
+                        required 
+                        {% if is_closed %}disabled{% endif %}
+                        oninput="let v = this.value;
+                                    if (!/^\d{0,2}$/.test(v)) {
+                                        this.value = v.slice(0, -1);
+                                    }
+                                "
+                        onblur="if(this.value.endsWith('.')){
+                                    this.value = this.value.slice(0,-1);
+                                }"
+                    />
+                    <!--
+                    <input type="number" id="exp" name="exp" max="70" min="0" step="0.01" inputmode="decimal" placeholder="Enter expected experience" 
+                        style="font-family: monospace; font-size: 14.5px;"
+                        value="{{ form_data.exp if form_data else '' }}" 
+                        required 
+                        {% if is_closed %}disabled{% endif %}
+                        
+                        oninput="let v=this.value;
+                                if(!/^\d{0,2}(\.\d{0,2})?$/.test(v)){
+                                    this.value = v.slice(0,-1);
+                                }"
+
+                        onblur="if(this.value.endsWith('.')){
+                                    this.value = this.value.slice(0,-1);
+                                }"
+                    /> -->
                 </div>
 
                 <div class="form-group">
                     <label for="certifications">Required Certifications:</label>
-                    <textarea id="certifications" name="certifications" placeholder="e.g., AWS Certified Developer, PMP, Scrum Master, Oracle Certified (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %} maxlength="1000">{{ form_data.certifications if form_data else '' }}</textarea>
+                    <textarea id="certifications" name="certifications" placeholder="e.g., AWS Certified Developer, Scrum Master, Oracle Certified (separate with commas)" rows="4" style="font-family: monospace;font-size: 14.5px;" {% if is_closed %}disabled{% endif %} maxlength="1000">{{ form_data.certifications if form_data else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="salary">Salary:</label>
-                    <input type="text" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.salary if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="50">
+                    <input type="text" id="salary" name="salary" placeholder="Enter expected salary" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.salary if form_data else '' }}" {% if is_closed %}disabled{% endif %} maxlength="20">
                 </div>
         
                 <div class="form-group">
@@ -108,12 +137,25 @@
 
                 <div class="form-group">
                     <label for="vacancy"><p style="color: red; display: inline;">* </p>Vacancy:</label>
-                    <input type="number" min="0" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" value="{{ form_data.vacancy if form_data else '' }}" required {% if is_closed %}disabled{% endif %}>
+                    <input type="number" min="0" id="vacancy" name="vacancy" placeholder="Enter number of vacancies" style="font-family: monospace;font-size: 14.5px;" 
+                        value="{{ form_data.vacancy if form_data else '' }}" 
+                        required {% if is_closed %}disabled{% endif %}
+                        
+                        oninput="
+                            let c = this.value;
+                            // remove anything that isn't a digit
+                            c = c.replace(/[^0-9]/g, '');
+                            // limit to 4 digits
+                            if (c.length > 4) c = c.slice(0,4);
+                            // clamp to max 9999
+                            if (c !== '' && parseInt(c,10) > 9999) c = '9999';
+                            this.value = c;
+                    ">
                 </div>
         
                 <div class="form-group">
                     <label for="deadline"><p style="color: red; display: inline;">* </p>Apply Before:</label>
-                    <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace; font-size: 14.5px;" min="{{ current_date }}" value="{{ form_data.deadline if form_data else '' }}" required {% if is_closed %}disabled{% endif %}>
+                    <input type="date" id="deadline" name="deadline" placeholder="Enter joining timeline" style="font-family: monospace; font-size: 14.5px;" min="{{ current_date }}" max="2199-12-31" value="{{ form_data.deadline if form_data else '' }}" required {% if is_closed %}disabled{% endif %}>
                 </div>
 
                 <div class="form-group">
@@ -247,6 +289,37 @@
             });
         });
 
+        // -------- Safety helpers (mirroring profile form) --------
+        function containsScript(value) {
+            return /<\s*script[\s\S]*?>[\s\S]*?<\s*\/\s*script\s*>/i.test(value);
+        }
+
+        function containsDangerousProtocols(value) {
+            return /(javascript\s*:|data\s*:)/i.test(value);
+        }
+
+        function isDangerousUrl(url) {
+            return /^(javascript:|data:)/i.test(url);
+        }
+
+        function hasMultipleUrls(url) {
+            return /\s/.test(url);
+        }
+
+        function isHttpUrl(url) {
+            return /^https?:\/\//i.test(url);
+        }
+
+        function isValidURL(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // -------- Main validation (extended with script/URL checks) --------
         function validateForm() {
             // Get form values
             const jobTitle = document.getElementById("job-title").value.trim();
@@ -260,7 +333,20 @@
             const skills = document.getElementById("skill-sets").value.trim();
             const certifications = document.getElementById("certifications").value.trim();
             
-            // Validate job title
+            // --- Security checks similar to profile form ---
+            // Block script/data/javascript in free-text fields
+            if (
+                containsScript(jobTitle) || containsDangerousProtocols(jobTitle) ||
+                containsScript(description) || containsDangerousProtocols(description) ||
+                containsScript(skills) || containsDangerousProtocols(skills) ||
+                containsScript(certifications) || containsDangerousProtocols(certifications) ||
+                containsScript(locations) || containsDangerousProtocols(locations) ||
+                containsScript(salary) || containsDangerousProtocols(salary)
+            ) {
+                showPopup("Dangerous content is not allowed in text fields.", "error");
+                return false;
+            }
+
             if (jobTitle.length < 3 || jobTitle.length > 250) {
                 showPopup("Job Title must be between 3-250 characters!", "error");
                 return false;
@@ -322,15 +408,33 @@
             
             // Validate form URL if provided
             console.log("Form URL entered:", JSON.stringify(formUrl));
-            if (formUrl && !isValidURL(formUrl)) {
-                showPopup("Please enter a valid URL for the questionnaire form!", "error");
-                return false;
+            if (formUrl) {
+                // 1) Basic format
+                if (!isValidURL(formUrl)) {
+                    showPopup("Please enter a valid URL for the questionnaire form!", "error");
+                    return false;
+                }
+                // 2) Single URL only (no whitespace)
+                if (hasMultipleUrls(formUrl)) {
+                    showPopup("Please enter only one questionnaire form URL.", "error");
+                    return false;
+                }
+                // 3) Must be http/https
+                if (!isHttpUrl(formUrl)) {
+                    showPopup("Questionnaire URL must start with http:// or https://.", "error");
+                    return false;
+                }
+                // 4) Block javascript:/data:
+                if (isDangerousUrl(formUrl)) {
+                    showPopup("Questionnaire URL scheme is not allowed.", "error");
+                    return false;
+                }
             }
             
             clearSessionData();
             return true;
         }
-        
+        /* Redundant
         function isValidURL(url) {
             try {
                 new URL(url);
@@ -344,7 +448,8 @@
             const googleFormsURL = "https://forms.google.com";
             window.open(googleFormsURL, "_blank");
         }
-        
+        */
+
         // Display popup messages from server
         {% if message and message_type %}
             showPopup("{{ message }}", "{{ message_type }}");

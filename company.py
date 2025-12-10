@@ -151,12 +151,13 @@ def company_jobposting():
     return render_template('/company/job_posting.html', jobs=jobs, profile=profile,)
 
 # Post New Job
-@company_blueprint.route('/company_post_new_job', methods=['GET','POST'])
+@company_blueprint.route('/company_post_new_job', methods=['GET', 'POST'])
 @no_cache
 @login_required
 def company_post_new_job():
     from app import db
     from datetime import datetime, date
+
     user_id = session.get('login_id')
 
     if 'login_id' not in session or session.get('role') != 'company':
@@ -165,11 +166,12 @@ def company_post_new_job():
     message = None
     message_type = None
     form_data = {}  # Initialize form_data dictionary
+    form_url = ''
     
     # Check if we're editing an existing job
     job = None
     job_id = request.args.get('job_id')
-    
+
     if request.method == 'POST':
         # Get form data
         job_id = request.form.get('jobId')
@@ -180,19 +182,27 @@ def company_post_new_job():
                 flash("This job is closed and cannot be edited.", "error")
                 return redirect(url_for('company.company_jobposting'))
 
-        title = request.form.get('job-title', '').strip()
-        description = request.form.get('description', '').strip()
-        skills = request.form.get('skill-sets', '').strip()
+        raw_title = request.form.get('job-title', '').strip()
+        raw_description = request.form.get('description', '').strip()
+        raw_skills = request.form.get('skill-sets', '').strip()
         exp_str = request.form.get('exp', '').strip()
-        certifications = request.form.get('certifications', '').strip()
+        raw_certifications = request.form.get('certifications', '').strip()
         job_type = request.form.get('job-type', '').strip()
-        locations = request.form.get('locations', '').strip()
-        salary_str = request.form.get('salary', '').strip()
+        raw_locations = request.form.get('locations', '').strip()
+        raw_salary = request.form.get('salary', '').strip()
         vacancy_str = request.form.get('vacancy', '').strip()
         form_url = request.form.get('form-url', '').strip()
         deadline_str = request.form.get('deadline', '').strip()
+
+        title = sanitize_text(raw_title)
+        description = sanitize_text(raw_description)
+        skills = sanitize_text(raw_skills)
+        certifications = sanitize_text(raw_certifications)
+        locations = sanitize_text(raw_locations)
+        salary_str = sanitize_text(raw_salary)
+
         created_by = session['login_id']
-        
+
         # Store form data to preserve it in case of validation errors
         form_data = {
             'title': title,
@@ -207,7 +217,7 @@ def company_post_new_job():
             'form_url': form_url,
             'deadline': deadline_str
         }
-        
+
         # Check for duplicate job title on the same day (only for new jobs, not edits)
         if not job_id:
             today = date.today()
@@ -223,38 +233,69 @@ def company_post_new_job():
             
         # Continue with existing validations only if no duplicate found
         if not message:
+            dangerous_fields = [title, description, skills, certifications, locations, salary_str]
+            if any(
+                re.search(r'<\s*script[\s\S]*?>[\s\S]*?<\s*/\s*script\s*>', f, re.IGNORECASE) or
+                re.search(r'(javascript\s*:|data\s*:)', f, re.IGNORECASE)
+                for f in dangerous_fields if f
+            ):
+                message = "Dangerous content is not allowed in text fields."
+                message_type = "error"
             # Validate inputs
-            if not (3 <= len(title) <= 250):
-                message = "Job Title must be between 3-250 characters!"
-                message_type = "error"
-            elif not (10 <= len(description) <= 2000):
-                message = "Job Description must be between 10-2000 characters!"
-                message_type = "error"
-            elif len(skills) > 1000:
-                message = "Skills must not exceed 1000 characters!"
-                message_type = "error"
-            elif not exp_str or not exp_str.isdigit():
-                message = "Years of Experience must be a valid number!"
-                message_type = "error"
-            elif len(certifications) > 1000:
-                message = "Certifications must not exceed 1000 characters!"
-                message_type = "error"
-            elif len(salary_str) > 50:
-                message = "Salary must not exceed 50 characters!"
-                message_type = "error"
-            elif len(locations) > 1000:
-                message = "Locations must not exceed 1000 characters!"
-                message_type = "error"
-            elif not vacancy_str or not vacancy_str.isdigit():
-                message = "Vacancy must be a valid number!"
-                message_type = "error"
-            elif not deadline_str:
-                message = "Application deadline is required!"
-                message_type = "error"
-            #elif form_url and not is_valid_url(form_url):
-            #    message = "Please enter a valid URL for the questionnaire form!"
-            #    message_type = "error"
-            else:
+            if not message:
+                if not (3 <= len(title) <= 250):
+                    message = "Job Title must be between 3-250 characters!"
+                    message_type = "error"
+                elif not (10 <= len(description) <= 2000):
+                    message = "Job Description must be between 10-2000 characters!"
+                    message_type = "error"
+                elif len(skills) > 1000:
+                    message = "Skills must not exceed 1000 characters!"
+                    message_type = "error"
+                elif not exp_str or not exp_str.isdigit():
+                    message = "Years of Experience must be a valid number!"
+                    message_type = "error"
+                elif len(certifications) > 1000:
+                    message = "Certifications must not exceed 1000 characters!"
+                    message_type = "error"
+                elif len(salary_str) > 50:
+                    message = "Salary must not exceed 50 characters!"
+                    message_type = "error"
+                elif len(locations) > 1000:
+                    message = "Locations must not exceed 1000 characters!"
+                    message_type = "error"
+                elif not vacancy_str or not vacancy_str.isdigit():
+                    message = "Vacancy must be a valid number!"
+                    message_type = "error"
+                elif not deadline_str:
+                    message = "Application deadline is required!"
+                    message_type = "error"
+                elif form_url:
+                    # ---- Questionnaire URL rules (mirror profile website/logo) ----
+                    # 1) Single URL only (no whitespace)
+                    if re.search(r"\s", form_url):
+                        message = "Please enter only one questionnaire form URL."
+                        message_type = "error"
+
+                    # 2) Must start with http/https
+                    elif not re.match(r"^https?", form_url, re.IGNORECASE):
+                        message = "Questionnaire URL must start with http or https."
+                        message_type = "error"
+
+                    # 3) Block dangerous schemes
+                    elif re.match(r"^(javascript|data)", form_url, re.IGNORECASE):
+                        message = "Questionnaire URL scheme is not allowed."
+                        message_type = "error"
+
+                    # 4) Optional ping check (same as profile)
+                    elif form_url and not url_seems_reachable(form_url):
+                        message = "Questionnaire URL could not be reached. Please check the link."
+                        message_type = "error"
+                # elif form_url and not is_valid_url(form_url):
+                #     message = "Please enter a valid URL for the questionnaire form!"
+                #     message_type = "error"
+
+            if not message:
                 try:
                     # Convert string values to appropriate types
                     exp = int(exp_str)
@@ -526,7 +567,6 @@ def company_application_review():
         selected_jobs=selected_jobs,
         user_certifications=user_certifications
     )
-
 
 # Hiring Communication
 from flask_mail import Message
