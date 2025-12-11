@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Job Search - Employee Recruitment</title>
-  
+
   <!-- External CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
@@ -32,7 +32,7 @@
       </div>
     </div>
   </header>
-  
+
 <main>
   <!-- Navigation Sidebar -->
   <div class="navigation" id="side-navigation">
@@ -55,50 +55,50 @@
     <!-- Main Content -->
     <div class="activity" id="activityContent">
       <h2 class="mb-4">Find Your Dream Job</h2>
-      
+     
       <!-- Flash Message Container -->
       <div class="flash-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} flash-message alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
         {% endwith %}
       </div>
-      
+     
       <!-- Job Search Form -->
       <div class="job-search-card" data-aos="fade-up">
         <form id="job-search-form" action="{{ url_for('user.job_search') }}" method="POST">
           <div class="mb-3">
             <label for="keyword" class="form-label"><i class="fas fa-search"></i> Keywords</label>
-            <input type="text" class="form-control" id="keyword" name="keyword" placeholder="Job title, skills, company name, or keywords">
+            <input type="text" class="form-control" id="keyword" name="keyword" value="{{ form_values.keyword if form_values else '' }}" placeholder="Job title, skills, company name, or keywords">
             <div class="form-text">Search will look in job titles, descriptions, and company names</div>
           </div>
-          
+         
           <div class="mb-3">
             <label for="location" class="form-label"><i class="fas fa-map-marker-alt"></i> Location</label>
-            <input type="text" class="form-control" id="location" name="location" placeholder="City, state, or 'Remote'">
+            <input type="text" class="form-control" id="location" name="location" value="{{ form_values.location if form_values else '' }}" placeholder="City, state, or 'Remote'">
           </div>
-          
+         
           <div class="mb-3">
             <label for="job_type" class="form-label"><i class="fas fa-briefcase"></i> Job Type</label>
             <select class="form-select" id="job_type" name="job_type">
               <option value="">Any</option>
-              <option value="full-time">Full-time</option>
-              <option value="part-time">Part-time</option>
-              <option value="contract">Contract</option>
-              <option value="internship">Internship</option>
+              <option value="full-time" {{ 'selected' if (form_values.job_type if form_values else '') == 'full-time' else '' }}>Full-time</option>
+              <option value="part-time" {{ 'selected' if (form_values.job_type if form_values else '') == 'part-time' else '' }}>Part-time</option>
+              <option value="contract" {{ 'selected' if (form_values.job_type if form_values else '') == 'contract' else '' }}>Contract</option>
+              <option value="internship" {{ 'selected' if (form_values.job_type if form_values else '') == 'internship' else '' }}>Internship</option>
             </select>
           </div>
-          
+         
           <a class="advanced-toggle mt-2 d-inline-block" data-bs-toggle="collapse" href="#advancedFilters" role="button" aria-expanded="false" aria-controls="advancedFilters">
             Advanced Filters <i class="fas fa-chevron-down"></i>
           </a>
-          
+         
           <div class="collapse mt-3" id="advancedFilters">
             <div class="card card-body border-0 bg-light p-3 rounded-3">
               <div class="row">
@@ -106,36 +106,36 @@
                   <label for="years_of_exp" class="form-label"><i class="fas fa-user-tie"></i> Years of Experience</label>
                   <select class="form-select" id="years_of_exp" name="years_of_exp">
                     <option value="">Any</option>
-                    <option value="0">0 years (Fresher)</option>
-                    <option value="1">1 year</option>
-                    <option value="2">2 years</option>
-                    <option value="3">3 years</option>
-                    <option value="4">4 years</option>
-                    <option value="5">5 years</option>
-                    <option value="6">6+ years</option>
+                    <option value="0" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '0' else '' }}>0 years (Fresher)</option>
+                    <option value="1" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '1' else '' }}>1 year</option>
+                    <option value="2" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '2' else '' }}>2 years</option>
+                    <option value="3" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '3' else '' }}>3 years</option>
+                    <option value="4" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '4' else '' }}>4 years</option>
+                    <option value="5" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '5' else '' }}>5 years</option>
+                    <option value="6" {{ 'selected' if (form_values.years_of_exp if form_values else '') == '6' else '' }}>6+ years</option>
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="skills" class="form-label"><i class="fas fa-tools"></i> Skills</label>
-                  <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g., Python, Java, React, SQL">
+                  <input type="text" class="form-control" id="skills" name="skills" value="{{ form_values.skills if form_values else '' }}" placeholder="e.g., Python, Java, React, SQL">
                   <div class="form-text">Search jobs that require specific skills (comma-separated)</div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="certifications" class="form-label"><i class="fas fa-certificate"></i> Certifications</label>
-                  <input type="text" class="form-control" id="certifications" name="certifications" placeholder="e.g., AWS, PMP, CISSP">
+                  <input type="text" class="form-control" id="certifications" name="certifications" value="{{ form_values.certifications if form_values else '' }}" placeholder="e.g., AWS, PMP, CISSP">
                   <div class="form-text">Search jobs that require specific certifications (comma-separated)</div>
                 </div>
-              
-              
+               
+               
                 <div class="col-md-6 mb-3">
                   <label for="deadline" class="form-label"><i class="fas fa-calendar-alt"></i> Deadline</label>
-                  <input type="date" class="form-control" id="deadline" name="deadline">
+                  <input type="date" class="form-control" id="deadline" name="deadline" value="{{ form_values.deadline if form_values else '' }}">
                   <div class="form-text">Find jobs with deadline on or before this date</div>
                 </div>
               </div>
             </div>
           </div>
-          
+         
           <div class="d-flex justify-content-between align-items-center mt-4" id="form-buttons">
             <button type="reset" class="btn btn-outline-secondary rounded-pill px-4">
               <i class="fas fa-times me-2"></i> Clear
@@ -148,22 +148,22 @@
       </div>
     </div>
   </main>
-  
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-  
+
   <script>
     // Initialize AOS
     AOS.init();
-    
+   
     // Toggle dropdown for profile menu
     document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
       event.stopPropagation();
       const dropdownContent = document.querySelector('.dropdown-content');
       dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
     });
-    
+   
     // Close dropdown if clicking outside
     window.addEventListener('click', function(event) {
       const dropdown = document.querySelector('.profile-dropdown');
@@ -171,44 +171,43 @@
         document.querySelector('.dropdown-content').style.display = 'none';
       }
     });
-    
+   
     // Menu toggle function
     document.querySelector('.menu-toggle').addEventListener('click', function() {
       document.getElementById('side-navigation').classList.toggle('active');
       document.querySelector('.menu-toggle').classList.toggle('active');
     });
-
     // Close menu when clicking outside
     document.addEventListener('click', function(event) {
       const sideNav = document.getElementById('side-navigation');
       const menuToggle = document.querySelector('.menu-toggle');
-      
-      if (sideNav.classList.contains('active') && 
-          !sideNav.contains(event.target) && 
+     
+      if (sideNav.classList.contains('active') &&
+          !sideNav.contains(event.target) &&
           !menuToggle.contains(event.target)) {
         sideNav.classList.remove('active');
         menuToggle.classList.remove('active');
       }
     });
-    
+   
     // Auto-hide flash messages after 5 seconds
     setTimeout(function() {
       document.querySelectorAll('.flash-message').forEach(function(message) {
         message.style.display = 'none';
       });
     }, 5000);
-    
+   
     // Enhanced form interactivity - comprehensive search
     document.getElementById('job-search-form').addEventListener('submit', function(event) {
       // Form will submit and search across all fields including title, description, requirements, company name, etc.
       // Backend should implement fuzzy search across multiple fields
     });
-    
+   
     // Clear form function
     document.querySelector('button[type="reset"]').addEventListener('click', function() {
       // Reset all form fields
       document.getElementById('job-search-form').reset();
-      
+     
       // Collapse advanced filters if open
       const advancedFilters = document.getElementById('advancedFilters');
       if (advancedFilters.classList.contains('show')) {
@@ -216,15 +215,15 @@
         document.querySelector('.advanced-toggle').setAttribute('aria-expanded', 'false');
       }
     });
-    
+   
     // Move search button when advanced filters expand/collapse
     document.querySelector('.advanced-toggle').addEventListener('click', function() {
       const expanded = this.getAttribute('aria-expanded') === 'true';
       this.setAttribute('aria-expanded', !expanded);
-      
+     
       const formButtons = document.getElementById('form-buttons');
       const advancedFilters = document.getElementById('advancedFilters');
-      
+     
       if (!expanded) {
         advancedFilters.after(formButtons);
       } else {

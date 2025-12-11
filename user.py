@@ -66,7 +66,7 @@ def user_dashboard():
    
     # Get current date for deadline comparison
     current_date = datetime.utcnow().date()
-   
+    print(current_date)
     # Query jobs with filters:
     # 1. Exclude jobs where vacancy is full (filled_vacancy >= total_vacancy)
     # 2. Exclude jobs from banned companies
@@ -283,6 +283,7 @@ def get_chart_data_for_user(user_id):
     live_feed = db.session.query(Job.title, Job.created_at, Company.company_name)\
         .join(Login, Login.id == Job.created_by)\
         .join(Company, Company.login_id == Login.id)\
+        .filter(Job.deadline >= current_date)\
         .order_by(Job.created_at.desc())\
         .limit(5).all()
     
@@ -530,13 +531,65 @@ def application_history():
         recent_activities=recent_activities,
         live_feed=live_feed
     )
-
-from sqlalchemy import or_
-from sqlalchemy import or_, func
-from flask import request, session, render_template
-from datetime import datetime, timedelta
 import re
+import requests
+from urllib.parse import urlparse
+from datetime import datetime, timedelta  # Ensure these are imported if not already
 
+# ============================================================================
+# HELPER FUNCTIONS FOR USER MODULE
+# ============================================================================
+def sanitize_text(value: str) -> str:
+    """ Sanitize text input to prevent XSS attacks. Removes script tags, javascript: URLs, data: URLs, and event handlers. """
+    if not value:
+        return ''
+    # Remove <script>...</script>
+    value = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', value, flags=re.IGNORECASE | re.DOTALL)
+    # Remove javascript: or data: URLs inside attributes or text
+    value = re.sub(r'javascript\s*:', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'data\s*:[^ \t\r\n]*', '', value, flags=re.IGNORECASE)
+    # Remove on* event handlers
+    value = re.sub(r'on\w+\s*=\s*"[^\"]*"', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', value, flags=re.IGNORECASE)
+    # Remove < and > characters
+    value = value.replace('<', '').replace('>', '')
+    return value.strip()
+
+def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
+    """ Check if a URL is reachable by making a HEAD or GET request. Returns True if the URL responds with a 2xx or 3xx status code. """
+    try:
+        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
+        resp = requests.head(url, allow_redirects=True, timeout=timeout)
+        if resp.status_code >= 400:
+            # try GET once more for sites that treat HEAD oddly
+            resp = requests.get(url, allow_redirects=True, timeout=timeout)
+        # treat 2xx / 3xx as "exists"
+        return 200 <= resp.status_code < 400
+    except requests.RequestException:
+        return False
+
+def is_valid_url(url: str) -> bool:
+    """ Validate if a string is a properly formatted URL. """
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
+def is_valid_email(email: str) -> bool:
+    """ Validate email format using regex. """
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(email_regex, email) is not None
+
+def count_words(text: str) -> int:
+    """ Count words in a text string. """
+    if not text:
+        return 0
+    return len(text.strip().split())
+
+# ============================================================================
+# USER PROFILE ROUTE WITH ENHANCED VALIDATION
+# ============================================================================
 @user_blueprint.route('/profile', methods=['GET', 'POST'])
 @no_cache
 @login_required
@@ -545,181 +598,205 @@ def profile():
     if not user_id:
         flash('You need to log in to access your profile.', 'error')
         return redirect(url_for('auth.login'))
-    
     user = User.query.filter_by(id=user_id).first()
     if not user:
         flash('User not found.', 'error')
         return redirect(url_for('user.user_dashboard'))
-    
+
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
-    
+
     # Get user's coupon information if they have one
     user_coupon_mapping = Couponuser.query.filter_by(user_id=user_id).first()
     user_coupon = None
     if user_coupon_mapping:
         user_coupon = Coupon.query.filter_by(id=user_coupon_mapping.coupon_id).first()
-    
+
     # Other data for charts, etc.
     edit_mode = request.args.get('edit', 'false').lower() == 'true'
-    
+
+    # Dictionary to hold form values for template repopulation on error
+    form_values = {}
+
     if request.method == 'POST':
-        # NEW: Handle name and email validation and updates
-        name_input = request.form.get('name', '').strip()
-        email_input = request.form.get('email', '').strip()
-        
+        # Get raw inputs first for invalid char check and repopulation
+        raw_name = request.form.get('name', '').strip()
+        raw_email = request.form.get('email', '').strip()
+        raw_phone = request.form.get('phone', '').strip()
+        raw_age = request.form.get('age', '').strip()
+        raw_manual_college = request.form.get('college_name', '').strip()
+        raw_about_me = request.form.get('about_me', '').strip()
+        raw_profile_pic_url = request.form.get('profile_pic_url', '').strip()
+        raw_coupon_code = request.form.get('coupon_code', '').strip()
+
+        # Store raw values for repopulation
+        form_values = {
+            'name': raw_name,
+            'email': raw_email,
+            'phone': raw_phone,
+            'age': raw_age,
+            'college_name': raw_manual_college,
+            'about_me': raw_about_me,
+            'profile_pic_url': raw_profile_pic_url,
+            'coupon_code': raw_coupon_code
+        }
+
+        # Check for invalid characters (< or >) in all text fields
+        text_fields_to_check = [
+            ('Name', raw_name),
+            ('Email', raw_email),
+            ('Phone', raw_phone),
+            ('College Name', raw_manual_college),
+            ('About Me', raw_about_me),
+            ('Profile Picture URL', raw_profile_pic_url),
+            ('Coupon Code', raw_coupon_code)
+        ]
+        for field_name, raw_value in text_fields_to_check:
+            if '<' in raw_value or '>' in raw_value:
+                flash(f"Invalid characters (< or >) not allowed in {field_name} field.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Sanitize inputs after invalid char check
+        name_input = sanitize_text(raw_name)
+        email_input = sanitize_text(raw_email)
+        phone_input = sanitize_text(raw_phone)
+        age_input = sanitize_text(raw_age)
+        manual_college = sanitize_text(raw_manual_college)
+        about_me_input = sanitize_text(raw_about_me)
+        profile_pic_url = sanitize_text(raw_profile_pic_url)
+        coupon_code = sanitize_text(raw_coupon_code)
+
         # Validate name
         if not name_input:
             flash("Name is required.", "error")
-            return render_template('/user/profile.html',
-                                   user=user,
-                                   resumes=resumes,
-                                   certifications=certifications,
-                                   user_coupon=user_coupon,
-                                   edit_mode=True)
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
         elif len(name_input) < 2:
             flash("Name must be at least 2 characters long.", "error")
-            return render_template('/user/profile.html',
-                                   user=user,
-                                   resumes=resumes,
-                                   certifications=certifications,
-                                   user_coupon=user_coupon,
-                                   edit_mode=True)
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
         elif len(name_input) > 100:
             flash("Name cannot exceed 100 characters.", "error")
-            return render_template('/user/profile.html',
-                                   user=user,
-                                   resumes=resumes,
-                                   certifications=certifications,
-                                   user_coupon=user_coupon,
-                                   edit_mode=True)
-        
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
         # Validate email
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not email_input:
             flash("Email is required.", "error")
-            return render_template('/user/profile.html',
-                                   user=user,
-                                   resumes=resumes,
-                                   certifications=certifications,
-                                   user_coupon=user_coupon,
-                                   edit_mode=True)
-        elif not re.match(email_regex, email_input):
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+        elif not is_valid_email(email_input):
             flash("Please enter a valid email address (name@domain.com).", "error")
-            return render_template('/user/profile.html',
-                                   user=user,
-                                   resumes=resumes,
-                                   certifications=certifications,
-                                   user_coupon=user_coupon,
-                                   edit_mode=True)
-        elif email_input != user.email:  # Check for uniqueness only if email changed
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+        elif email_input != user.email:
+            # Check for uniqueness only if email changed
             existing_email_user = User.query.filter_by(email=email_input).first()
             if existing_email_user:
                 flash("This email is already registered to another user.", "error")
-                return render_template('/user/profile.html',
-                                       user=user,
-                                       resumes=resumes,
-                                       certifications=certifications,
-                                       user_coupon=user_coupon,
-                                       edit_mode=True)
-        
-        # Validate phone number uniqueness if provided
-        phone_input = request.form.get('phone', '').strip()
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Validate phone number if provided
         if phone_input:
+            # Check if phone contains only digits
+            if not phone_input.isdigit():
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            # Check phone length
+            if len(phone_input) < 10 or len(phone_input) > 15:
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             # Check if phone number already exists for another user
             existing_phone_user = User.query.filter(
                 User.phone == phone_input,
                 User.id != user_id
             ).first()
             if existing_phone_user:
-                flash("This phone number is already registered to another user.", "error")
-                return render_template('/user/profile.html',
-                                       user=user,
-                                       resumes=resumes,
-                                       certifications=certifications,
-                                       user_coupon=user_coupon,
-                                       edit_mode=True)
-        
-        # Handle college name and coupon code FIRST
-        manual_college = request.form.get('college_name', '').strip()
-        coupon_code = request.form.get('coupon_code', "").strip()
-        
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Validate age if provided
+        if age_input:
+            try:
+                age_value = int(age_input)
+                if age_value < 18 or age_value > 80:
+                    flash("Please enter a valid age between 18 and 80.", "error")
+                    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            except ValueError:
+                flash("Please enter a valid age.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Validate About Me word count if provided
+        if about_me_input:
+            word_count = count_words(about_me_input)
+            if word_count > 200:
+                flash(f"About Me section cannot exceed 200 words. Current count: {word_count} words.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            if len(about_me_input) > 2000:
+                flash("About Me section cannot exceed 2000 characters.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Validate college name length if provided
+        if manual_college:
+            if len(manual_college) > 200:
+                flash("College name cannot exceed 200 characters.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+        # Validate profile picture URL if provided
+        if profile_pic_url:
+            if not is_valid_url(profile_pic_url):
+                flash("Please enter a valid URL for the profile picture.", "error")
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            # Check if URL is reachable (optional - can be slow)
+            # Uncomment if you want to verify URL accessibility
+            # if not url_seems_reachable(profile_pic_url):
+            #     flash("The profile picture URL appears to be unreachable. Please check the URL.", "warning")
+
+        # Handle college name and coupon code
         # Only process new coupon codes if user doesn't already have one
         if coupon_code and not user_coupon:
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             if not coupon:
-                # Invalid coupon - don't save profile and stay in edit mode
                 flash("Invalid coupon code provided.", "error")
-                return render_template('/user/profile.html',
-                                       user=user,
-                                       resumes=resumes,
-                                       certifications=certifications,
-                                       user_coupon=user_coupon,
-                                       edit_mode=True)
+                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             else:
                 # Check if coupon is expired (created more than 2 years ago)
                 current_date = datetime.now()
-                coupon_creation_date = coupon.created_at  # Assuming this is your created_at field
+                coupon_creation_date = coupon.created_at
                 expiration_threshold = current_date - timedelta(days=730)  # 2 years = 730 days
-                
                 if coupon_creation_date < expiration_threshold:
                     flash("Coupon has expired. This coupon is more than 2 years old.", "error")
-                    return render_template('/user/profile.html',
-                                           user=user,
-                                           resumes=resumes,
-                                           certifications=certifications,
-                                           user_coupon=user_coupon,
-                                           edit_mode=True)
-                
-                # Valid and non-expired coupon - proceed with coupon logic
+                    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                # Valid and non-expired coupon
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
                     new_mapping = Couponuser(user_id=user_id, coupon_id=coupon.id)
                     db.session.add(new_mapping)
-                    
-                # Set college name from coupon if available
-                if coupon.college:
-                    user.college_name = coupon.college.college_name
-                else:
-                    user.college_name = manual_college or user.college_name
-                    
-                flash("Coupon code applied successfully!", "success")
+                    # Set college name from coupon if available
+                    if coupon.college:
+                        user.college_name = coupon.college.college_name
+                    else:
+                        user.college_name = manual_college or user.college_name
+                    flash("Coupon code applied successfully!", "success")
+                # Reload user_coupon after adding mapping
+                user_coupon_mapping = Couponuser.query.filter_by(user_id=user_id).first()
+                if user_coupon_mapping:
+                    user_coupon = Coupon.query.filter_by(id=user_coupon_mapping.coupon_id).first()
         elif user_coupon:
             # User already has a coupon, don't allow changes to coupon-controlled fields
             if user_coupon.college:
-                # College is controlled by coupon, don't change it
                 user.college_name = user_coupon.college.college_name
             else:
-                # College can still be manually set if coupon doesn't specify it
                 user.college_name = manual_college or user.college_name
         else:
             # No coupon code provided and user doesn't have one, use manual college
             user.college_name = manual_college or user.college_name
-        
-        # Update other fields only if coupon validation passed
-        # NEW: Update name and email
+
+        # Update user fields
         user.name = name_input
         user.email = email_input
-        
-        # Update phone (already validated above)
         user.phone = phone_input if phone_input else None
-        
-        age_input = request.form.get('age', '')
         if age_input:
             try:
                 user.age = int(age_input)
             except ValueError:
-                flash("Invalid age provided.", "error")
-                return redirect(url_for('user.profile', edit='true'))
-        user.about_me = request.form.get('about_me', user.about_me)
-        
+                pass  # Already validated above
+        user.about_me = about_me_input if about_me_input else None
         # Profile picture URL update - clear if empty
-        profile_pic_url = request.form.get('profile_pic_url', '').strip()
-        if profile_pic_url:
-            user.profile_picture = profile_pic_url
-        else:
-            user.profile_picture = None  # Clear the profile picture if no URL provided
-        
+        user.profile_picture = profile_pic_url if profile_pic_url else None
+
         try:
             db.session.commit()
             flash("Profile updated successfully!", "success")
@@ -727,14 +804,9 @@ def profile():
         except Exception as e:
             db.session.rollback()
             flash(f"Error updating profile: {str(e)}", "error")
-            return redirect(url_for('user.profile', edit='true'))
-    
-    return render_template('/user/profile.html',
-                           user=user,
-                           resumes=resumes,
-                           certifications=certifications,
-                           user_coupon=user_coupon,
-                           edit_mode=edit_mode)
+            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+
+    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=edit_mode, form_values=form_values)
 from flask import jsonify
 
 @user_blueprint.route('/get_application_details/<uuid:application_id>', methods=['GET'])
@@ -802,36 +874,92 @@ def job_details(job_id):
                          applied_jobs=applied_jobs, 
                          saved_jobs=saved_jobs)
 
+import re
+import requests
+from urllib.parse import urlparse
+from datetime import datetime, timedelta, date  # Ensure date is imported
+from sqlalchemy import or_
 
+# Assuming sanitize_text is already defined from previous helpers
+
+# ============================================================================
+# JOB SEARCH ROUTE WITH ENHANCED VALIDATION AND SANITIZATION
+# ============================================================================
 @user_blueprint.route('/job_search', methods=['GET', 'POST'])
 @no_cache
 @login_required
 def job_search():
+    # Dictionary to hold form values for template repopulation on error
+    form_values = {}
+
     if request.method == 'POST':
-        # Get search parameters
-        keyword = request.form.get('keyword')
-        location = request.form.get('location')
-        job_type = request.form.get('job_type')
-        years_of_exp = request.form.get('years_of_exp')
-        salary = request.form.get('salary')
-        deadline = request.form.get('deadline')
-        skills = request.form.get('skills')
-        certifications = request.form.get('certifications')
-        
+        # Get raw inputs first for invalid char check and repopulation
+        raw_keyword = request.form.get('keyword', '').strip()
+        raw_location = request.form.get('location', '').strip()
+        raw_job_type = request.form.get('job_type', '').strip()
+        raw_years_of_exp = request.form.get('years_of_exp', '').strip()
+        raw_skills = request.form.get('skills', '').strip()
+        raw_certifications = request.form.get('certifications', '').strip()
+        raw_deadline = request.form.get('deadline', '').strip()
+
+        # Store raw values for repopulation
+        form_values = {
+            'keyword': raw_keyword,
+            'location': raw_location,
+            'job_type': raw_job_type,
+            'years_of_exp': raw_years_of_exp,
+            'skills': raw_skills,
+            'certifications': raw_certifications,
+            'deadline': raw_deadline
+        }
+
+        # Check for invalid characters (< or >) in all text fields
+        text_fields_to_check = [
+            ('Keyword', raw_keyword),
+            ('Location', raw_location),
+            ('Skills', raw_skills),
+            ('Certifications', raw_certifications)
+        ]
+        for field_name, raw_value in text_fields_to_check:
+            if '<' in raw_value or '>' in raw_value:
+                flash(f"Invalid characters (< or >) not allowed in {field_name} field.", "error")
+                return render_template('/user/jobsearch.html', form_values=form_values)
+
+        # Sanitize inputs after invalid char check
+        keyword = sanitize_text(raw_keyword)
+        location = sanitize_text(raw_location)
+        job_type = sanitize_text(raw_job_type)
+        years_of_exp = sanitize_text(raw_years_of_exp)
+        skills = sanitize_text(raw_skills)
+        certifications = sanitize_text(raw_certifications)
+        deadline_str = sanitize_text(raw_deadline)
+
+        # Validate deadline if provided
+        deadline = None
+        if deadline_str:
+            try:
+                deadline = date.fromisoformat(deadline_str)
+                if deadline < date.today():
+                    flash("Deadline cannot be in the past.", "error")
+                    return render_template('/user/jobsearch.html', form_values=form_values)
+            except ValueError:
+                flash("Please enter a valid deadline date.", "error")
+                return render_template('/user/jobsearch.html', form_values=form_values)
+
         # Get pagination parameters
         page = request.form.get('page', 1, type=int)
         per_page = 6  # Jobs per page
-        
-        # Get current date for deadline comparison
-        current_date = datetime.utcnow().date()
-        
-        # Build the query with deadline check
+
+        # Get current date for base deadline comparison (show jobs on or after today)
+        current_date = date.today()
+
+        # Build the query with deadline check (>= for on or after today)
         query = Job.query.join(Company, Job.created_by == Company.login_id).filter(
             Job.status != 'closed',
             Company.is_banned == False,
-            Job.deadline > current_date  # Only show jobs with future deadlines
+            Job.deadline >= current_date  # Show jobs with deadline on or after today
         )
-        
+
         # Apply search filters
         if keyword:
             keyword_like = f'%{keyword}%'
@@ -844,13 +972,13 @@ def job_search():
                     Company.company_name.ilike(keyword_like)
                 )
             )
-        
+
         if location:
             query = query.filter(Job.location.ilike(f'%{location}%'))
-        
+
         if job_type:
             query = query.filter(Job.job_type.ilike(job_type))
-        
+
         if years_of_exp:
             try:
                 if years_of_exp == '6':
@@ -860,66 +988,56 @@ def job_search():
                     query = query.filter(Job.years_of_exp == exp_val)
             except (ValueError, TypeError):
                 pass
-        
-        if salary:
-            try:
-                query = query.filter(Job.salary >= float(salary))
-            except (ValueError, TypeError):
-                pass
-       
+
+        # Apply deadline filter if provided (jobs expiring on or before specified date)
         if deadline:
-            try:
-                if deadline:
-                    query = query.filter(Job.deadline <= deadline)
-            except ValueError:
-                pass
-        
+            query = query.filter(Job.deadline <= deadline)
+
         if skills:
             skills_list = [skill.strip() for skill in skills.split(',') if skill.strip()]
             if skills_list:
                 skills_filters = [Job.skills.ilike(f'%{skill}%') for skill in skills_list]
                 query = query.filter(or_(*skills_filters))
-        
+
         if certifications:
             cert_list = [cert.strip() for cert in certifications.split(',') if cert.strip()]
             if cert_list:
                 cert_filters = [Job.certifications.ilike(f'%{cert}%') for cert in cert_list]
                 query = query.filter(or_(*cert_filters))
-        
+
         # Apply pagination
         jobs_pagination = query.order_by(Job.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
-        
+
         jobs = jobs_pagination.items
-        
+
         # Get user's applied and saved jobs
         current_user_id = session.get('user_id')
         applied_applications = JobApplication.query.filter_by(user_id=current_user_id).all()
         applied_jobs = {app.job_id for app in applied_applications}
         saved_favorites = Favorite.query.filter_by(user_id=current_user_id).all()
         saved_jobs = {fav.job_id for fav in saved_favorites}
-        
-        # Pass search parameters to maintain state
+
+        # Pass search parameters to maintain state in results
         search_params = {
             'keyword': keyword,
             'location': location,
             'job_type': job_type,
             'years_of_exp': years_of_exp,
-            'salary': salary,
-            'deadline': deadline,
             'skills': skills,
-            'certifications': certifications
+            'certifications': certifications,
+            'deadline': deadline_str if deadline_str else ''
         }
-        
+
         return render_template('/user/jobresults.html',
-                             jobs=jobs,
-                             applied_jobs=applied_jobs,
-                             saved_jobs=saved_jobs,
-                             pagination=jobs_pagination,
-                             search_params=search_params)
+                               jobs=jobs,
+                               applied_jobs=applied_jobs,
+                               saved_jobs=saved_jobs,
+                               pagination=jobs_pagination,
+                               search_params=search_params)
     else:
-        return render_template('/user/jobsearch.html')
+        return render_template('/user/jobsearch.html', form_values=form_values)
 # Updated Save Job Route
 @user_blueprint.route('/save_job1/<uuid:job_id>', methods=['POST'])
 @no_cache
