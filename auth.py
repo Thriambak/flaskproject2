@@ -102,6 +102,7 @@ def signup():
             flash('The entered username is not allowed. Please choose a different username.', 'danger')
             return redirect(url_for('auth.signup'))
         
+        
         # Username length validation
         if not (3 <= len(username) <= 30):
             flash('Username must be between 3 and 30 characters long.', 'danger')
@@ -166,7 +167,7 @@ def signup():
         elif role == 'college':
             new_college = College(login_id=new_login.id, college_name=username, email=email)
             db.session.add(new_college)
-            '''elif role == 'admin':
+            ''' elif role == 'admin':
             pass'''
         else:
             flash('Invalid profile type specified.', 'danger')

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Profile</title>
-  
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Bootstrap 5 -->
@@ -16,45 +16,80 @@
   <!-- Animate.css -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user/profilestyle.css') }}">
-  
+
   <style>
     .frozen-field {
       background-color: #f8f9fa !important;
       cursor: not-allowed !important;
       opacity: 0.7;
     }
-    
+   
     .frozen-field:focus {
       box-shadow: none !important;
       border-color: #dee2e6 !important;
     }
-    
+   
     .field-frozen-label {
       color: #6c757d;
       font-size: 0.875rem;
       font-style: italic;
     }
-
     .error-field {
       border-color: #dc3545 !important;
       box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
     }
+    .editable-field {
+      margin-bottom: 1rem;
+    }
+    .editable-field label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .editable-field input,
+    .editable-field textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .editable-field input:focus,
+    .editable-field textarea:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      outline: none;
+    }
+    .invalid-feedback {
+      display: none;
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+    .editable-field .error-field + .invalid-feedback {
+      display: block;
+    }
   </style>
 </head>
 <body data-aos-duration="1000">
+  <!-- Popup Message -->
+  <div id="popup-message" class="popup"></div>
+
   <!-- Flash Messages Container -->
   <div class="flash-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
         <div class="alert alert-{{ category }} flash-message fade show" role="alert">
-          {{ message }}
+         {{ message }}
         </div>
       {% endfor %}
     {% endif %}
     {% endwith %}
   </div>
-  
+
   <!-- Header -->
   <header>
     <div class="menu-toggle">
@@ -68,17 +103,16 @@
       <div class="profile-dropdown">
         <button class="profile-icon-btn"><i class="fas fa-user-circle"></i></button>
         <div class="dropdown-content">
-          <a href="{{ url_for('user.profile') }}" style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
-            <i class="fas fa-user"></i> Profile
-          </a>
-          <a href="{{ url_for('auth.logout') }}">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </a>
+         <a href="{{ url_for('user.profile') }}" style="background: linear-gradient(90deg, #e3e8f8, #f9faff); transform: scale(1.05); font-weight: bold;">
+           <i class="fas fa-user"></i> Profile
+         </a>
+         <a href="{{ url_for('auth.logout') }}">
+           <i class="fas fa-sign-out-alt"></i> Logout
+         </a>
         </div>
       </div>
     </div>
   </header>
-  
 
 <main>
   <!-- Navigation Sidebar -->
@@ -104,8 +138,7 @@
       <div class="profile-container">
         <div class="profile-header">
           <div class="profile-picture-container">
-            <img src="{{ user.profile_picture or url_for('static', filename='default_profile.png') }}" 
-                 
+            <img src="{{ user.profile_picture or url_for('static', filename='default_profile.png') }}"
                  class="profile-picture"
                  id="profileImage">
             <!-- Clicking the overlay sets focus on the URL field -->
@@ -122,7 +155,7 @@
            
           </div>
         </div>
-        
+       
         <!-- Profile Completion Bar -->
         <div class="profile-progress" data-aos="fade-up">
           <div class="progress-bar-bg">
@@ -130,57 +163,58 @@
           </div>
           <span id="progressPercent">0%</span>
         </div>
-        
+       
         {% if edit_mode %}
-          <form action="{{ url_for('user.profile', edit='true') }}" method="POST" class="edit-form" id="editProfileForm">
+          <form action="{{ url_for('user.profile', edit='true') }}" method="POST" class="edit-form" id="editProfileForm" onsubmit="return validateForm()">
             <!-- Name Field -->
             <div class="editable-field">
-              <label>Name</label>
-              <input type="text" name="name" id="nameField" value="{{ user.name }}" required>
+              <label><p style="color: red; display: inline;">* </p>Name</label>
+              <input type="text" name="name" id="nameField" value="{{ form_values.name if form_values else user.name }}" required maxlength="100">
               <div class="invalid-feedback" id="nameError"></div>
             </div>
-            
+           
             <!-- Email Field -->
             <div class="editable-field">
-              <label>Email</label>
-              <input type="email" name="email" id="emailField" value="{{ user.email }}" required>
+              <label><p style="color: red; display: inline;">* </p>Email</label>
+              <input type="email" name="email" id="emailField" value="{{ form_values.email if form_values else user.email }}" required maxlength="255">
               <div class="invalid-feedback" id="emailError"></div>
             </div>
-            
+           
             <div class="editable-field">
               <label>Phone</label>
-              <input type="text" name="phone" id="phoneField" value="{{ user.phone or '' }}">
-              <div class="invalid-feedback" id="phoneError"></div>
+              <input type="text" name="phone" id="phoneField" value="{{ form_values.phone if form_values else (user.phone or '') }}" maxlength="15">
+              
             </div>
-            
+           
             <div class="editable-field">
               <label>Age</label>
-              <input type="number" name="age" id="ageField" value="{{ user.age or '' }}">
+              <input type="number" name="age" id="ageField" value="{{ form_values.age if form_values else (user.age or '') }}" min="18" max="80">
               <div class="invalid-feedback" id="ageError"></div>
             </div>
-            
+           
             <!-- Coupon Code Field - Show only if user doesn't have a coupon -->
             {% if not user_coupon %}
               <div class="editable-field">
                 <label>Coupon Code</label>
-                <input type="text" name="coupon_code" placeholder="Enter coupon code">
+                <input type="text" name="coupon_code" id="couponField" value="{{ form_values.coupon_code if form_values else '' }}" placeholder="Enter coupon code" maxlength="50">
+                <div class="invalid-feedback" id="couponError"></div>
               </div>
             {% else %}
               <!-- Show frozen coupon code field if user has a coupon -->
               <div class="editable-field">
-                <label>Coupon Code 
+                <label>Coupon Code
                   <span class="field-frozen-label">(Cannot be changed)</span>
                 </label>
-                <input type="text" 
-                       value="{{ user_coupon.code }}" 
-                       class="frozen-field" 
-                       readonly 
+                <input type="text"
+                       value="{{ user_coupon.code }}"
+                       class="frozen-field"
+                       readonly
                        title="Coupon code cannot be changed once applied">
                 <!-- Hidden field to maintain the coupon code -->
                 <input type="hidden" name="coupon_code" value="{{ user_coupon.code }}">
               </div>
             {% endif %}
-            
+           
             <!-- College Name Field -->
             <div class="editable-field">
               <label>College Name
@@ -190,37 +224,40 @@
               </label>
               {% if user_coupon and user_coupon.college %}
                 <!-- Frozen college field if set by coupon -->
-                <input type="text" 
-                       value="{{ user_coupon.college.college_name }}" 
-                       class="frozen-field" 
-                       readonly 
+                <input type="text"
+                       value="{{ user_coupon.college.college_name }}"
+                       class="frozen-field"
+                       readonly
                        title="College name is set by your coupon code and cannot be changed">
                 <!-- Hidden field to maintain the college name -->
                 <input type="hidden" name="college_name" value="{{ user_coupon.college.college_name }}">
               {% else %}
                 <!-- Editable college field if not set by coupon -->
-                <input type="text" 
-                       name="college_name" 
-                       id="collegeField" 
-                       value="{{ user.college_name or '' }}" 
-                       placeholder="Enter college name">
+                <input type="text"
+                       name="college_name"
+                       id="collegeField"
+                       value="{{ form_values.college_name if form_values else (user.college_name or '') }}"
+                       placeholder="Enter college name"
+                       maxlength="200">
+                <div class="invalid-feedback" id="collegeError"></div>
               {% endif %}
             </div>
-            
+           
             <div class="editable-field">
               <label>About Me <span id="wordCount">(0/200 words)</span></label>
-              <textarea name="about_me" id="aboutMeField" rows="5">{{ user.about_me or '' }}</textarea>
+              <textarea name="about_me" id="aboutMeField" rows="5" maxlength="2000">{{ form_values.about_me if form_values else (user.about_me or '') }}</textarea>
               <div class="invalid-feedback" id="aboutMeError"></div>
             </div>
-            
+           
             <!-- New field for Profile Picture URL -->
             <div class="editable-field">
               <label>Profile Picture URL</label>
-              <input type="url" name="profile_pic_url" id="profilePicUrlField" value="{{ user.profile_picture or '' }}" placeholder="Enter image URL">
+              <input type="url" name="profile_pic_url" id="profilePicUrlField" value="{{ form_values.profile_pic_url if form_values else (user.profile_picture or '') }}" placeholder="Enter image URL" maxlength="2000">
+              <div class="invalid-feedback" id="profilePicError"></div>
             </div>
-            
+           
             <div class="mt-4 flex items-center gap-4">
-              <button type="submit" class="btn-primary">Save Profile</button>
+              <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Profile</button>
               <a href="{{ url_for('user.profile') }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
           </form>
@@ -236,7 +273,7 @@
           </div>
         {% endif %}
       </div>
-      
+     
       <div class="grid-content">
         <!-- Left Column: Skills & Expertise -->
         <div data-aos="fade-right">
@@ -253,7 +290,7 @@
             </div>
           </div>
         </div>
-        
+       
         <!-- Right Column: Resume -->
         <div data-aos="fade-left">
           <div class="glass-card">
@@ -280,28 +317,49 @@
       </div>
     </div>
   </main>
-  
+
   <!-- Scroll-to-Top Button -->
   <div class="scroll-to-top" id="scrollToTop" onclick="scrollToTop()">
     <i class="fas fa-chevron-up"></i>
   </div>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script>
     // Initialize AOS (Animate on Scroll)
     AOS.init({ duration: 800, once: true });
-    
+   
+    // Popup message function
+    function showPopup(message, type) {
+      if (!message) return;
+      var popup = document.getElementById("popup-message");
+      popup.innerHTML = message;
+      popup.className = "popup " + type;
+      popup.style.display = "block";
+      setTimeout(() => { popup.style.display = "none"; }, 3000);
+    }
+   
     // Function to count words in text
     function countWords(text) {
+      if (!text || !text.trim()) return 0;
       return text.trim().split(/\s+/).filter(word => word.length > 0).length;
     }
-    
+   
     // Function to validate email format
     function isValidEmail(email) {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       return emailRegex.test(email);
     }
-    
+   
+    // Function to validate URL format
+    function isValidURL(url) {
+      try {
+        new URL(url);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+   
     // Function to clear field error state
     function clearFieldError(fieldId, errorId) {
       const field = document.getElementById(fieldId);
@@ -314,7 +372,7 @@
         errorDiv.style.display = 'none';
       }
     }
-    
+   
     // Function to show field error
     function showFieldError(fieldId, errorId, message) {
       const field = document.getElementById(fieldId);
@@ -328,26 +386,21 @@
         errorDiv.style.display = 'block';
       }
     }
-    
+   
     // Function to create and show flash message
     function showFlashMessage(message, category = 'danger') {
-      // Remove any existing flash messages first
       const existingMessages = document.querySelectorAll('.flash-message');
       existingMessages.forEach(msg => msg.remove());
-      
-      // Create new flash message
+     
       const flashContainer = document.querySelector('.flash-container');
       const flashDiv = document.createElement('div');
       flashDiv.className = `alert alert-${category} flash-message fade show`;
       flashDiv.setAttribute('role', 'alert');
       flashDiv.textContent = message;
-      
+     
       flashContainer.appendChild(flashDiv);
-      
-      // Scroll to top to show the message
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Auto-hide after 5 seconds
+     
       setTimeout(() => {
         flashDiv.style.transition = 'opacity 0.5s ease-out';
         flashDiv.style.opacity = '0';
@@ -356,152 +409,386 @@
         }, 500);
       }, 5000);
     }
-    
+   
+    // Form validation function
+    function validateForm() {
+      const nameField = document.getElementById('nameField');
+      const emailField = document.getElementById('emailField');
+      const phoneField = document.getElementById('phoneField');
+      const ageField = document.getElementById('ageField');
+      const collegeField = document.getElementById('collegeField');
+      const aboutMeField = document.getElementById('aboutMeField');
+      const profilePicUrlField = document.getElementById('profilePicUrlField');
+      const couponField = document.getElementById('couponField');
+     
+      let hasError = false;
+     
+      // Clear all previous errors
+      clearFieldError('nameField', 'nameError');
+      clearFieldError('emailField', 'emailError');
+      clearFieldError('phoneField', 'phoneError');
+      clearFieldError('ageField', 'ageError');
+      if (collegeField) clearFieldError('collegeField', 'collegeError');
+      clearFieldError('aboutMeField', 'aboutMeError');
+      clearFieldError('profilePicUrlField', 'profilePicError');
+      if (couponField) clearFieldError('couponField', 'couponError');
+     
+      // Name validation
+      const name = nameField.value.trim();
+      if (!name) {
+        showFieldError('nameField', 'nameError', 'Name is required');
+        showPopup("Name is required!", "error");
+        hasError = true;
+      } else if (name.length < 2) {
+        showFieldError('nameField', 'nameError', 'Name must be at least 2 characters long');
+        showPopup("Name must be at least 2 characters long!", "error");
+        hasError = true;
+      } else if (name.length > 100) {
+        showFieldError('nameField', 'nameError', 'Name cannot exceed 100 characters');
+        showPopup("Name cannot exceed 100 characters!", "error");
+        hasError = true;
+      } else if (name.includes('<') || name.includes('>')) {
+        showFieldError('nameField', 'nameError', 'Invalid characters (< or >) not allowed in Name field');
+        showPopup("Invalid characters (< or >) not allowed in Name field!", "error");
+        hasError = true;
+      }
+     
+      // Email validation
+      const email = emailField.value.trim();
+      if (!hasError) {
+        if (!email) {
+          showFieldError('emailField', 'emailError', 'Email is required');
+          showPopup("Email is required!", "error");
+          hasError = true;
+        } else if (!isValidEmail(email)) {
+          showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          showPopup("Please enter a valid email address!", "error");
+          hasError = true;
+        } else if (email.includes('<') || email.includes('>')) {
+          showFieldError('emailField', 'emailError', 'Invalid characters (< or >) not allowed in Email field');
+          showPopup("Invalid characters (< or >) not allowed in Email field!", "error");
+          hasError = true;
+        }
+      }
+     
+      // Phone validation (if provided)
+      const phone = phoneField.value.trim();
+      if (!hasError && phone !== '') {
+        // Check if phone contains only digits
+        if (!/^\d+$/.test(phone)) {
+          showFieldError('phoneField', 'phoneError', 'Phone number must contain only digits (0-9)');
+          showPopup("Phone number must contain only digits (0-9)!", "error");
+          hasError = true;
+        } else if (phone.length < 10 || phone.length > 15) {
+          showFieldError('phoneField', 'phoneError', 'Phone number must be between 10-15 digits');
+          showPopup("Phone number must be between 10-15 digits!", "error");
+          hasError = true;
+        } else if (phone.includes('<') || phone.includes('>')) {
+          showFieldError('phoneField', 'phoneError', 'Invalid characters (< or >) not allowed in Phone field');
+          showPopup("Invalid characters (< or >) not allowed in Phone field!", "error");
+          hasError = true;
+        }
+      }
+     
+      // Age validation (if provided)
+      const age = ageField.value.trim();
+      if (!hasError && age !== '') {
+        const ageValue = parseInt(age);
+        if (isNaN(ageValue) || ageValue < 18 || ageValue > 80) {
+          showFieldError('ageField', 'ageError', 'Please enter a valid age between 18 and 80');
+          showPopup("Please enter a valid age between 18 and 80!", "error");
+          hasError = true;
+        }
+      }
+     
+      // College validation (if editable and provided)
+      if (!hasError && collegeField) {
+        const college = collegeField.value.trim();
+        if (college.length > 200) {
+          showFieldError('collegeField', 'collegeError', 'College name cannot exceed 200 characters');
+          showPopup("College name cannot exceed 200 characters!", "error");
+          hasError = true;
+        } else if (college && (college.includes('<') || college.includes('>'))) {
+          showFieldError('collegeField', 'collegeError', 'Invalid characters (< or >) not allowed in College Name field');
+          showPopup("Invalid characters (< or >) not allowed in College Name field!", "error");
+          hasError = true;
+        }
+      }
+     
+      // Coupon code validation (if provided and editable)
+      if (!hasError && couponField && couponField.value.trim() !== '') {
+        // Basic client-side check (server will validate fully)
+        const coupon = couponField.value.trim();
+        if (coupon.length > 50) {
+          showFieldError('couponField', 'couponError', 'Coupon code cannot exceed 50 characters');
+          showPopup("Coupon code cannot exceed 50 characters!", "error");
+          hasError = true;
+        } else if (coupon.includes('<') || coupon.includes('>')) {
+          showFieldError('couponField', 'couponError', 'Invalid characters (< or >) not allowed in Coupon Code field');
+          showPopup("Invalid characters (< or >) not allowed in Coupon Code field!", "error");
+          hasError = true;
+        }
+      }
+     
+      // About Me word count validation (if provided)
+      const aboutMe = aboutMeField.value.trim();
+      if (!hasError && aboutMe !== '') {
+        // Check for invalid characters
+        if (aboutMe.includes('<') || aboutMe.includes('>')) {
+          showFieldError('aboutMeField', 'aboutMeError', 'Invalid characters (< or >) not allowed in About Me section');
+          showPopup("Invalid characters (< or >) not allowed in About Me section!", "error");
+          hasError = true;
+        } else {
+          const wordCount = countWords(aboutMe);
+          if (wordCount > 200) {
+            showFieldError('aboutMeField', 'aboutMeError', `About Me section cannot exceed 200 words. Current count: ${wordCount} words`);
+            showPopup(`About Me section cannot exceed 200 words. Current count: ${wordCount} words!`, "error");
+            hasError = true;
+          } else if (aboutMe.length > 2000) {
+            showFieldError('aboutMeField', 'aboutMeError', 'About Me section cannot exceed 2000 characters');
+            showPopup("About Me section cannot exceed 2000 characters!", "error");
+            hasError = true;
+          }
+        }
+      }
+     
+      // Profile Picture URL validation (if provided)
+      const profilePicUrl = profilePicUrlField.value.trim();
+      if (!hasError && profilePicUrl !== '') {
+        if (!isValidURL(profilePicUrl)) {
+          showFieldError('profilePicUrlField', 'profilePicError', 'Please enter a valid URL for the profile picture');
+          showPopup("Please enter a valid URL for the profile picture!", "error");
+          hasError = true;
+        } else if (profilePicUrl.includes('<') || profilePicUrl.includes('>')) {
+          showFieldError('profilePicUrlField', 'profilePicError', 'Invalid characters (< or >) not allowed in Profile Picture URL field');
+          showPopup("Invalid characters (< or >) not allowed in Profile Picture URL field!", "error");
+          hasError = true;
+        }
+      }
+     
+      // If there are errors, prevent form submission
+      if (hasError) {
+        return false;
+      }
+     
+      // If all validations pass, form will submit
+      return true;
+    }
+   
     // Update profile progress based on filled fields
     function updateProfileProgress() {
-      let total = 6; // name, email, phone, age, college, about me, profile picture
+      let total = 6; // name, email, phone, age, college, about me
       let filled = 0;
-      
-      // Check fields in both edit mode and display mode
-      const name = document.getElementById('nameField') 
-        ? document.getElementById('nameField').value.trim() 
+     
+      const name = document.getElementById('nameField')
+        ? document.getElementById('nameField').value.trim()
         : document.getElementById('displayName')?.textContent.trim();
-      
-      const email = document.getElementById('emailField') 
-        ? document.getElementById('emailField').value.trim() 
+     
+      const email = document.getElementById('emailField')
+        ? document.getElementById('emailField').value.trim()
         : document.getElementById('displayEmail')?.textContent.trim();
-      
-      const phone = document.getElementById('phoneField') 
-        ? document.getElementById('phoneField').value.trim() 
+     
+      const phone = document.getElementById('phoneField')
+        ? document.getElementById('phoneField').value.trim()
         : document.getElementById('displayPhone')?.textContent.trim();
-      
-      const age = document.getElementById('ageField') 
-        ? document.getElementById('ageField').value.trim() 
+     
+      const age = document.getElementById('ageField')
+        ? document.getElementById('ageField').value.trim()
         : document.getElementById('displayAge')?.textContent.trim();
-      
-      const college = document.getElementById('collegeField') 
-        ? document.getElementById('collegeField').value.trim() 
+     
+      const college = document.getElementById('collegeField')
+        ? document.getElementById('collegeField').value.trim()
         : document.getElementById('displayCollege')?.textContent.trim();
-      
-      const aboutMe = document.getElementById('aboutMeField') 
-        ? document.getElementById('aboutMeField').value.trim() 
+     
+      const aboutMe = document.getElementById('aboutMeField')
+        ? document.getElementById('aboutMeField').value.trim()
         : document.querySelector('.glass-card p')?.textContent.trim();
-      
+     
       const profilePicUrl = document.getElementById('profilePicUrlField')
         ? document.getElementById('profilePicUrlField').value.trim()
         : null;
-      
+     
       if(name && name !== 'Not provided') filled++;
       if(email && email !== 'Not provided' && isValidEmail(email)) filled++;
       if(phone && phone !== 'Not provided') filled++;
       if(age && age !== 'Not provided') filled++;
       if(college && college !== 'Not provided') filled++;
       if(aboutMe && aboutMe !== 'Tell us about yourself...') filled++;
-      
-      // Check if profile picture is custom (either URL entered or image doesn't contain default)
-      const profileImage = document.getElementById('profileImage');
-      if((profilePicUrl && profilePicUrl.length > 0) || 
-         (profileImage && !profileImage.src.includes('default_profile.png'))) {
-        // Don't count profile picture in total for now, or adjust total to 7
-        // filled++;
-      }
-  
-      // Calculate and update progress
+
       const percentage = Math.round((filled / total) * 100);
       document.getElementById('profileProgressBarFill').style.width = percentage + '%';
       document.getElementById('progressPercent').textContent = percentage + '% Complete';
     }
-  
+
     // Run on page load
     window.addEventListener('DOMContentLoaded', function() {
       updateProfileProgress();
-      
+     
       // Word count functionality for About Me field
       const aboutMeField = document.getElementById('aboutMeField');
       const wordCountElement = document.getElementById('wordCount');
-      
+     
       if(aboutMeField && wordCountElement) {
         function updateWordCount() {
           const text = aboutMeField.value;
           const wordCount = countWords(text);
           wordCountElement.textContent = `(${wordCount}/200 words)`;
-          
-          if(wordCount > 200) {
+         
+          // Check for invalid characters
+          if (text.includes('<') || text.includes('>')) {
             wordCountElement.style.color = 'red';
+            showFieldError('aboutMeField', 'aboutMeError', 'Invalid characters (< or >) not allowed');
+          } else if(wordCount > 200) {
+            wordCountElement.style.color = 'red';
+            showFieldError('aboutMeField', 'aboutMeError', `Cannot exceed 200 words (current: ${wordCount})`);
           } else {
             wordCountElement.style.color = '';
+            clearFieldError('aboutMeField', 'aboutMeError');
           }
         }
-        
-        // Update word count on input
+       
         aboutMeField.addEventListener('input', updateWordCount);
-        
-        // Initialize word count on page load
         updateWordCount();
       }
-      
+     
       // Real-time validation for email field
       const emailField = document.getElementById('emailField');
       if (emailField) {
         emailField.addEventListener('input', function() {
           clearFieldError('emailField', 'emailError');
-          if (this.value.trim() && !isValidEmail(this.value.trim())) {
+          const email = this.value.trim();
+          if (email && !isValidEmail(email)) {
             showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          } else if (email && (email.includes('<') || email.includes('>'))) {
+            showFieldError('emailField', 'emailError', 'Invalid characters (< or >) not allowed in Email field');
           }
           updateProfileProgress();
         });
-        
+       
         emailField.addEventListener('blur', function() {
-          if (this.value.trim() && !isValidEmail(this.value.trim())) {
+          const email = this.value.trim();
+          if (email && !isValidEmail(email)) {
             showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
+          } else if (email && (email.includes('<') || email.includes('>'))) {
+            showFieldError('emailField', 'emailError', 'Invalid characters (< or >) not allowed in Email field');
           }
         });
       }
-      
+     
       // Real-time validation for name field
       const nameField = document.getElementById('nameField');
       if (nameField) {
         nameField.addEventListener('input', function() {
           clearFieldError('nameField', 'nameError');
+          const name = this.value.trim();
+          if (name.length < 2 || name.length > 100) {
+            // Length checks if needed, but already in submit
+          } else if (name && (name.includes('<') || name.includes('>'))) {
+            showFieldError('nameField', 'nameError', 'Invalid characters (< or >) not allowed in Name field');
+          }
           updateProfileProgress();
         });
       }
-      
+     
+      // Real-time validation for phone field
+      const phoneField = document.getElementById('phoneField');
+      if (phoneField) {
+        phoneField.addEventListener('input', function() {
+          clearFieldError('phoneField', 'phoneError');
+          const phone = this.value.trim();
+         
+          if (phone !== '') {
+            // Check if phone contains only digits
+            if (!/^\d+$/.test(phone)) {
+                showFieldError('phoneField', 'phoneError', 'Phone number must contain only digits (0-9)');
+            } else if (phone.length < 10 || phone.length > 15) {
+                showFieldError('phoneField', 'phoneError', 'Phone number must be between 10-15 digits');
+            } else if (phone.includes('<') || phone.includes('>')) {
+                showFieldError('phoneField', 'phoneError', 'Invalid characters (< or >) not allowed in Phone field');
+            }
+          }
+          updateProfileProgress();
+        });
+      }
+     
+      // Real-time validation for age field
+      const ageField = document.getElementById('ageField');
+      if (ageField) {
+        ageField.addEventListener('input', function() {
+          clearFieldError('ageField', 'ageError');
+          updateProfileProgress();
+        });
+      }
+
+      // Real-time validation for college field
+      const collegeField = document.getElementById('collegeField');
+      if (collegeField) {
+        collegeField.addEventListener('input', function() {
+          clearFieldError('collegeField', 'collegeError');
+          const college = this.value.trim();
+          if (college.length > 200) {
+            showFieldError('collegeField', 'collegeError', 'College name cannot exceed 200 characters');
+          } else if (college && (college.includes('<') || college.includes('>'))) {
+            showFieldError('collegeField', 'collegeError', 'Invalid characters (< or >) not allowed in College Name field');
+          }
+          updateProfileProgress();
+        });
+      }
+     
+      // Real-time validation for coupon field
+      const couponField = document.getElementById('couponField');
+      if (couponField) {
+        couponField.addEventListener('input', function() {
+          clearFieldError('couponField', 'couponError');
+          const coupon = this.value.trim();
+          if (coupon.length > 50) {
+            showFieldError('couponField', 'couponError', 'Coupon code cannot exceed 50 characters');
+          } else if (coupon && (coupon.includes('<') || coupon.includes('>'))) {
+            showFieldError('couponField', 'couponError', 'Invalid characters (< or >) not allowed in Coupon Code field');
+          }
+          updateProfileProgress();
+        });
+      }
+     
       // Preview profile picture as user types URL
       const urlField = document.getElementById('profilePicUrlField');
       if(urlField) {
         urlField.addEventListener('input', function() {
+          clearFieldError('profilePicUrlField', 'profilePicError');
           const imageUrl = this.value.trim();
           if(imageUrl) {
-            // Try to load the image to check if it's valid
-            const img = new Image();
-            img.onload = function() {
-              document.getElementById('profileImage').src = imageUrl;
-            };
-            img.onerror = function() {
-              // If image fails to load, show default
-              document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
-            };
-            img.src = imageUrl;
+            if (!isValidURL(imageUrl)) {
+              showFieldError('profilePicUrlField', 'profilePicError', 'Please enter a valid URL for the profile picture');
+            } else if (imageUrl.includes('<') || imageUrl.includes('>')) {
+              showFieldError('profilePicUrlField', 'profilePicError', 'Invalid characters (< or >) not allowed in Profile Picture URL field');
+            } else {
+              const img = new Image();
+              img.onload = function() {
+                document.getElementById('profileImage').src = imageUrl;
+              };
+              img.onerror = function() {
+                document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
+              };
+              img.src = imageUrl;
+            }
           } else {
-            // Reset to default if empty
             document.getElementById('profileImage').src = "{{ url_for('static', filename='default_profile.png') }}";
           }
           updateProfileProgress();
         });
       }
-      
+     
       // Menu toggle for mobile
       const menuToggle = document.querySelector('.menu-toggle');
       const navigation = document.getElementById('side-navigation');
-      
+     
       if(menuToggle) {
         menuToggle.addEventListener('click', function() {
           menuToggle.classList.toggle('active');
           navigation.classList.toggle('active');
         });
       }
-      
+     
       // Show/hide scroll-to-top button
       window.addEventListener('scroll', function() {
         const scrollBtn = document.getElementById('scrollToTop');
@@ -512,7 +799,7 @@
         }
       });
     });
-  
+
     // Scroll to top function
     function scrollToTop() {
       window.scrollTo({
@@ -520,94 +807,7 @@
         behavior: 'smooth'
       });
     }
-  
-    // Form validation
-    const editForm = document.getElementById('editProfileForm');
-    if(editForm) {
-      editForm.addEventListener('submit', function(e) {
-        const nameField = document.getElementById('nameField');
-        const emailField = document.getElementById('emailField');
-        const phoneField = document.getElementById('phoneField');
-        const ageField = document.getElementById('ageField');
-        const aboutMeField = document.getElementById('aboutMeField');
-        const couponCodeField = document.querySelector('input[name="coupon_code"]');
-        
-        let hasError = false;
-        
-        // Clear all previous errors
-        clearFieldError('nameField', 'nameError');
-        clearFieldError('emailField', 'emailError');
-        clearFieldError('phoneField', 'phoneError');
-        clearFieldError('ageField', 'ageError');
-        clearFieldError('aboutMeField', 'aboutMeError');
-        
-        // Name validation
-        if (!nameField.value.trim()) {
-          e.preventDefault();
-          showFieldError('nameField', 'nameError', 'Name is required');
-          hasError = true;
-        } else if (nameField.value.trim().length < 2) {
-          e.preventDefault();
-          showFieldError('nameField', 'nameError', 'Name must be at least 2 characters long');
-          hasError = true;
-        } else if (nameField.value.trim().length > 100) {
-          e.preventDefault();
-          showFieldError('nameField', 'nameError', 'Name cannot exceed 100 characters');
-          hasError = true;
-        }
-        
-        // Email validation
-        if (!emailField.value.trim()) {
-          e.preventDefault();
-          showFieldError('emailField', 'emailError', 'Email is required');
-          hasError = true;
-        } else if (!isValidEmail(emailField.value.trim())) {
-          e.preventDefault();
-          showFieldError('emailField', 'emailError', 'Please enter a valid email address (name@domain.com)');
-          hasError = true;
-        }
-        
-        // Phone validation (if provided)
-        if(phoneField.value.trim() !== '' && !hasError) {
-          const phoneRegex = /^\d{10,15}$/;
-          if(!phoneRegex.test(phoneField.value.trim())) {
-            e.preventDefault();
-            showFieldError('phoneField', 'phoneError', 'Please enter a valid phone number (10-15 digits)');
-            hasError = true;
-          }
-        }
-        
-        // Age validation (if provided)
-        if(ageField.value.trim() !== '' && !hasError) {
-          const age = parseInt(ageField.value);
-          if(isNaN(age) || age < 18 || age > 80) {
-            e.preventDefault();
-            showFieldError('ageField', 'ageError', 'Please enter a valid age between 18 and 80');
-            hasError = true;
-          }
-        }
-        
-        // About Me word count validation (if provided)
-        if(aboutMeField.value.trim() !== '' && !hasError) {
-          const wordCount = countWords(aboutMeField.value);
-          if(wordCount > 200) {
-            e.preventDefault();
-            showFieldError('aboutMeField', 'aboutMeError', `About Me section cannot exceed 200 words. Current count: ${wordCount} words`);
-            hasError = true;
-          }
-        }
-        
-        // If there are errors, prevent form submission and show flash message
-        if(hasError) {
-          showFlashMessage('Please correct the errors in the form before submitting', 'danger');
-          return false;
-        }
-        
-        // If all validations pass, form will submit
-        return true;
-      });
-    }
-  
+
     // Auto-hide flash messages after 5 seconds
     setTimeout(function() {
       const flashMessages = document.querySelectorAll('.flash-message');
@@ -620,7 +820,6 @@
       });
     }, 5000);
   </script>
-
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
