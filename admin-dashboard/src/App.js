@@ -52,7 +52,7 @@ import {
   Select, 
   InputLabel,
   Skeleton,
-  FormControl, 
+  FormControl,
 } from "@mui/material";
 import {useCallback, useRef } from "react";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -559,95 +559,105 @@ const Dashboard = () => {
         job_seekers: 0,
         companies: 0,
         jobs: 0,
-        applications: 0
+        applications: 0,
     });
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [range, setRange] = useState('weekly'); // 'weekly' | 'monthly' | 'yearly' | 'ten_years'
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for faster initial load
-            
-            const response = await fetch(`${API_BASE_URL}/dashboard`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                credentials: 'include',
-                signal: controller.signal
-            });
-            
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+            const response = await fetch(
+                `${API_BASE_URL}/dashboard?range=${range}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                    },
+                    credentials: 'include',
+                    signal: controller.signal,
+                }
+            );
+
             clearTimeout(timeoutId);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             const transformedMetrics = {
                 job_seekers: data.metrics?.users || data.metrics?.job_seekers || 0,
                 companies: data.metrics?.companies || 0,
                 jobs: data.metrics?.jobs || 0,
-                applications: data.metrics?.applications || 0
+                applications: data.metrics?.applications || 0,
             };
-            
+
             setMetrics(transformedMetrics);
-            setChartData(data.trends?.map(item => ({ 
-                x: item.x, 
-                applications: item.applications, 
-                registrations: item.logins 
-            })) || []);
-            
+            setChartData(
+                data.trends?.map((item) => ({
+                    x: item.x, // backend: day name / Week N / month abbr / year
+                    applications: item.applications,
+                    registrations: item.logins,
+                })) || []
+            );
         } catch (error) {
-            console.error("Error fetching dashboard data:", error);
+            console.error('Error fetching dashboard data:', error);
             setError(error.message);
-            
-            // Set default values on error
+
             setMetrics({
                 job_seekers: 0,
                 companies: 0,
                 jobs: 0,
-                applications: 0
+                applications: 0,
             });
             setChartData([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [range]);
 
     useEffect(() => {
-        // Immediate data fetch on component mount
+        // Fetch on mount and whenever range changes
         fetchDashboardData();
-        
-        // Set up auto-refresh every 30 seconds
+
+        // Auto-refresh every 30 seconds with current range
         const intervalId = setInterval(fetchDashboardData, 30000);
-        
-        // Cleanup interval on component unmount
         return () => clearInterval(intervalId);
-    }, []);
+    }, [fetchDashboardData]);
 
     const metricColors = [
         theme.palette.primary.main,
         theme.palette.secondary.main,
         '#4caf50',
-        '#9c27b0'
+        '#9c27b0',
     ];
 
     const formatMetricName = (key) => {
-        return key === 'job_seekers' ? 'JOB SEEKERS' : key.replace("_", " ").toUpperCase();
+        return key === 'job_seekers'
+            ? 'JOB SEEKERS'
+            : key.replace('_', ' ').toUpperCase();
     };
 
-    // Show loading state only for initial load
-    if (loading && Object.values(metrics).every(val => val === 0)) {
+    // Initial loading state
+    if (loading && Object.values(metrics).every((val) => val === 0)) {
         return (
-            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <Box
+                p={3}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="200px"
+            >
                 <Box textAlign="center">
                     <CircularProgress size={40} />
                     <Typography variant="body1" sx={{ mt: 1 }}>
@@ -658,24 +668,27 @@ const Dashboard = () => {
         );
     }
 
-    // Show error state with retry option
-    if (error && Object.values(metrics).every(val => val === 0)) {
+    // Initial error state
+    if (error && Object.values(metrics).every((val) => val === 0)) {
         return (
-            <Box p={3} display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <Box
+                p={3}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+            >
                 <Box textAlign="center">
                     <Typography variant="h6" color="error" sx={{ mb: 2 }}>
                         Failed to load dashboard data
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 3 }}
+                    >
                         {error}
                     </Typography>
-                    <Button 
-                        variant="contained" 
-                        onClick={fetchDashboardData}
-                        disabled={loading}
-                    >
-                        {loading ? 'Retrying...' : 'Retry'}
-                    </Button>
                 </Box>
             </Box>
         );
@@ -683,7 +696,7 @@ const Dashboard = () => {
 
     return (
         <Box p={3}>
-            {/* Add refresh indicator */}
+            {/* Small refresh indicator while background updates run */}
             {loading && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                     <CircularProgress size={20} />
@@ -692,32 +705,54 @@ const Dashboard = () => {
                     </Typography>
                 </Box>
             )}
-            
+
+            {/* Metric cards (unchanged design) */}
             <Grid container spacing={3}>
                 {Object.entries(metrics).map(([key, value], index) => (
-                    <Grid item xs={12} sm={6} md={3} key={key}>
-                        <Card elevation={3} sx={{ 
-                            background: metricColors[index],
-                            color: 'white',
-                            borderRadius: 3,
-                            overflow: 'visible',
-                            '&:hover': { transform: 'translateY(-4px)', transition: 'transform 0.3s' }
-                        }}>
+                    <Grid item xs={12} sm={6} md={6} lg={3} key={key}>
+                        <Card
+                            elevation={3}
+                            sx={{
+                                background: metricColors[index],
+                                color: 'white',
+                                borderRadius: 3,
+                                overflow: 'visible',
+                                '&:hover': {
+                                    transform: 'translateY(-4px)',
+                                    transition: 'transform 0.3s',
+                                },
+                            }}
+                        >
                             <CardContent>
-                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Box
+                                    display="flex"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                >
                                     <div>
-                                        <Typography variant="subtitle2" sx={{ opacity: 0.9, letterSpacing: 1 }}>
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{
+                                                opacity: 0.9,
+                                                letterSpacing: 1,
+                                            }}
+                                        >
                                             {formatMetricName(key)}
                                         </Typography>
-                                        <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
+                                        <Typography
+                                            variant="h3"
+                                            sx={{ fontWeight: 700, mt: 1 }}
+                                        >
                                             {value}
                                         </Typography>
                                     </div>
-                                    <Box sx={{
-                                        bgcolor: 'rgba(255,255,255,0.2)',
-                                        p: 1.5,
-                                        borderRadius: 3
-                                    }}>
+                                    <Box
+                                        sx={{
+                                            bgcolor: 'rgba(255,255,255,0.2)',
+                                            p: 1.5,
+                                            borderRadius: 3,
+                                        }}
+                                    >
                                         {metricIcons[key]}
                                     </Box>
                                 </Box>
@@ -729,49 +764,73 @@ const Dashboard = () => {
 
             <Divider sx={{ my: 4, bgcolor: 'divider', height: 2 }} />
 
-            <Box sx={{ 
-                height: 400,
-                bgcolor: 'background.paper',
-                borderRadius: 3,
-                p: 3,
-                boxShadow: 1
-            }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            {/* Chart card – slightly taller, no explicit Refresh button */}
+            <Box
+                sx={{
+                    height: 460,
+                    bgcolor: 'background.paper',
+                    borderRadius: 3,
+                    p: 3,
+                    boxShadow: 1,
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 3,
+                    }}
+                >
                     <Typography variant="h6" sx={{ color: 'text.primary' }}>
                         Activity Trends
                     </Typography>
-                    <Button 
-                        size="small" 
-                        onClick={fetchDashboardData}
-                        disabled={loading}
-                        sx={{ textTransform: 'none' }}
-                    >
-                        {loading ? 'Refreshing...' : 'Refresh'}
-                    </Button>
+
+                    <FormControl size="small" sx={{ minWidth: 120, maxWidth: 240 }}>
+                        <InputLabel id="range-label">Range</InputLabel>
+                        <Select
+                            labelId="range-label"
+                            value={range}
+                            label="Range"
+                            onChange={(e) => setRange(e.target.value)}
+                        >
+                            <MenuItem value="weekly">This Week</MenuItem>
+                            <MenuItem value="monthly">This Month (4 Weeks)</MenuItem>
+                            <MenuItem value="yearly">This Year</MenuItem>
+                            <MenuItem value="ten_years">Last 10 Years</MenuItem>
+                        </Select>
+                    </FormControl>
                 </Box>
-                <ResponsiveContainer width="100%" height="90%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                        <XAxis 
-                            dataKey="x" 
-                            label={{ 
-                                value: "Date", 
-                                position: "bottom",
-                                offset: 0,
-                                fill: theme.palette.text.secondary
+
+                <ResponsiveContainer width="100%" height="88%">
+                    <LineChart
+                        data={chartData}
+                        margin={{ top: 10, right: 30, left: 20, bottom: 40 }}
+                    >
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke={theme.palette.divider}
+                        />
+                        <XAxis
+                            dataKey="x"
+                            label={{
+                                value: 'Date',
+                                position: 'bottom',
+                                offset: 10,
+                                fill: theme.palette.text.secondary,
                             }}
                             tick={{ fill: theme.palette.text.secondary }}
                         />
-                        <YAxis 
-                            label={{ 
-                                value: "Activity", 
-                                angle: -90, 
-                                position: "left",
-                                fill: theme.palette.text.secondary
+                        <YAxis
+                            label={{
+                                value: 'Activity',
+                                angle: -90,
+                                position: 'left',
+                                fill: theme.palette.text.secondary,
                             }}
                             tick={{ fill: theme.palette.text.secondary }}
                         />
-                        <Tooltip 
+                        <Tooltip
                             contentStyle={{
                                 backgroundColor: theme.palette.background.paper,
                                 color: theme.palette.text.primary,
@@ -779,25 +838,30 @@ const Dashboard = () => {
                                 borderColor: theme.palette.divider,
                                 boxShadow: theme.shadows[3],
                             }}
-                            cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
+                            cursor={{
+                                stroke: theme.palette.action.hover,
+                                strokeWidth: 2,
+                            }}
                         />
-                        <Legend 
-                            wrapperStyle={{ paddingTop: 20 }}
+                        <Legend
+                            wrapperStyle={{
+                                paddingTop: 35,
+                            }}
                             iconSize={16}
                             iconType="circle"
                         />
-                        <Line 
-                            type="monotone" 
+                        <Line
+                            type="monotone"
                             dataKey="applications"
                             name="Applications"
-                            stroke={theme.palette.primary.main} 
+                            stroke={theme.palette.primary.main}
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{ r: 3 }}
                         />
-                        <Line 
-                            type="monotone" 
-                            dataKey="registrations" 
+                        <Line
+                            type="monotone"
+                            dataKey="registrations"
                             name="Registrations"
                             stroke="#388e3c"
                             strokeWidth={2}
@@ -810,6 +874,8 @@ const Dashboard = () => {
         </Box>
     );
 };
+
+
 
 
 // This component displays details in a popup.

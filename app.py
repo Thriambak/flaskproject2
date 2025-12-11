@@ -21,6 +21,8 @@ from sqlalchemy import or_
 from datetime import datetime
 import pytz
 import re
+import calendar
+
 
 app = Flask(__name__)
 
@@ -941,6 +943,7 @@ def update_company_ban_status(id):
         return jsonify({'message': f'Error updating company: {str(e)}'}), 500
 
 # ========== DASHBOARD API ==========
+'''
 @app.route('/dashboard', methods=['GET'])
 def get_dashboard_data():
     total_users = User.query.count()
@@ -1005,8 +1008,129 @@ def get_dashboard_data():
         },
         "trends": trends
     })
+'''
 
+@app.route('/dashboard', methods=['GET'])
+def get_dashboard_data():
+    total_users = User.query.count()
+    total_companies = Company.query.count()
+    total_jobs = Job.query.count()
+    total_applications = JobApplication.query.count()
 
+    range_type = request.args.get('range', 'weekly')  # weekly | monthly | yearly | ten_years
+
+    trends = []
+
+    # Asia/Kolkata time
+    kolkata_tz = pytz.timezone('Asia/Kolkata')
+    now_kolkata = datetime.now(kolkata_tz)
+
+    def get_counts_for_range(start_naive: datetime, end_naive: datetime):
+        applications_count = JobApplication.query.filter(
+            JobApplication.date_applied >= start_naive,
+            JobApplication.date_applied <= end_naive,
+        ).count()
+
+        logins_count = Login.query.filter(
+            Login.created_at >= start_naive,
+            Login.created_at <= end_naive,
+        ).count()
+
+        return applications_count, logins_count
+
+    if range_type == 'monthly':
+        # Current month, 4 weekly buckets (1–7, 8–14, 15–21, 22–end)
+        year = now_kolkata.year
+        month = now_kolkata.month
+        days_in_month = calendar.monthrange(year, month)[1]
+
+        for week_idx in range(4):
+            start_day = 1 + week_idx * 7
+            if start_day > days_in_month:
+                break
+            end_day = min(start_day + 6, days_in_month)
+
+            start_dt = datetime(year, month, start_day, 0, 0, 0, 0)
+            end_dt = datetime(year, month, end_day, 23, 59, 59, 999999)
+
+            applications_count, logins_count = get_counts_for_range(start_dt, end_dt)
+
+            trends.append({
+                "x": f"Week {week_idx + 1}",   # Week 1..4
+                "applications": applications_count,
+                "logins": logins_count,
+            })
+
+    elif range_type == 'yearly':
+        # Current year, aggregated per month
+        year = now_kolkata.year
+
+        for month in range(1, 13):
+            start_of_month = datetime(year, month, 1, 0, 0, 0, 0)
+            if month == 12:
+                end_of_month = datetime(year + 1, 1, 1, 0, 0, 0, 0) - timedelta(microseconds=1)
+            else:
+                end_of_month = datetime(year, month + 1, 1, 0, 0, 0, 0) - timedelta(microseconds=1)
+
+            applications_count, logins_count = get_counts_for_range(start_of_month, end_of_month)
+
+            trends.append({
+                "x": calendar.month_abbr[month],  # Jan, Feb, ...
+                "applications": applications_count,
+                "logins": logins_count,
+            })
+
+    elif range_type == 'ten_years':
+        # Last 10 years (inclusive), aggregated per year
+        current_year = now_kolkata.year
+        start_year = current_year - 9
+
+        for year in range(start_year, current_year + 1):
+            start_of_year = datetime(year, 1, 1, 0, 0, 0, 0)
+            end_of_year = datetime(year + 1, 1, 1, 0, 0, 0, 0) - timedelta(microseconds=1)
+
+            applications_count, logins_count = get_counts_for_range(start_of_year, end_of_year)
+
+            trends.append({
+                "x": str(year),  # e.g., "2016"
+                "applications": applications_count,
+                "logins": logins_count,
+            })
+
+    else:
+        # Default: weekly – current calendar week (Mon–Sun)
+        days_since_sunday = (now_kolkata.weekday() + 1) % 7
+        start_of_week_kolkata = now_kolkata - timedelta(days=days_since_sunday)
+
+        for i in range(7):
+            day_kolkata = start_of_week_kolkata + timedelta(days=i)
+
+            start_of_day = datetime(
+                day_kolkata.year, day_kolkata.month, day_kolkata.day,
+                0, 0, 0, 0,
+            )
+            end_of_day = datetime(
+                day_kolkata.year, day_kolkata.month, day_kolkata.day,
+                23, 59, 59, 999999,
+            )
+
+            applications_count, logins_count = get_counts_for_range(start_of_day, end_of_day)
+
+            trends.append({
+                "x": day_kolkata.strftime("%a"),  # Sun, Mon, ... Sat
+                "applications": applications_count,
+                "logins": logins_count,
+            })
+
+    return jsonify({
+        "metrics": {
+            "users": total_users,
+            "companies": total_companies,
+            "jobs": total_jobs,
+            "applications": total_applications,
+        },
+        "trends": trends,
+    })
 
 if __name__ == "__main__":
     with app.app_context():
