@@ -97,51 +97,77 @@
             'college-name', 'contact-email', 'college-description', 'college-address',
             'college-logo', 'college-website'
         ];
-
+    
+        // -------------------- SESSION STORAGE --------------------
         function saveProfileToSession() {
             const formData = {};
             profileFormFields.forEach(fieldId => {
                 const element = document.getElementById(fieldId);
-                if (element) {
-                    formData[fieldId] = element.value;
-                }
+                if (element) formData[fieldId] = element.value;
             });
             sessionStorage.setItem('collegeProfileFormData', JSON.stringify(formData));
         }
-
+    
         function loadProfileFromSession() {
             const savedData = sessionStorage.getItem('collegeProfileFormData');
             if (savedData) {
                 const formData = JSON.parse(savedData);
                 profileFormFields.forEach(fieldId => {
                     const element = document.getElementById(fieldId);
-                    // Only load data if the field is empty to avoid overwriting db values on refresh
                     if (element && !element.value && formData[fieldId]) {
                         element.value = formData[fieldId];
                     }
                 });
             }
         }
-
+    
         function clearProfileSessionData() {
             sessionStorage.removeItem('collegeProfileFormData');
         }
-
-        // Add event listeners to save data on input
+    
         profileFormFields.forEach(fieldId => {
             const element = document.getElementById(fieldId);
             if (element) {
                 element.addEventListener('input', saveProfileToSession);
             }
         });
-
-        // Load data when the page is ready
+    
         document.addEventListener('DOMContentLoaded', loadProfileFromSession);
-
+    
+        // -------------------- POPUP MESSAGE --------------------
+        function showPopup(message, type) {
+            if (!message) return;
+            var popup = document.getElementById("popup-message");
+            popup.innerHTML = message;
+            popup.className = "popup " + type;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 3000);
+        }
+    
+        // -------------------- SAFETY HELPERS --------------------
+        function validateEmailStrict(value) {
+            return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
+        }
+        function containsScript(value) {
+            return /<\s*script[\s\S]*?>[\s\S]*?<\s*\/\s*script\s*>/i.test(value);
+        }
+        function containsDangerousProtocols(value) {
+            return /(javascript\s*:|data\s*:)/i.test(value);
+        }
+        function hasMultipleUrls(url) {
+            return /\s/.test(url);
+        }
+        function isDangerousUrl(url) {
+            return /^(javascript:|data:)/i.test(url);
+        }
+        function isHttpUrl(url) {
+            return /^https?:\/\//i.test(url);
+        }
+    
+        // -------------------- INITIAL FORM SNAPSHOT --------------------
         let initialFormData = {};
-
+    
         window.onload = function() {
-            // Store initial form values
             initialFormData = {
                 "college-name": document.getElementById("college-name").value.trim(),
                 "contact-email": document.getElementById("contact-email").value.trim(),
@@ -151,19 +177,11 @@
                 "college-logo": document.getElementById("college-logo").value.trim()
             };
         };
-
-        function showPopup(message, type) {
-            if (!message) return; // Don't show popup if message is empty
-            var popup = document.getElementById("popup-message");
-            popup.innerHTML = message;
-            popup.className = "popup " + type;
-            popup.style.display = "block";
-            setTimeout(() => { popup.style.display = "none"; }, 3000);
-        }
-
+    
+        // -------------------- MAIN VALIDATION --------------------
         function validateForm() {
             let changed = false;
-
+    
             let currentFormData = {
                 "college-name": document.getElementById("college-name").value.trim(),
                 "contact-email": document.getElementById("contact-email").value.trim(),
@@ -172,85 +190,128 @@
                 "college-website": document.getElementById("college-website").value.trim(),
                 "college-logo": document.getElementById("college-logo").value.trim()
             };
-
+    
+            // Detect changes
             for (let key in currentFormData) {
                 if (currentFormData[key] !== initialFormData[key]) {
                     changed = true;
                     break;
                 }
             }
-
+    
             if (!changed) {
-                return false; // Prevent form submission if no changes
-            }
-
-            // Form validation
-            if (currentFormData["college-name"].length < 3 || currentFormData["college-name"].length > 255) {
-                showPopup("College Name must be between 3-255 characters!", "error");
+                showPopup("No changes detected.", "info");
                 return false;
             }
-            if (!currentFormData["contact-email"].match(/^\S+@\S+\.\S+$/)) {
+    
+            // -------------------- Security Checks --------------------
+            const name = currentFormData["college-name"];
+            const desc = currentFormData["college-description"];
+            const addr = currentFormData["college-address"];
+    
+            if (containsScript(name) || containsScript(desc) || containsScript(addr) ||
+                containsDangerousProtocols(name) || containsDangerousProtocols(desc) || containsDangerousProtocols(addr)) {
+                showPopup("Dangerous content detected. Scripts or harmful URLs are not allowed.", "error");
+                return false;
+            }
+    
+            // -------------------- Field Rules --------------------
+            if (name.length < 3 || name.length > 100) {
+                showPopup("College Name must be between 3-100 characters!", "error");
+                return false;
+            }
+    
+            if (!validateEmailStrict(currentFormData["contact-email"])) {
                 showPopup("Invalid email format!", "error");
                 return false;
             }
-            if (currentFormData["college-website"] && !currentFormData["college-website"].match(/^https?:\/\//)) {
-                showPopup("Please enter a valid website URL (e.g., https://example.com).", "error");
-                return false;
+    
+            const website = currentFormData["college-website"];
+            if (website) {
+                if (hasMultipleUrls(website)) {
+                    showPopup("Only one website URL is allowed.", "error");
+                    return false;
+                }
+                if (!isHttpUrl(website)) {
+                    showPopup("Website must start with http:// or https://.", "error");
+                    return false;
+                }
+                if (isDangerousUrl(website)) {
+                    showPopup("Dangerous URL protocol is not allowed.", "error");
+                    return false;
+                }
             }
-            if (currentFormData["college-description"].length > 1000) {
+    
+            const logo = currentFormData["college-logo"];
+            if (logo) {
+                if (hasMultipleUrls(logo)) {
+                    showPopup("Only one logo URL is allowed.", "error");
+                    return false;
+                }
+                if (!isHttpUrl(logo)) {
+                    showPopup("Logo URL must start with http:// or https://.", "error");
+                    return false;
+                }
+                if (isDangerousUrl(logo)) {
+                    showPopup("Dangerous logo URL protocol is not allowed.", "error");
+                    return false;
+                }
+            }
+    
+            if (desc.length > 1000) {
                 showPopup("Description must be under 1000 characters!", "error");
                 return false;
             }
-            if (currentFormData["college-address"].length > 500) {
+    
+            if (addr.length > 500) {
                 showPopup("Address must be under 500 characters!", "error");
                 return false;
             }
-
+    
             clearProfileSessionData();
-            return true; // Allow form submission
+            return true;
         }
 
         {% if message and request.method == 'POST' %}
             showPopup("{{ message }}", "{{ message_type }}");
         {% endif %}
-
-        // Menu toggle function
+    
+        // -------------------- MENU TOGGLE (KEEPED) --------------------
         document.querySelector('.menu-toggle').addEventListener('click', function() {
             document.getElementById('side-navigation').classList.toggle('active');
             document.querySelector('.menu-toggle').classList.toggle('active');
         });
-
+    
         // Close menu when clicking outside
         document.addEventListener('click', function(event) {
             const sideNav = document.getElementById('side-navigation');
             const menuToggle = document.querySelector('.menu-toggle');
-            
-            if (sideNav.classList.contains('active') && 
-                !sideNav.contains(event.target) && 
+    
+            if (sideNav.classList.contains('active') &&
+                !sideNav.contains(event.target) &&
                 !menuToggle.contains(event.target)) {
                 sideNav.classList.remove('active');
                 menuToggle.classList.remove('active');
             }
         });
-
+    
+        // -------------------- DROPDOWN TOGGLE (KEEPED) --------------------
         window.addEventListener('click', function(event) {
             const dropdown = document.querySelector('.profile-dropdown');
-            const dropdownBtn = document.querySelector('.profile-icon-btn');
-            
             if (!dropdown.contains(event.target)) {
                 const dropdownContent = document.querySelector('.dropdown-content');
-                if (dropdownContent.style.display === 'block') {
-                    dropdownContent.style.display = 'none';
-                }
+                dropdownContent.style.display = 'none';
             }
         });
-        
-        // Toggle dropdown on click (alternative to hover)
+    
         document.querySelector('.profile-icon-btn').addEventListener('click', function(event) {
             event.stopPropagation();
             const dropdownContent = document.querySelector('.dropdown-content');
-            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+            dropdownContent.style.display =
+                dropdownContent.style.display === 'block' ? 'none' : 'block';
         });
+    
     </script>
+    
 </body>
 </html>
