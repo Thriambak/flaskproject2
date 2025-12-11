@@ -401,7 +401,7 @@ def get_companies():
     response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
     return response
 
-# Updated route in app.py
+'''# Updated route in app.py
 @app.route('/companies', methods=['POST'])
 def create_company():
     data = request.json
@@ -443,6 +443,158 @@ def create_company():
     except Exception as e:
         db.session.rollback()  # Rollback in case of error
         return jsonify({"error": f"Error creating company: {str(e)}"}), 500
+'''
+import requests
+
+def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
+    try:
+        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
+        resp = requests.head(url, allow_redirects=True, timeout=timeout)
+        if resp.status_code >= 400:
+            # try GET once more for sites that treat HEAD oddly
+            resp = requests.get(url, allow_redirects=True, timeout=timeout)
+        # treat 2xx / 3xx as “exists”
+        return 200 <= resp.status_code < 400
+    except requests.RequestException:
+        return False
+
+def sanitize_text(value: str) -> str:
+    if not value:
+        return ''
+    # Remove <script>...</script>
+    value = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', value,
+                   flags=re.IGNORECASE | re.DOTALL)
+    # Remove javascript: or data: URLs inside attributes or text
+    value = re.sub(r'javascript\s*:', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'data\s*:[^ \t\r\n]*', '', value, flags=re.IGNORECASE)
+    # Remove on* event handlers
+    value = re.sub(r'on\w+\s*=\s*"[^\"]*"', '', value, flags=re.IGNORECASE)
+    value = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', value, flags=re.IGNORECASE)
+    value = value.replace('<', '').replace('>', '')
+    return value.strip()
+
+@app.route('/companies', methods=['POST'])
+def create_company():
+    data = request.json or {}
+
+    try:
+        raw_company_name = (data.get('company_name') or '').strip()
+        raw_email = (data.get('email') or '').strip()
+        raw_address = (data.get('address') or '').strip()
+        raw_website = (data.get('website') or '').strip()
+        raw_logo = (data.get('logo') or '').strip()
+        raw_description = (data.get('description') or '').strip()
+        industry = (data.get('industry') or '').strip()
+        password = data.get('password') or ''
+        is_banned = data.get('is_banned', False)
+
+        # Always define website/logo to avoid UnboundLocalError
+        website = raw_website.strip() if raw_website else ''
+        logo = raw_logo.strip() if raw_logo else ''
+
+        # ---- Reject raw dangerous content (like company_post_new_job) ----
+        dangerous_raw_fields = [raw_company_name, raw_address, raw_description]
+        if any(
+            re.search(r'<\s*script[\s\S]*?>[\s\S]*?<\s*/\s*script\s*>', f, re.IGNORECASE) or
+            re.search(r'(javascript\s*:|data\s*:)', f, re.IGNORECASE)
+            for f in dangerous_raw_fields if f
+        ):
+            return jsonify({
+                "message": "Dangerous content is not allowed in text fields."
+            }), 400
+
+        # ---- Sanitise text ----
+        company_name = sanitize_text(raw_company_name)
+        address = sanitize_text(raw_address)
+        description = sanitize_text(raw_description)
+
+        # ---- Basic required checks ----
+        if not company_name:
+            return jsonify({
+                "message": "Company Name is required."
+            }), 400
+
+        if len(company_name) < 3 or len(company_name) > 100:
+            return jsonify({"message": "Company Name must be between 3-100 characters!"}), 400
+
+        if not raw_email:
+            return jsonify({"message": "Email address is required."}), 400
+
+        if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', raw_email):
+            return jsonify({"message": "Invalid email format!"}), 400
+
+        if not password:
+            return jsonify({"message": "Password is required."}), 400
+
+        if len(description) > 1000:
+            return jsonify({"message": "Description must be under 1000 characters!"}), 400
+
+        if len(address) > 500:
+            return jsonify({"message": "Address must be under 500 characters!"}), 400
+
+        # ---- Website URL checks (optional field) ----
+        if website:
+            if re.search(r'\s', website):
+                return jsonify({"message": "Please enter only one website URL."}), 400
+
+            # Must start with http/https
+            if not re.match(r'^https?', website, re.IGNORECASE):
+                return jsonify({"message": "Website URL must start with http or https."}), 400
+            # Block javascript:/data:
+            if re.match(r'^(javascript|data)', website, re.IGNORECASE):
+                return jsonify({"message": "Website URL scheme is not allowed."}), 400
+            # Optional ping
+            if website and not url_seems_reachable(website):
+                return jsonify({"message": "Website URL could not be reached. Please check the link."}), 400
+
+        # ---- Logo URL checks (optional field) ----
+        if logo:
+            # Single URL only
+            if re.search(r'\s', logo):
+                return jsonify({"message": "Please enter only one logo URL."}), 400
+            if not re.match(r'^https?', logo, re.IGNORECASE):
+                return jsonify({"message": "Logo URL must start with http or https."}), 400
+            if re.match(r'^(javascript|data)', logo, re.IGNORECASE):
+                return jsonify({"message": "Logo URL scheme is not allowed."}), 400
+            if logo and not url_seems_reachable(logo):
+                return jsonify({"message": "Logo URL could not be reached. Please check the link."}), 400
+
+        # ---- Create Login entry ----
+        new_login = Login(
+            username=company_name,
+            role='company'
+        )
+        new_login.set_password(password)
+        db.session.add(new_login)
+        db.session.flush()  # get new_login.id
+
+        # --- create Company record with correct column names ---
+        new_company = Company(
+            login_id=new_login.id,
+            company_name=company_name,
+            email=raw_email,
+            address=address,
+            website=website,
+            logo=logo,
+            description=description,
+            industry=industry,
+            is_banned=is_banned,
+        )
+
+        db.session.add(new_company)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Company created successfully!",
+            "id": str(new_company.id),
+            "login_id": str(new_login.id),
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        # log for debugging
+        print(f"ERROR /companies POST: {e}")
+        return jsonify({"message": f"Error creating company"}), 500 # : {str(e)}
 
 @app.route('/companies/<uuid:company_id>', methods=['PUT'])
 def update_company(company_id):

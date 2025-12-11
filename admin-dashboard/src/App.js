@@ -1119,6 +1119,33 @@ const industryOptions = [
   "Activities of Households as Employers",
   "Activities of Extraterritorial Organizations and Bodies"
 ];
+
+// --- Shared safety helpers like profile form ---
+
+const containsScript = (value = '') =>
+    /<\s*script[\s\S]*?>[\s\S]*?<\s*\/\s*script\s*>/i.test(value);
+
+const containsDangerousProtocols = (value = '') =>
+    /(javascript\s*:|data\s*:)/i.test(value);
+
+const isDangerousUrl = (url = '') =>
+    /^(javascript:|data:)/i.test(url);
+
+const hasMultipleUrls = (url = '') =>
+    /\s/.test(url);
+
+const isHttpUrl = (url = '') =>
+    /^https?:\/\//i.test(url);
+
+const isValidURL = (url = '') => {
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 const AddCompanyDialog = ({ open, handleClose }) => {
     const [create] = useCreate();
     const notify = useNotify();
@@ -1160,11 +1187,18 @@ const AddCompanyDialog = ({ open, handleClose }) => {
 
     const checkCompanyNameExists = async (companyName) => {
         try {
-            const { data } = await dataProvider.getList('companies', { pagination: { page: 1, perPage: 1000 }, sort: { field: 'id', order: 'ASC' }, filter: {} });
-            return data.some(company => company.company_name.toLowerCase() === companyName.toLowerCase());
+            const { data } = await dataProvider.getList('companies', {
+                pagination: { page: 1, perPage: 1000 },
+                sort: { field: 'id', order: 'ASC' },
+                filter: {},
+            });
+            return data.some(
+                (company) =>
+                    (company.company_name || '').toLowerCase() === companyName.toLowerCase()
+            );
         } catch (error) {
             console.error('Error checking company name:', error);
-            throw new Error('Unable to verify company name. Please try again.');
+            return false; // don't block creation if check fails
         }
     };
     
@@ -1184,10 +1218,16 @@ const AddCompanyDialog = ({ open, handleClose }) => {
         const passwordValidationMessage = validatePassword(formData.password);
         const emailValidationMessage = validateEmail(formData.email);
         const companyNameValidationMessage = validateCompanyName(formData.company_name);
+
         if (passwordValidationMessage) setPasswordError(passwordValidationMessage);
         if (emailValidationMessage) setEmailError(emailValidationMessage);
         if (companyNameValidationMessage) setCompanyNameError(companyNameValidationMessage);
-        if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) return;
+
+        if (passwordValidationMessage || emailValidationMessage || companyNameValidationMessage) {
+            return;
+        }
+
+        // === extra script / URL checks you already added go here ===
 
         setIsCheckingCompany(true);
         try {
@@ -1199,18 +1239,47 @@ const AddCompanyDialog = ({ open, handleClose }) => {
             }
         } catch (error) {
             setIsCheckingCompany(false);
-            notify(`Error: ${error.message}`, { type: 'error' });
+            notify(error.message || 'Unable to verify company name. Please try again.', { type: 'error' });
             return;
         }
+
         setIsCheckingCompany(false);
 
         try {
-            await create('companies', { data: { ...formData, is_banned: false } });
-            notify('Company added successfully!', { type: 'success' });
+            const response = await fetch(`${API_BASE_URL}/companies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    ...formData,
+                    // Backend expects snake_case:
+                    is_banned: false,
+                }),
+            });
+
+            const json = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                // This path runs for all validation failures and server errors
+                const msg =
+                    json.message ||
+                    json.error ||
+                    'Failed to add company. Please check the form and try again.';
+                notify(msg, { type: 'error' });
+                return;
+            }
+
+            // Only reached on actual 2xx/201 success
+            notify(json.message || 'Company added successfully!', { type: 'success' });
             refresh();
             handleDialogClose();
         } catch (error) {
-            notify(`Error adding company: ${error.message}`, { type: 'error' });
+            notify(
+                error?.message || 'Network error while adding company. Please try again.',
+                { type: 'error' }
+            );
         }
     };
 
@@ -1493,7 +1562,7 @@ const StyledDatagrid = ({ children, ...props }) => {
                         No data found
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
-                        There are no records to display at the moment. Use the "Add" button or adjust your filters to see results.
+                        There are no records to display at the moment. Try adjusting your filters or check back later.
                     </Typography>
                 </Box>
             )}
