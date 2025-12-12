@@ -893,16 +893,20 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
 
     // Helper to format values
     const formatValue = (key, value) => {
+        // Show em dash for null, undefined, or empty string
+        if (value === null || value === undefined || value === '') {
+            return '—';
+        }
+        
         if (typeof value === 'boolean') {
             return value ? 'Yes' : 'No';
         }
-        if (value === null || value === undefined || value === '') {
-            return 'N/A';
-        }
+
         // Special formatting for created_at if it's a date string
         if (key === 'created_at' && typeof value === 'string' && !isNaN(new Date(value))) {
-            return new Date(value).toLocaleDateString() + ' ' + new Date(value).toLocaleTimeString();
+            return `${new Date(value).toLocaleDateString()} ${new Date(value).toLocaleTimeString()}`;
         }
+
         return String(value);
     };
 
@@ -992,7 +996,6 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
     );
 };
 
-// ClickableNameField Component
 // ClickableNameField Component with Truncation
 const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
     const record = useRecordContext();
@@ -1005,19 +1008,22 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
     if (!record) return null;
 
     const value = record[source];
-    if (value === undefined || value === null) return null;
+    
+    // Show em dash for null, undefined, or empty string
+    if (value === undefined || value === null || value === '') {
+        return <span style={{ color: '#999' }}>—</span>;
+    }
 
     const text = String(value);
     const isLong = text.length > maxChars;
     const display = isLong ? text.slice(0, maxChars).trimEnd() + '...' : text;
 
     const handleClick = (event) => {
-        event.stopPropagation(); // Stop row click event
+        event.stopPropagation();
         event.preventDefault();
         setOpen(true);
         setLoading(true);
 
-        // Fetch the full details of the record
         dataProvider
             .getOne(resource, { id: record.id })
             .then(({ data }) => {
@@ -1033,7 +1039,7 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
 
     const handleClose = () => {
         setOpen(false);
-        setDetails(null); // Reset details for next open
+        setDetails(null);
     };
 
     const dialogTitle =
@@ -1041,7 +1047,6 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
             ? `${record.name} - Job Seeker Details`
             : `${record.company_name} - Company Details`;
 
-    // Define the specific display order and filter for each resource
     let fieldsOrder;
     if (resource === 'users') {
         fieldsOrder = ['age', 'email', 'phone', 'college_name', 'about_me', 'is_banned', 'created_at'];
@@ -1095,8 +1100,6 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
         </>
     );
 };
-
-
 
 const FilterDropdown = () => {
     const { resource, filterValues, setFilters } = useListContext();
@@ -1439,7 +1442,8 @@ const AddCompanyDialog = ({ open, handleClose }) => {
                             onChange={handleChange} 
                             required 
                             error={!!emailError} 
-                            helperText={emailError} 
+                            helperText={emailError}
+                            autoComplete="new-email"
                         />
                     </Box>
                     
@@ -1458,7 +1462,8 @@ const AddCompanyDialog = ({ open, handleClose }) => {
                             onChange={handleChange} 
                             required 
                             error={!!passwordError} 
-                            helperText={passwordError || "8+ characters, no spaces"} 
+                            helperText={passwordError || "8+ characters, no spaces"}
+                            autoComplete="new-password"  // prevents autofill
                         />
                         <FormControl fullWidth variant="outlined">
                             <InputLabel id="industry-label">Industry</InputLabel>
@@ -1688,10 +1693,6 @@ const StyledDatagrid = ({ children, ...props }) => {
     );
 };
 
-
-
-
-
 const BanToggle = ({ record, resource }) => {
     const [update, { isLoading }] = useUpdate();
     const notify = useNotify();
@@ -1766,11 +1767,15 @@ const TruncatedTextField = ({ source, label, maxChars = 25 }) => {
     if (!record) return null;
 
     const value = record[source];
-    if (value === undefined || value === null) return null;
+    
+    // Show em dash for null, undefined, or empty string
+    if (value === undefined || value === null || value === '') {
+        return <span style={{ color: '#999' }}>—</span>;
+    }
 
     const text = String(value);
     const isLong = text.length > maxChars;
-    const display = isLong ? text.slice(0, maxChars).trimEnd() + '...' : text;
+    const display = isLong ? text.slice(0, maxChars).trimEnd() + '....' : text;
 
     const content = (
         <span
@@ -1786,7 +1791,6 @@ const TruncatedTextField = ({ source, label, maxChars = 25 }) => {
         </span>
     );
 
-    // Always show tooltip (or only when isLong if you prefer)
     return (
         <Tooltip title={text}>
             <span>{content}</span>
@@ -1853,8 +1857,8 @@ const CompanyList = (props) => (
                 sortBy="company_name"
                 render={() => <ClickableNameField source="company_name" resource="companies" maxChars={25} />}
             />
-            <TruncatedTextField source="email" maxChars={28} />
-            <TruncatedTextField source="industry" maxChars={20} />
+            <TruncatedTextField source="email" maxChars={30} />
+            <TruncatedTextField source="industry" maxChars={35} />
             <FunctionField
                 label="Ban Status"
                 sortable={false}
