@@ -53,13 +53,14 @@ import {
   InputLabel,
   Skeleton,
   FormControl,
+  Tooltip,
 } from "@mui/material";
 import {useCallback, useRef } from "react";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import SchoolIcon from '@mui/icons-material/School';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -992,7 +993,8 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
 };
 
 // ClickableNameField Component
-const ClickableNameField = ({ source, resource }) => {
+// ClickableNameField Component with Truncation
+const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
     const record = useRecordContext();
     const dataProvider = useDataProvider();
     const [open, setOpen] = useState(false);
@@ -1002,6 +1004,13 @@ const ClickableNameField = ({ source, resource }) => {
 
     if (!record) return null;
 
+    const value = record[source];
+    if (value === undefined || value === null) return null;
+
+    const text = String(value);
+    const isLong = text.length > maxChars;
+    const display = isLong ? text.slice(0, maxChars).trimEnd() + '...' : text;
+
     const handleClick = (event) => {
         event.stopPropagation(); // Stop row click event
         event.preventDefault();
@@ -1009,12 +1018,13 @@ const ClickableNameField = ({ source, resource }) => {
         setLoading(true);
 
         // Fetch the full details of the record
-        dataProvider.getOne(resource, { id: record.id })
+        dataProvider
+            .getOne(resource, { id: record.id })
             .then(({ data }) => {
                 setDetails(data);
                 setLoading(false);
             })
-            .catch(error => {
+            .catch((error) => {
                 setLoading(false);
                 setOpen(false);
                 notify(`Error fetching details: ${error.message}`, { type: 'error' });
@@ -1026,43 +1036,66 @@ const ClickableNameField = ({ source, resource }) => {
         setDetails(null); // Reset details for next open
     };
 
-    const dialogTitle = resource === 'users' ? record.name || 'Job Seeker Details' : record.company_name || 'Company Details';
+    const dialogTitle =
+        resource === 'users'
+            ? `${record.name} - Job Seeker Details`
+            : `${record.company_name} - Company Details`;
 
     // Define the specific display order and filter for each resource
-    let fieldsOrder = [];
+    let fieldsOrder;
     if (resource === 'users') {
         fieldsOrder = ['age', 'email', 'phone', 'college_name', 'about_me', 'is_banned', 'created_at'];
     } else if (resource === 'companies') {
         fieldsOrder = ['email', 'address', 'industry', 'description', 'website', 'is_banned', 'created_at'];
     }
 
+    const content = (
+        <span
+            style={{
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+            }}
+        >
+            {display}
+        </span>
+    );
+
     return (
         <>
-            <Link
-                component="button"
-                variant="body2"
-                onClick={handleClick}
-                sx={{ 
-                    textAlign: 'left', 
-                    textTransform: 'none', 
-                    textDecoration: 'none', // Remove underline
-                    color: 'primary.main', // Keep the primary color to indicate it's clickable
-                    // cursor: 'pointer', '&:hover': { textDecoration: 'underline' } // Optional: add underline on hover for better UX 
-                }}
-            >
-                {record[source]}
-            </Link>
+            <Tooltip title={text}>
+                <Link
+                    component="button"
+                    variant="body2"
+                    onClick={handleClick}
+                    sx={{
+                        textAlign: 'left',
+                        textTransform: 'none',
+                        textDecoration: 'none',
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        '&:hover': { textDecoration: 'underline' },
+                        display: 'inline-block',
+                        maxWidth: '100%',
+                    }}
+                >
+                    {content}
+                </Link>
+            </Tooltip>
             <DetailsDialog
                 open={open}
                 onClose={handleClose}
                 title={dialogTitle}
                 data={details}
                 loading={loading}
-                fieldsOrder={fieldsOrder} // Pass the specific order
+                fieldsOrder={fieldsOrder}
             />
         </>
     );
 };
+
 
 
 const FilterDropdown = () => {
@@ -1575,12 +1608,32 @@ const ListActions = (props) => {
 
 const StyledDatagrid = ({ children, ...props }) => {
     const { data, isLoading, error } = useListContext();
-    
+
     return (
         <>
             <Datagrid
                 {...props}
                 sx={{
+                    '& .RaDatagrid-table': {
+                        tableLayout: 'fixed',
+                        width: '100%',
+                    },
+
+                    // Truncate ONLY non-checkbox columns (skip first cell)
+                    '& .RaDatagrid-headerCell:not(:first-of-type), & .RaDatagrid-rowCell:not(:first-of-type)': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    },
+
+                    // Ensure the selection checkbox column has enough width
+                    '& .MuiTableCell-paddingCheckbox': {
+                        width: '64px !important',
+                        minWidth: '64px !important',
+                        maxWidth: '64px !important',
+                        overflow: 'visible !important',
+                    },
+
                     '& .RaDatagrid-headerCell': {
                         bgcolor: 'background.default',
                         fontWeight: 700,
@@ -1589,15 +1642,14 @@ const StyledDatagrid = ({ children, ...props }) => {
                         py: 2,
                     },
                     '& .RaDatagrid-row:hover': {
-                        bgcolor: 'action.hover'
-                    }
+                        bgcolor: 'action.hover',
+                    },
                 }}
                 rowClick="edit"
             >
                 {children}
             </Datagrid>
-            
-            {/* Show empty state when no data but not loading */}
+
             {!isLoading && !error && (!data || data.length === 0) && (
                 <Box sx={{ 
                     display: 'flex', 
@@ -1635,6 +1687,9 @@ const StyledDatagrid = ({ children, ...props }) => {
         </>
     );
 };
+
+
+
 
 
 const BanToggle = ({ record, resource }) => {
@@ -1706,6 +1761,44 @@ const BanToggle = ({ record, resource }) => {
     );
 };
 
+const TruncatedTextField = ({ source, label, maxChars = 25 }) => {
+    const record = useRecordContext();
+    if (!record) return null;
+
+    const value = record[source];
+    if (value === undefined || value === null) return null;
+
+    const text = String(value);
+    const isLong = text.length > maxChars;
+    const display = isLong ? text.slice(0, maxChars).trimEnd() + '...' : text;
+
+    const content = (
+        <span
+            style={{
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+            }}
+        >
+            {display}
+        </span>
+    );
+
+    // Always show tooltip (or only when isLong if you prefer)
+    return (
+        <Tooltip title={text}>
+            <span>{content}</span>
+        </Tooltip>
+    );
+};
+
+// Let react-admin use the label in the header
+TruncatedTextField.defaultProps = {
+    addLabel: true,
+};
+
 // =============================================================================
 // == CORRECTED UserList COMPONENT ==
 // =============================================================================
@@ -1727,10 +1820,10 @@ const UserList = (props) => (
             <FunctionField
                 label="Name"
                 sortBy="name"
-                render={() => <ClickableNameField source="name" resource="users" />}
+                render={() => <ClickableNameField source="name" resource="users" maxChars={25} />}
             />
-            <TextField source="email" sortable={false} />
-            <TextField source="college_name" label="College" sortable={false} />
+            <TruncatedTextField source="email" maxChars={28} />
+            <TruncatedTextField source="college_name" label="College" maxChars={22} />
             <FunctionField
                 label="Ban Status"
                 sortable={false}
@@ -1758,10 +1851,10 @@ const CompanyList = (props) => (
             <FunctionField
                 label="Company Name"
                 sortBy="company_name"
-                render={() => <ClickableNameField source="company_name" resource="companies" />}
+                render={() => <ClickableNameField source="company_name" resource="companies" maxChars={25} />}
             />
-            <TextField source="email" sortable={false} />
-            <TextField source="industry" sortable={false} />
+            <TruncatedTextField source="email" maxChars={28} />
+            <TruncatedTextField source="industry" maxChars={20} />
             <FunctionField
                 label="Ban Status"
                 sortable={false}
@@ -1786,21 +1879,38 @@ const JobList = (props) => (
         {...props}
     >
         <StyledDatagrid bulkActionButtons={<JobBulkActionButtons />}>
-            <TextField
+            <TruncatedTextField
                 source="title"
                 label="Job Title"
+                maxChars={30}
             />
-            <TextField 
-                source="company_name" 
+            <TruncatedTextField
+                source="company_name"
                 label="Company"
-                sortable={false}
+                maxChars={20}
             />
-            <TextField source="job_type" sortable={false} />
-            <TextField source="location" sortable={false} />
-            <TextField source="salary" sortable={false} />
+            <TruncatedTextField
+                source="job_type"
+                label="Job type"
+                maxChars={15}
+            />
+            <TruncatedTextField
+                source="location"
+                label="Location"
+                maxChars={25}
+            />
+            <TruncatedTextField
+                source="salary"
+                label="Salary"
+                maxChars={15}
+            />
             <TextField source="total_vacancy" sortable={false} />
             <TextField source="filled_vacancy" sortable={false} />
-            <TextField source="status" sortable={false} />
+            <TruncatedTextField
+                source="status"
+                label="Status"
+                maxChars={10}
+            />
         </StyledDatagrid>
     </List>
 );
