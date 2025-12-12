@@ -32,6 +32,10 @@ button[aria-label="Refresh"] {
   display: none !important;
 }
 
+/* change of double message */
+.RaList-content > div:first-child > p.MuiTypography-body2 {
+    display: none !important;
+}
 .MuiCircularProgress-root[role="progressbar"] {
     display: none !important;
 }
