@@ -448,7 +448,7 @@ def create_company():
 '''
 import requests
 
-def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
+def url_seems_reachable(url: str, timeout: float = 10.0) -> bool:
     try:
         # HEAD is lighter; fall back to GET for servers that don't support HEAD well
         resp = requests.head(url, allow_redirects=True, timeout=timeout)
@@ -1034,6 +1034,7 @@ def get_dashboard_data():
         logins_count = Login.query.filter(
             Login.created_at >= start_naive,
             Login.created_at <= end_naive,
+            Login.role != 'admin',
         ).count()
 
         return applications_count, logins_count

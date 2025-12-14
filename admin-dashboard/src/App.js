@@ -60,7 +60,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import SchoolIcon from '@mui/icons-material/School';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -804,34 +804,22 @@ const Dashboard = () => {
                 </Box>
 
                 <ResponsiveContainer width="100%" height="88%">
-                    <LineChart
-                        data={chartData}
+                    <LineChart 
+                        data={chartData} 
                         margin={{ top: 10, right: 30, left: 20, bottom: 40 }}
                     >
-                        <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke={theme.palette.divider}
-                        />
-                        <XAxis
-                            dataKey="x"
-                            label={{
-                                value: 'Date',
-                                position: 'bottom',
-                                offset: 10,
-                                fill: theme.palette.text.secondary,
-                            }}
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                        <XAxis 
+                            dataKey="x" 
+                            label={{ value: 'Date', position: 'bottom', offset: 10, fill: theme.palette.text.secondary }}
                             tick={{ fill: theme.palette.text.secondary }}
                         />
-                        <YAxis
-                            label={{
-                                value: 'Activity',
-                                angle: -90,
-                                position: 'left',
-                                fill: theme.palette.text.secondary,
-                            }}
+                        <YAxis 
+                            allowDecimals={false}
+                            label={{ value: 'Activity', angle: -90, position: 'left', fill: theme.palette.text.secondary }}
                             tick={{ fill: theme.palette.text.secondary }}
                         />
-                        <Tooltip
+                        <RechartsTooltip 
                             contentStyle={{
                                 backgroundColor: theme.palette.background.paper,
                                 color: theme.palette.text.primary,
@@ -839,32 +827,27 @@ const Dashboard = () => {
                                 borderColor: theme.palette.divider,
                                 boxShadow: theme.shadows[3],
                             }}
-                            cursor={{
-                                stroke: theme.palette.action.hover,
-                                strokeWidth: 2,
-                            }}
+                            cursor={{ stroke: theme.palette.action.hover, strokeWidth: 2 }}
                         />
-                        <Legend
-                            wrapperStyle={{
-                                paddingTop: 35,
-                            }}
+                        <Legend 
+                            wrapperStyle={{ paddingTop: '35px' }}
                             iconSize={16}
                             iconType="circle"
                         />
-                        <Line
-                            type="monotone"
-                            dataKey="applications"
-                            name="Applications"
-                            stroke={theme.palette.primary.main}
+                        <Line 
+                            type="monotone" 
+                            dataKey="applications" 
+                            name="Applications" 
+                            stroke={theme.palette.primary.main} 
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{ r: 3 }}
                         />
-                        <Line
-                            type="monotone"
-                            dataKey="registrations"
-                            name="Registrations"
-                            stroke="#388e3c"
+                        <Line 
+                            type="monotone" 
+                            dataKey="registrations" 
+                            name="Registrations" 
+                            stroke="#388e3c" 
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{ r: 3 }}
@@ -1261,6 +1244,9 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     const [companyNameError, setCompanyNameError] = useState('');
     const [isCheckingCompany, setIsCheckingCompany] = useState(false);
 
+    const [isVerifyingWebsite, setIsVerifyingWebsite] = useState(false);
+    const [isVerifyingLogo, setIsVerifyingLogo] = useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -1345,7 +1331,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
             return;
         }
 
-        setIsCheckingCompany(false);
+        //setIsCheckingCompany(false);
+
+        if (formData.website) setIsVerifyingWebsite(true);
+        if (formData.logo) setIsVerifyingLogo(true);
 
         try {
             const response = await fetch(`${API_BASE_URL}/companies`, {
@@ -1382,6 +1371,10 @@ const AddCompanyDialog = ({ open, handleClose }) => {
                 error?.message || 'Network error while adding company. Please try again.',
                 { type: 'error' }
             );
+        } finally {
+            setIsCheckingCompany(false);
+            setIsVerifyingWebsite(false);
+            setIsVerifyingLogo(false);
         }
     };
 
