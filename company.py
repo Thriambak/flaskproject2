@@ -11,6 +11,7 @@ from config import Config
 from utils import allowed_file  # Assuming your config file is named config.py
 from models import Job, Company, Login, JobApplication, User, Communication, Notification, College, Certification, ResumeCertification
 import re, uuid
+from utils_url import url_seems_reachable
 
 
 company_blueprint = Blueprint('company', __name__)
@@ -958,20 +959,6 @@ def company_profile():
         message=message,
         message_type=message_type,
     )
-
-import requests
-
-def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
-    try:
-        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
-        resp = requests.head(url, allow_redirects=True, timeout=timeout)
-        if resp.status_code >= 400:
-            # try GET once more for sites that treat HEAD oddly
-            resp = requests.get(url, allow_redirects=True, timeout=timeout)
-        # treat 2xx / 3xx as “exists”
-        return 200 <= resp.status_code < 400
-    except requests.RequestException:
-        return False
 
 def sanitize_text(value: str) -> str:
     if not value:

@@ -14,6 +14,7 @@ from utils import allowed_file  # Assuming your config file is named config.py
 from sqlalchemy.sql import func
 from sqlalchemy import distinct
 from auth import secure_route
+from utils_url import url_seems_reachable
 
 college_blueprint = Blueprint('college', __name__)
 
@@ -138,34 +139,16 @@ def college_dashboard():
         selected_year=selected_year,
         college_profile=college_profile)
 
+EMAIL_REGEX = re.compile(r"^(?!.*\.\.)(?!.*\.$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
-
-
-EMAIL_REGEX = re.compile(
-    r"^(?!.*\.\.)(?!.*\.$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
-)
-
-URL_REGEX = re.compile(
-    r"^(https?:\/\/)([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?$"
-)
+URL_REGEX = re.compile(r"^(https?:\/\/)([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?$")
 
 def contains_script(text):
     return "<script" in text.lower() or "javascript:" in text.lower() or "data:" in text.lower()
 
 import re
-import requests
 
 # ----------------- SAME AS COMPANY PROFILE -----------------
-
-def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
-    try:
-        resp = requests.head(url, allow_redirects=True, timeout=timeout)
-        if resp.status_code >= 400:
-            resp = requests.get(url, allow_redirects=True, timeout=timeout)
-        return 200 <= resp.status_code < 400
-    except requests.RequestException:
-        return False
-
 def sanitize_text(value: str) -> str:
     if not value:
         return ''
@@ -344,8 +327,6 @@ def college_profile():
         message=message,
         message_type=message_type
     )
-
-
 
 @college_blueprint.route('/college_studenttracking')
 @secure_route

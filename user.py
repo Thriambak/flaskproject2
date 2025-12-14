@@ -37,6 +37,7 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
 @user_blueprint.route('/user_dashboard')
 @no_cache
 @login_required
@@ -323,6 +324,7 @@ def analytics():
         recent_activities=recent_activities,
         live_feed=live_feed
     )
+
 from flask import session, render_template, flash, redirect, url_for
 from models import Communication, User, db  # make sure db is imported from your app
 @user_blueprint.route('/notifications', methods=['GET'])
@@ -555,18 +557,7 @@ def sanitize_text(value: str) -> str:
     value = value.replace('<', '').replace('>', '')
     return value.strip()
 
-def url_seems_reachable(url: str, timeout: float = 3.0) -> bool:
-    """ Check if a URL is reachable by making a HEAD or GET request. Returns True if the URL responds with a 2xx or 3xx status code. """
-    try:
-        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
-        resp = requests.head(url, allow_redirects=True, timeout=timeout)
-        if resp.status_code >= 400:
-            # try GET once more for sites that treat HEAD oddly
-            resp = requests.get(url, allow_redirects=True, timeout=timeout)
-        # treat 2xx / 3xx as "exists"
-        return 200 <= resp.status_code < 400
-    except requests.RequestException:
-        return False
+from utils_url import url_seems_reachable
 
 def is_valid_url(url: str) -> bool:
     """ Validate if a string is a properly formatted URL. """

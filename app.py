@@ -22,10 +22,9 @@ from datetime import datetime
 import pytz
 import re
 import calendar
-
+from utils_url import url_seems_reachable
 
 app = Flask(__name__)
-
 
 # SECRET KEY - Set first
 app.secret_key = 'your_secret_key'  # Change to secure random key in production
@@ -50,7 +49,6 @@ CORS(app,
      },
      supports_credentials=True
 )
-
 
 # Ensure upload folder exists
 if not os.path.exists(Config.UPLOAD_FOLDER):
@@ -446,19 +444,6 @@ def create_company():
         db.session.rollback()  # Rollback in case of error
         return jsonify({"error": f"Error creating company: {str(e)}"}), 500
 '''
-import requests
-
-def url_seems_reachable(url: str, timeout: float = 10.0) -> bool:
-    try:
-        # HEAD is lighter; fall back to GET for servers that don't support HEAD well
-        resp = requests.head(url, allow_redirects=True, timeout=timeout)
-        if resp.status_code >= 400:
-            # try GET once more for sites that treat HEAD oddly
-            resp = requests.get(url, allow_redirects=True, timeout=timeout)
-        # treat 2xx / 3xx as “exists”
-        return 200 <= resp.status_code < 400
-    except requests.RequestException:
-        return False
 
 def sanitize_text(value: str) -> str:
     if not value:
