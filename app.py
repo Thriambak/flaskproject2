@@ -540,8 +540,8 @@ def create_company():
             if re.search(r'\s', logo):
                 return jsonify({"message": "Please enter only one logo URL."}), 400
             if not re.match(r'^https?', logo, re.IGNORECASE):
-                return jsonify({"message": "Logo URL must start with http or https."}), 400
-            if re.match(r'^(javascript|data)', logo, re.IGNORECASE):
+                return jsonify({"message": "Please provide a publicly accessible link."}), 400
+            if re.match(r'^(javascript:|data:)', logo, re.IGNORECASE):
                 return jsonify({"message": "Logo URL scheme is not allowed."}), 400
             if logo and not url_seems_reachable(logo):
                 return jsonify({"message": "Logo URL could not be reached. Please check the link."}), 400

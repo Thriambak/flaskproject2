@@ -29,7 +29,9 @@ import {
   BulkDeleteWithConfirmButton,
   defaultTheme,
   useLogout,
+  downloadCSV,
 } from "react-admin";
+import jsonExport from 'jsonexport/dist';
 import {
   Card,
   CardContent,
@@ -111,11 +113,11 @@ const authProvider = {
             const response = await fetch(request);
             
             // Debug: Log response headers
-            console.log('Login response headers:', {
+            /* console.log('Login response headers:', {
                 'set-cookie': response.headers.get('set-cookie'),
                 'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
             });
-            
+            */
             if (response.status < 200 || response.status >= 300) {
                 throw new Error('Invalid credentials');
             }
@@ -153,7 +155,7 @@ const authProvider = {
             });
             
             // Debug: Log cookies being sent
-            console.log('CheckAuth cookies:', document.cookie);
+            // console.log('CheckAuth cookies:', document.cookie);
             
             if (!response.ok) {
                 return Promise.reject();
@@ -864,7 +866,7 @@ const Dashboard = () => {
 
 // This component displays details in a popup.
 // Fixed DetailsDialog component with better alignment
-const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => {
+const DetailsDialog = ({ open, onClose, onExited, title, data, loading, fieldsOrder }) => {
     // Helper to format keys (e.g., 'company_name' -> 'Company Name')
     const formatLabel = (key) => {
         if (key === 'is_banned') return 'Ban Status';
@@ -911,7 +913,7 @@ const DetailsDialog = ({ open, onClose, title, data, loading, fieldsOrder }) => 
     }
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="paper">
+        <Dialog open={open} onClose={onClose} TransitionProps={ { onExited: onExited }} fullWidth maxWidth="sm" scroll="paper">
             <DialogTitle>{title}</DialogTitle>
             <DialogContent dividers>
                 {loading && (
@@ -1022,7 +1024,14 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
 
     const handleClose = () => {
         setOpen(false);
+        // Don't clear details immediately - let the modal animation finish first
+        // Details will be overwritten when opening a new modal anyway
+    };
+
+    // Clear details after modal is fully closed (after animation)
+    const handleExited = () => {
         setDetails(null);
+        setLoading(false);
     };
 
     const dialogTitle =
@@ -1075,6 +1084,7 @@ const ClickableNameField = ({ source, resource, maxChars = 25 }) => {
             <DetailsDialog
                 open={open}
                 onClose={handleClose}
+                onExited={handleExited}
                 title={dialogTitle}
                 data={details}
                 loading={loading}
@@ -1229,6 +1239,100 @@ const isValidURL = (url = '') => {
     } catch {
         return false;
     }
+};
+
+const createExporter = (resourceName) => (data) => {
+    // console.log('Exporting:', resourceName, 'Records:', data?.length || 0);
+    
+    // If no data, export empty file
+    if (!data || data.length === 0) {
+        // console.warn('No data to export for', resourceName);
+        jsonExport([], (err, csv) => {
+            downloadCSV(csv || '', getFilename(resourceName));
+        });
+        return;
+    }
+
+    // Map resource names to proper filename
+    const getFilename = (resource) => {
+        switch(resource) {
+            case 'users':
+                return 'jobseekers';
+            case 'companies':
+                return 'companies';
+            case 'jobs':
+                return 'jobs';
+            default:
+                return resource;
+        }
+    };
+
+    // Define field mapping based on resource
+    const getFieldsForResource = (resource, sampleRecord) => {
+        // console.log('Sample record keys:', Object.keys(sampleRecord));
+
+        switch(resource) {
+            case 'users':
+                return {
+                    'S.No': (record, index) => index + 1,
+                    'Name': 'name',
+                    'Email': 'email',
+                    'College': 'college_name',
+                    'Banned': 'is_banned'
+                };
+            case 'companies':
+                return {
+                    'S.No': (record, index) => index + 1,
+                    'Company Name': 'company_name',
+                    'Email': 'email',
+                    'Industry': 'industry',
+                    'Banned': 'is_banned'
+                };
+            case 'jobs':
+                return {
+                    'S.No': (record, index) => index + 1,
+                    'Job Title': 'title',
+                    'Company': 'company_name',
+                    'Job Type': 'job_type',
+                    'Location': 'location',
+                    'Salary': 'salary',
+                    'Total Vacancy': 'total_vacancy',
+                    'Filled Vacancy': 'filled_vacancy',
+                    'Status': 'status'
+                };
+            default:
+                return {};
+        }
+    };
+
+    const fieldMapping = getFieldsForResource(resourceName, data[0]);
+    
+    const dataForExport = data.map((record, index) => {
+        const exportRecord = {};
+        
+        Object.entries(fieldMapping).forEach(([exportFieldName, sourceField]) => {
+            if (typeof sourceField === 'function') {
+                // For computed fields like S.No
+                exportRecord[exportFieldName] = sourceField(record, index);
+            } else {
+                // For regular fields
+                exportRecord[exportFieldName] = record[sourceField];
+            }
+        });
+        
+        return exportRecord;
+    });
+
+    // console.log('Export data formatted:', dataForExport.slice(0, 2)); // Log first 2 records
+
+    jsonExport(dataForExport, (err, csv) => {
+        if (err) {
+            console.error('Export error:', err);
+            return;
+        }
+        downloadCSV(csv, getFilename(resourceName));
+        // console.log('Export successful:', getFilename(resourceName) + '.csv');
+    });
 };
 
 const AddCompanyDialog = ({ open, handleClose }) => {
@@ -1586,12 +1690,13 @@ const AddCompanyButton = () => {
 
 
 const ListActions = (props) => {
-    const { resource } = props;
+    const { resource } = useListContext();
     
     return (
         <TopToolbar {...props} sx={{ p: 2, bgcolor: 'background.default' }}>
             <FilterDropdown />
             <ExportButton 
+                exporter={createExporter(resource)}
                 sx={{ 
                     borderRadius: 20,
                     textTransform: 'none',
@@ -1921,6 +2026,7 @@ const lightTheme = {
     },
 };
 */
+
 const App = () => (
     <Admin 
         dataProvider={customDataProvider} 
