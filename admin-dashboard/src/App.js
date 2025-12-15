@@ -1,62 +1,67 @@
 import * as React from "react";
 import { 
-  Admin, 
-  Resource, 
-  List,
-  Confirm,
-  useRecordContext, 
-  Datagrid, 
-  TextField,
-  SearchInput,
-  TopToolbar,
-  FunctionField,
-  ExportButton,
-  useListContext,
-  BooleanField,
-  BooleanInput,
-  useUpdate,
-  useNotify,
-  Login,
-  LoginForm,
-  Layout,
-  AppBar,
-  UserMenu,
-  Button as RaButton, // Alias React-Admin's Button to avoid conflict
-  useRefresh, // Import useRefresh hook
-  useGetList, // Import useGetList to manually trigger a fetch
-  useCreate,
-  useDataProvider, // Import useDataProvider
-  BulkDeleteWithConfirmButton,
-  defaultTheme,
-  useLogout,
-  downloadCSV,
+    Admin, 
+    Resource, 
+    List,
+    Confirm,
+    useRecordContext, 
+    Datagrid, 
+    TextField,
+    SearchInput,
+    TopToolbar,
+    FunctionField,
+    ExportButton,
+    useListContext,
+    BooleanField,
+    BooleanInput,
+    useUpdate,
+    useNotify,
+    Login,
+    LoginForm,
+    Layout,
+    AppBar,
+    UserMenu,
+    Button as RaButton, // Alias React-Admin's Button to avoid conflict
+    useRefresh, // Import useRefresh hook
+    useGetList, // Import useGetList to manually trigger a fetch
+    useCreate,
+    useDataProvider, // Import useDataProvider
+    BulkDeleteWithConfirmButton,
+    defaultTheme,
+    useLogout,
+    useLogin,
+    downloadCSV,
 } from "react-admin";
 import jsonExport from 'jsonexport/dist';
 import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Box,
-  Menu,
-  MenuItem, 
-  ListItemIcon,
-  ListItemText,
-  Button,
-  Divider,
-  useTheme,
-  Switch,
-  FormControlLabel,
-  TextField as MuiTextField,
-  Paper,
-  Link,
-  CircularProgress,
-  Select, 
-  InputLabel,
-  Skeleton,
-  FormControl,
-  Tooltip,
+    Card,
+    CardContent,
+    Typography,
+    Grid,
+    Box,
+    Menu,
+    MenuItem, 
+    ListItemIcon,
+    ListItemText,
+    Button,
+    Divider,
+    useTheme,
+    Switch,
+    FormControlLabel,
+    TextField as MuiTextField,
+    Paper,
+    Link,
+    CircularProgress,
+    Select, 
+    InputLabel,
+    Skeleton,
+    FormControl,
+    Tooltip,
+    IconButton,
+    InputAdornment,
 } from "@mui/material";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import {useCallback, useRef } from "react";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import SchoolIcon from '@mui/icons-material/School';
@@ -263,13 +268,33 @@ const loginPageTheme = createTheme({
 // Custom Login Page Component
 const CustomLoginPage = () => {
     const theme = useTheme();
-    
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false); // ✅ Add state for password visibility
+    const notify = useNotify();
+    const login = useLogin();
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        
+        // If fields are empty, just return without any error message
+        if (!username || !username.trim() || !password || !password.trim()) {
+            return;
+        }
+
+        // Proceed with login
+        try {
+            await login({ username: username.trim(), password });
+        } catch (error) {
+            notify('Invalid credentials', { type: 'error' });
+        }
+    };
+
     return (
         <ThemeProvider theme={loginPageTheme}>
             <Box
                 sx={{
                     minHeight: '100vh',
-                    // Use the specific color values from our light theme
                     background: `linear-gradient(135deg, ${loginPageTheme.palette.primary.main} 0%, ${loginPageTheme.palette.secondary.main} 100%)`,
                     display: 'flex',
                     alignItems: 'center',
@@ -304,29 +329,72 @@ const CustomLoginPage = () => {
                         </Typography>
                     </Box>
                     
-                    <LoginForm 
-                        sx={{ 
-                            justifyItems: 'center', 
-                            '& .MuiTextField-root': {
-                                mb: 1,
+                    <Box component="form" onSubmit={handleSubmit}>
+                        <MuiTextField
+                            label="Username"
+                            name="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            fullWidth
+                            required
+                            sx={{ 
+                                mb: 2,
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: 2,
                                 }
-                            },
-                            '& .MuiButton-root': {
+                            }}
+                        />
+                        <MuiTextField
+                            label="Password"
+                            name="password"
+                            type={showPassword ? 'text' : 'password'} // ✅ Toggle between text and password
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            fullWidth
+                            required
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            edge="end"
+                                            aria-label="toggle password visibility"
+                                        >
+                                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                            sx={{ 
+                                mb: 3,
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                }
+                            }}
+                        />
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            fullWidth
+                            size="large"
+                            sx={{
                                 borderRadius: 2,
                                 py: 1.5,
                                 textTransform: 'none',
                                 fontSize: '1rem',
                                 fontWeight: 600
-                            }
-                        }}
-                    />
+                            }}
+                        >
+                            Sign in
+                        </Button>
+                    </Box>
                 </Paper>
             </Box>
         </ThemeProvider>
     );
 };
+
+
 
 
 const customDataProvider = {
