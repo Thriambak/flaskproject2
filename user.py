@@ -111,6 +111,7 @@ def user_dashboard():
         .order_by(Notification.timestamp.desc()).limit(5).all()
    
     return render_template('/user/user_dashboard.html',
+                           user=user,
                            jobs=jobs,
                            upcoming_events=upcoming_events,
                            recent_notifications=recent_notifications,
@@ -315,10 +316,25 @@ def get_chart_data_for_user(user_id):
 @no_cache
 @login_required
 def analytics():
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     user_id = session.get('user_id')
     user_success_rate, application_trends, recent_activities, live_feed = get_chart_data_for_user(user_id)
     return render_template(
         '/user/analytics.html',
+        user=user,
         user_success_rate=user_success_rate,
         application_trends=application_trends,
         recent_activities=recent_activities,
@@ -331,15 +347,28 @@ from models import Communication, User, db  # make sure db is imported from your
 @no_cache
 @login_required
 def notifications():
-    # Retrieve the primary key from the session (User.id)
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     user_pk = session.get('user_id')
     if not user_pk:
         flash("Please log in to view notifications.", "danger")
         return redirect(url_for('auth.login'))
 
     # Retrieve the user record to get the user's login_id (which is stored in the Communication table)
-    user = User.query.get(user_pk)
-    if not user:
+    users = User.query.get(user_pk)
+    if not users:
         flash("User not found.", "danger")
         return redirect(url_for('auth.login'))
 
@@ -348,17 +377,18 @@ def notifications():
     per_page = 5  # Changed from unlimited to 5 per page
 
     # Use the user's login_id for querying communications and filter out hidden ones if needed.
-    notifications_query = Communication.query.filter_by(user_id=user.login_id, hidden=False)\
+    notifications_query = Communication.query.filter_by(user_id=users.login_id, hidden=False)\
         .order_by(Communication.timestamp.desc())
     
     notifications_pagination = notifications_query.paginate(page=page, per_page=per_page, error_out=False)
     notifications = notifications_pagination.items
     total_pages = notifications_pagination.pages
     
-    unread_count = Communication.query.filter_by(user_id=user.login_id, read_status=False, hidden=False).count()
+    unread_count = Communication.query.filter_by(user_id=users.login_id, read_status=False, hidden=False).count()
 
     return render_template(
         '/user/notification.html',
+        user=user,
         notifications=notifications,
         unread_count=unread_count,
         page=page,
@@ -433,16 +463,29 @@ def delete_notification(notification_id):
 @no_cache
 @login_required
 def resume_certifications():
-    # Ensure the user is logged in
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     user_id = session.get('user_id')
     if not user_id:
         flash('You need to log in to access this page.', 'error')
         return redirect(url_for('auth.login'))
     
     # Fetch user data
-    user = User.query.get(user_id)
-    print(user_id, user)
-    if not user:
+    users = User.query.get(user_id)
+    print(user_id, users)
+    if not users:
         flash('User not found.', 'error')
         return redirect(url_for('auth.login'))
     
@@ -456,12 +499,12 @@ def resume_certifications():
             resume = request.files.get('resume')
             if resume and allowed_file(resume.filename):
                 resume_filename = secure_filename(resume.filename)
-                resume_path = os.path.join(upload_folder, f"resume_{user.name}_{resume_filename}")
+                resume_path = os.path.join(upload_folder, f"resume_{users.name}_{resume_filename}")
                 resume.save(resume_path)
                 resume_path = resume_path.replace('\\', '/')  # Normalize path for web use
                 
                 # Save Resume Entry
-                resume_entry = ResumeCertification(user_id=user.id, resume_path=resume_path)
+                resume_entry = ResumeCertification(user_id=users.id, resume_path=resume_path)
                 db.session.add(resume_entry)
                 db.session.commit()
                 flash('Resume uploaded successfully!', 'success')
@@ -472,7 +515,7 @@ def resume_certifications():
             if certification_name:
                 # Check if certification already exists (case insensitive)
                 existing_certification = Certification.query.filter(
-                    Certification.user_id == user.id,
+                    Certification.user_id == users.id,
                     db.func.lower(Certification.certification_name) == certification_name.lower()
                 ).first()
                 
@@ -480,7 +523,7 @@ def resume_certifications():
                     flash(f'Skill "{certification_name}" already exists in your profile!', 'warning')
                 else:
                     certification = Certification(
-                        user_id=user.id,
+                        user_id=users.id,
                         certification_name=certification_name,
                         verification_status=False
                     )
@@ -501,6 +544,7 @@ def resume_certifications():
     
     return render_template(
         '/user/resume_certifications.html',
+        user=user,
         resume_certifications=resumes,
         certifications=certifications,
         user_success_rate=user_success_rate,
@@ -513,6 +557,20 @@ def resume_certifications():
 @no_cache
 @login_required
 def application_history():
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     user_id = session.get('user_id')
    
     if not user_id:
@@ -527,6 +585,7 @@ def application_history():
     
     # Render the template with the application data, chart data, recent activities, and live feed
     return render_template('/user/applicationhistory.html',
+                           user=user,
         applications=applications,
         user_success_rate=user_success_rate,
         applications_overview=applications_overview,
@@ -589,11 +648,24 @@ def profile():
     if not user_id:
         flash('You need to log in to access your profile.', 'error')
         return redirect(url_for('auth.login'))
-    user = User.query.filter_by(id=user_id).first()
-    if not user:
+    users = User.query.filter_by(id=user_id).first()
+    if not users:
         flash('User not found.', 'error')
         return redirect(url_for('user.user_dashboard'))
-
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     resumes = ResumeCertification.query.filter_by(user_id=user_id).all()
     certifications = Certification.query.filter_by(user_id=user_id).all()
 
@@ -645,7 +717,7 @@ def profile():
         for field_name, raw_value in text_fields_to_check:
             if '<' in raw_value or '>' in raw_value:
                 flash(f"Invalid characters (< or >) not allowed in {field_name} field.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Sanitize inputs after invalid char check
         name_input = sanitize_text(raw_name)
@@ -660,43 +732,43 @@ def profile():
         # Validate name
         if not name_input:
             flash("Name is required.", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
         elif len(name_input) < 2:
             flash("Name must be at least 2 characters long.", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
         elif len(name_input) > 100:
             flash("Name cannot exceed 100 characters.", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate email
         if not email_input:
             flash("Email is required.", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
         elif not is_valid_email(email_input):
             flash("Please enter a valid email address (name@domain.com).", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
-        elif email_input != user.email:
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+        elif email_input != users.email:
             # Check for uniqueness only if email changed
             existing_email_user = User.query.filter_by(email=email_input).first()
             if existing_email_user:
                 flash("This email is already registered to another user.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate phone number if provided
         if phone_input:
             # Check if phone contains only digits
             if not phone_input.isdigit():
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             # Check phone length
             if len(phone_input) < 10 or len(phone_input) > 15:
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             # Check if phone number already exists for another user
             existing_phone_user = User.query.filter(
                 User.phone == phone_input,
                 User.id != user_id
             ).first()
             if existing_phone_user:
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate age if provided
         if age_input:
@@ -704,32 +776,32 @@ def profile():
                 age_value = int(age_input)
                 if age_value < 18 or age_value > 80:
                     flash("Please enter a valid age between 18 and 80.", "error")
-                    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                    return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             except ValueError:
                 flash("Please enter a valid age.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate About Me word count if provided
         if about_me_input:
             word_count = count_words(about_me_input)
             if word_count > 200:
                 flash(f"About Me section cannot exceed 200 words. Current count: {word_count} words.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             if len(about_me_input) > 2000:
                 flash("About Me section cannot exceed 2000 characters.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate college name length if provided
         if manual_college:
             if len(manual_college) > 200:
                 flash("College name cannot exceed 200 characters.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
         # Validate profile picture URL if provided
         if profile_pic_url:
             if not is_valid_url(profile_pic_url):
                 flash("Please enter a valid URL for the profile picture.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             # Check if URL is reachable (optional - can be slow)
             # Uncomment if you want to verify URL accessibility
             # if not url_seems_reachable(profile_pic_url):
@@ -741,7 +813,7 @@ def profile():
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             if not coupon:
                 flash("Invalid coupon code provided.", "error")
-                return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
             else:
                 # Check if coupon is expired (created more than 2 years ago)
                 current_date = datetime.now()
@@ -749,7 +821,7 @@ def profile():
                 expiration_threshold = current_date - timedelta(days=730)  # 2 years = 730 days
                 if coupon_creation_date < expiration_threshold:
                     flash("Coupon has expired. This coupon is more than 2 years old.", "error")
-                    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+                    return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
                 # Valid and non-expired coupon
                 existing_mapping = Couponuser.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
                 if not existing_mapping:
@@ -757,9 +829,9 @@ def profile():
                     db.session.add(new_mapping)
                     # Set college name from coupon if available
                     if coupon.college:
-                        user.college_name = coupon.college.college_name
+                        users.college_name = coupon.college.college_name
                     else:
-                        user.college_name = manual_college or user.college_name
+                        users.college_name = manual_college or users.college_name
                     flash("Coupon code applied successfully!", "success")
                 # Reload user_coupon after adding mapping
                 user_coupon_mapping = Couponuser.query.filter_by(user_id=user_id).first()
@@ -768,25 +840,25 @@ def profile():
         elif user_coupon:
             # User already has a coupon, don't allow changes to coupon-controlled fields
             if user_coupon.college:
-                user.college_name = user_coupon.college.college_name
+                users.college_name = user_coupon.college.college_name
             else:
-                user.college_name = manual_college or user.college_name
+                users.college_name = manual_college or users.college_name
         else:
             # No coupon code provided and user doesn't have one, use manual college
-            user.college_name = manual_college or user.college_name
+            users.college_name = manual_college or users.college_name
 
         # Update user fields
-        user.name = name_input
-        user.email = email_input
-        user.phone = phone_input if phone_input else None
+        users.name = name_input
+        users.email = email_input
+        users.phone = phone_input if phone_input else None
         if age_input:
             try:
-                user.age = int(age_input)
+                users.age = int(age_input)
             except ValueError:
                 pass  # Already validated above
-        user.about_me = about_me_input if about_me_input else None
+        users.about_me = about_me_input if about_me_input else None
         # Profile picture URL update - clear if empty
-        user.profile_picture = profile_pic_url if profile_pic_url else None
+        users.profile_picture = profile_pic_url if profile_pic_url else None
 
         try:
             db.session.commit()
@@ -795,9 +867,9 @@ def profile():
         except Exception as e:
             db.session.rollback()
             flash(f"Error updating profile: {str(e)}", "error")
-            return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
+            return render_template('/user/profile.html', users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=True, form_values=form_values)
 
-    return render_template('/user/profile.html', user=user, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=edit_mode, form_values=form_values)
+    return render_template('/user/profile.html', user=user,users=users, resumes=resumes, certifications=certifications, user_coupon=user_coupon, edit_mode=edit_mode, form_values=form_values)
 from flask import jsonify
 
 @user_blueprint.route('/get_application_details/<uuid:application_id>', methods=['GET'])
@@ -860,7 +932,8 @@ def job_details(job_id):
     applied_jobs = {app.job_id for app in JobApplication.query.filter_by(user_id=user.id).all()}
     saved_jobs = {fav.job_id for fav in Favorite.query.filter_by(user_id=user.id).all()}
     
-    return render_template('/user/jobresults.html', 
+    return render_template('/user/jobresults.html',
+                           user=user, 
                          job=job, 
                          applied_jobs=applied_jobs, 
                          saved_jobs=saved_jobs)
@@ -882,7 +955,20 @@ from sqlalchemy import or_
 def job_search():
     # Dictionary to hold form values for template repopulation on error
     form_values = {}
-
+    login_id = session.get('login_id')  # Use 'login_id' instead of 'user_id'
+    if not login_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('auth.login'))
+   
+    # Ensure that only regular users access this page
+    if session.get('role') != 'user':
+        return redirect(url_for('auth.login'))
+   
+    # Get the User object using login_id from the Login table
+    user = User.query.filter_by(login_id=login_id).first()
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('auth.login'))
     if request.method == 'POST':
         # Get raw inputs first for invalid char check and repopulation
         raw_keyword = request.form.get('keyword', '').strip()
@@ -1022,13 +1108,14 @@ def job_search():
         }
 
         return render_template('/user/jobresults.html',
+                               user=user,
                                jobs=jobs,
                                applied_jobs=applied_jobs,
                                saved_jobs=saved_jobs,
                                pagination=jobs_pagination,
                                search_params=search_params)
     else:
-        return render_template('/user/jobsearch.html', form_values=form_values)
+        return render_template('/user/jobsearch.html', user=user,form_values=form_values)
 # Updated Save Job Route
 @user_blueprint.route('/save_job1/<uuid:job_id>', methods=['POST'])
 @no_cache
@@ -1251,6 +1338,7 @@ def favorites():
    
     return render_template(
         '/user/favorites.html',
+        user=user,
         favorites=favorites,
         page=favorites_pagination.page,
         total_pages=favorites_pagination.pages,
