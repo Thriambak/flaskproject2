@@ -1415,6 +1415,7 @@ const AddCompanyDialog = ({ open, handleClose }) => {
     const [emailError, setEmailError] = useState('');
     const [companyNameError, setCompanyNameError] = useState('');
     const [isCheckingCompany, setIsCheckingCompany] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const [isVerifyingWebsite, setIsVerifyingWebsite] = useState(false);
     const [isVerifyingLogo, setIsVerifyingLogo] = useState(false);
@@ -1617,19 +1618,33 @@ const AddCompanyDialog = ({ open, handleClose }) => {
                         gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                         gap: 3
                     }}>
-                        <MuiTextField 
-                            name="password" 
-                            label="Password" 
-                            type="password" 
-                            fullWidth 
-                            variant="outlined" 
-                            value={formData.password} 
-                            onChange={handleChange} 
-                            required 
-                            error={!!passwordError} 
-                            helperText={passwordError || "8+ characters, no spaces"}
-                            autoComplete="new-password"  // prevents autofill
+                        <MuiTextField
+                            name="password"
+                            label="Password"
+                            type={showPassword ? "text" : "password"}  // Toggle between text and password
+                            fullWidth
+                            variant="outlined"
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                            error={!!passwordError}
+                            helperText={passwordError || "8+ characters, letters, numbers, and special characters"}
+                            InputProps={{
+                                endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    edge="end"
+                                    aria-label="toggle password visibility"
+                                    >
+                                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                    </IconButton>
+                                </InputAdornment>
+                                ),
+                            }}
                         />
+
                         <FormControl fullWidth variant="outlined">
                             <InputLabel id="industry-label">Industry</InputLabel>
                             <Select 
