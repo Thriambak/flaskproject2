@@ -81,6 +81,72 @@ def check_session_validity():
     
     return True
 
+import dns.resolver
+from dns.exception import DNSException
+
+def validate_email_domain(email):
+    """
+    Check if email domain has valid MX records (can receive email).
+    Returns (is_valid: bool, error_message: str)
+    """
+    try:
+        domain = email.split('@')[1].lower()
+        
+        """# Common typos in popular domains
+        common_typos = {
+            'gmial.com': 'gmail.com',
+            'gmai.com': 'gmail.com',
+            'gamil.com': 'gmail.com',
+            'gmil.com': 'gmail.com',
+            'yahooo.com': 'yahoo.com',
+            'yaho.com': 'yahoo.com',
+            'outlok.com': 'outlook.com',
+            'outloo.com': 'outlook.com',
+            'hotmial.com': 'hotmail.com',
+            'hotmal.com': 'hotmail.com',
+        }
+        
+        # Check for common typos
+        if domain in common_typos:
+            suggested = common_typos[domain]
+            return False, f"Did you mean '{email.split('@')[0]}@{suggested}'? Please check your email address."
+        """
+        
+        # Check for MX records (mail servers)
+        try:
+            mx_records = dns.resolver.resolve(domain, 'MX')
+            if mx_records:
+                return True, None
+        except dns.resolver.NoAnswer:
+            # No MX records, try A record (some domains use A records for email)
+            try:
+                a_records = dns.resolver.resolve(domain, 'A')
+                if a_records:
+                    return True, None
+            except dns.resolver.NXDOMAIN:
+                return False, f"The email domain '{domain}' does not exist. Please check your email address."
+            except:
+                return False, f"Unable to verify the domain '{domain}'. Please check your email address."
+        except dns.resolver.NXDOMAIN:
+            return False, f"The email domain '{domain}' does not exist. Please check your email address."
+        except dns.resolver.Timeout:
+            # DNS lookup timed out - allow signup rather than blocking user
+            print(f"DNS timeout for domain: {domain}")
+            return True, None
+        
+        return False, f"The email domain '{domain}' cannot receive emails. Please use a valid email address."
+        
+    except IndexError:
+        return False, "Invalid email format. Email must contain '@' symbol."
+    except DNSException as e:
+        print(f"DNS error for {email}: {e}")
+        return False, "Unable to verify email domain. Please check your email address and try again."
+    except Exception as e:
+        # Unexpected error - allow signup gracefully
+        print(f"Email validation error for {email}: {e}")
+        return True, None  # Don't block users on unexpected errors
+
+
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
 @no_cache
 def signup():
@@ -141,12 +207,21 @@ def signup():
             return redirect(url_for('auth.signup'))
        
         # Email validation
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r'^[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9][a-zA-Z0-9.-]{0,253}\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             flash('Invalid email format. Please use a valid email (e.g., user@domain.com).', 'danger')
             return redirect(url_for('auth.signup'))
+        # Additional format checks
+        if '..' in email or email.startswith('.') or email.endswith('.'):
+            flash('Email format is invalid.', 'danger')
+            return redirect(url_for('auth.signup'))
         if len(email) > 90:
             flash('Password length is too long.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        is_valid_domain, domain_error = validate_email_domain(email)
+        if not is_valid_domain:
+            flash(domain_error, 'danger')
             return redirect(url_for('auth.signup'))
 
         # Check for existing username or email

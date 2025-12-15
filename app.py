@@ -460,6 +460,71 @@ def sanitize_text(value: str) -> str:
     value = value.replace('<', '').replace('>', '')
     return value.strip()
 
+import dns.resolver
+from dns.exception import DNSException
+
+def validate_email_domain(email):
+    """
+    Check if email domain has valid MX records (can receive email).
+    Returns (is_valid: bool, error_message: str)
+    """
+    try:
+        domain = email.split('@')[1].lower()
+        
+        """# Common typos in popular domains
+        common_typos = {
+            'gmial.com': 'gmail.com',
+            'gmai.com': 'gmail.com',
+            'gamil.com': 'gmail.com',
+            'gmil.com': 'gmail.com',
+            'yahooo.com': 'yahoo.com',
+            'yaho.com': 'yahoo.com',
+            'outlok.com': 'outlook.com',
+            'outloo.com': 'outlook.com',
+            'hotmial.com': 'hotmail.com',
+            'hotmal.com': 'hotmail.com',
+        }
+        
+        # Check for common typos
+        if domain in common_typos:
+            suggested = common_typos[domain]
+            return False, f"Did you mean '{email.split('@')[0]}@{suggested}'? Please check your email address."
+        """
+        
+        # Check for MX records (mail servers)
+        try:
+            mx_records = dns.resolver.resolve(domain, 'MX')
+            if mx_records:
+                return True, None
+        except dns.resolver.NoAnswer:
+            # No MX records, try A record (some domains use A records for email)
+            try:
+                a_records = dns.resolver.resolve(domain, 'A')
+                if a_records:
+                    return True, None
+            except dns.resolver.NXDOMAIN:
+                return False, f"The email domain '{domain}' does not exist. Please check your email address."
+            except:
+                return False, f"Unable to verify the domain '{domain}'. Please check your email address."
+        except dns.resolver.NXDOMAIN:
+            return False, f"The email domain '{domain}' does not exist. Please check your email address."
+        except dns.resolver.Timeout:
+            # DNS lookup timed out - allow signup rather than blocking user
+            print(f"DNS timeout for domain: {domain}")
+            return True, None
+        
+        return False, f"The email domain '{domain}' cannot receive emails. Please use a valid email address."
+        
+    except IndexError:
+        return False, "Invalid email format. Email must contain '@' symbol."
+    except DNSException as e:
+        print(f"DNS error for {email}: {e}")
+        return False, "Unable to verify email domain. Please check your email address and try again."
+    except Exception as e:
+        # Unexpected error - allow signup gracefully
+        print(f"Email validation error for {email}: {e}")
+        return True, None  # Don't block users on unexpected errors
+
 @app.route('/companies', methods=['POST'])
 def create_company():
     data = request.json or {}
@@ -509,6 +574,20 @@ def create_company():
 
         if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', raw_email):
             return jsonify({"message": "Invalid email format!"}), 400
+
+        if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9][a-zA-Z0-9.-]{0,253}\.[a-zA-Z]{2,}$', raw_email):
+            return jsonify({"message": "Invalid email format!"}), 400
+        
+        if '..' in raw_email or raw_email.startswith('.') or raw_email.endswith('.'):
+            return jsonify({"message": "Email format is invalid."}), 400
+        
+        if len(raw_email) > 90:
+            return jsonify({"message": "Email address is too long."}), 400
+        
+        # ✅ NEW: DNS MX Record Check
+        is_valid_domain, domain_error = validate_email_domain(raw_email)
+        if not is_valid_domain:
+            return jsonify({"message": domain_error}), 400
 
         if not password:
             return jsonify({"message": "Password is required."}), 400
