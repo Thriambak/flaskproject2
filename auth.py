@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from functools import wraps
 import uuid
+import dns.resolver
+from dns.exception import DNSException
+
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -81,9 +84,6 @@ def check_session_validity():
     
     return True
 
-import dns.resolver
-from dns.exception import DNSException
-
 def validate_email_domain(email):
     """
     Check if email domain has valid MX records (can receive email).
@@ -145,7 +145,6 @@ def validate_email_domain(email):
         # Unexpected error - allow signup gracefully
         print(f"Email validation error for {email}: {e}")
         return True, None  # Don't block users on unexpected errors
-
 
 @auth_blueprint.route('/signup', methods=['GET', 'POST'])
 @no_cache
@@ -283,7 +282,7 @@ def check_api_session():
     print(f"DEBUG check-session: role = {session.get('role')}")
     print(f"DEBUG check-session: cookies = {request.cookies}")
     """
-    if 'login_id' in session and session.get('role') == 'admin':
+    if 'admin_login_id' in session and session.get('admin_role') == 'admin':
         # print("DEBUG check-session: AUTHENTICATED ✅")
         return jsonify({'isAuthenticated': True}), 200
     
@@ -332,11 +331,11 @@ def login():
             # print("DEBUG: Login successful, setting session")
             
             # Set Flask session for admin
-            session['login_id'] = login_user.id
-            session['username'] = login_user.username
-            session['role'] = login_user.role
-            session['last_activity'] = datetime.utcnow()
-            session['session_token'] = login_user.session_token
+            session['admin_login_id'] = login_user.id
+            session['admin_username'] = login_user.username
+            session['admin_role'] = login_user.role
+            session['admin_last_activity'] = datetime.utcnow()
+            session['admin_session_token'] = login_user.session_token
             session.permanent = True
             
             # print(f"DEBUG: Session set - login_id={session['login_id']}, role={session['role']}")
@@ -407,23 +406,25 @@ def login():
 def logout():
     is_api_request = request.headers.get('X-Requested-With') == 'ReactAdmin'
     
-    # Clear session
-    session.pop('login_id', None)
-    session.pop('username', None)
-    session.pop('role', None)
-    session.pop('user_id', None)
-    session.pop('college_id', None)
-    session.pop('company_id', None)
-    session.clear()
-    
-    # For API requests, return JSON with cookie deletion
     if is_api_request:
+        # ✅ Clear only admin-specific session keys
+        session.pop('admin_login_id', None)
+        session.pop('admin_username', None)
+        session.pop('admin_role', None)
+        session.pop('admin_last_activity', None)
+        session.pop('admin_session_token', None)
+        
         response = make_response(jsonify({'message': 'Logged out successfully'}), 200)
-        
-        # Delete the session cookie
         response.delete_cookie('admin_session', domain='127.0.0.1', path='/')
-        
-        return response
+    else:
+        # ✅ Clear web module session keys (unchanged)
+        session.pop('login_id', None)
+        session.pop('username', None)
+        session.pop('role', None)
+        session.pop('user_id', None)
+        session.pop('college_id', None)
+        session.pop('company_id', None)
+        session.clear()
     
     # For web form requests, redirect with cookie deletion
     response = make_response(redirect(url_for('auth.login')))
