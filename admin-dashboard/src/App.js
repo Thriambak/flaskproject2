@@ -99,12 +99,13 @@ import {
 import './App.css';
 
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = 'http://127.0.0.1:5000/admin';
+const API_BASE_URL_AUTH = 'http://127.0.0.1:5000/auth';
 
 // CLEANED Authentication Provider
 const authProvider = {
     login: async ({ username, password }) => {
-        const request = new Request(`${API_BASE_URL}/auth/login`, {
+        const request = new Request(`${API_BASE_URL_AUTH}/login`, {
             method: 'POST',
             body: JSON.stringify({ username, password }),
             headers: new Headers({ 
@@ -135,7 +136,7 @@ const authProvider = {
     
     logout: async () => {
         try {
-            await fetch(`${API_BASE_URL}/auth/logout`, {
+            await fetch(`${API_BASE_URL_AUTH}/logout`, {
                 method: 'GET',
                 headers: { 'X-Requested-With': 'ReactAdmin' },
                 credentials: 'include'
@@ -155,7 +156,7 @@ const authProvider = {
     
     checkAuth: async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/api/check-session`, {
+            const response = await fetch(`${API_BASE_URL_AUTH}/api/check-session`, {
                 credentials: 'include'
             });
             
@@ -643,7 +644,7 @@ const Dashboard = () => {
             setError(null);
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // changed from 5 to 10s timeout
 
             const response = await fetch(
                 `${API_BASE_URL}/dashboard?range=${range}`,

@@ -382,12 +382,17 @@ def college_collab():
         
     college_id = college_profile.id  # Get college_id from the profile for related queries
 
+    # print("DEBUG college_collab: college_id =", college_id)
+    # print("DEBUG college_collab: user_id =", login_id)
+    
     # Get total students registered through college coupons
     total_students = db.session.query(func.count(distinct(User.id)))\
         .join(Couponuser, Couponuser.user_id == User.id)\
         .join(Coupon, Coupon.id == Couponuser.coupon_id)\
         .filter(Coupon.college_id == college_id)\
         .scalar() or 0
+    
+    # print("DEBUG college_collab: total_students =", total_students)
 
     # Comment out the partnered companies query but keep for future reference
     """

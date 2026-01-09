@@ -1,0 +1,1116 @@
+{
+  "info": {
+    "name": "API",
+    "description": "Auto-generated Postman collection from Flask backend source code. Contains all discovered API endpoints organized by blueprint.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints for signup, login, logout, password reset, and session management.",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "",
+                  "description": "Username (3-30 chars, alphanumeric or 10-digit phone)"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "description": "Password (min 8 chars, letters/numbers/@#$%^&+=)"
+                },
+                {
+                  "key": "email",
+                  "value": "",
+                  "description": "Valid email address"
+                },
+                {
+                  "key": "role",
+                  "value": "user",
+                  "description": "Role: user, company, or college"
+                }
+              ]
+            },
+            "url": "{{base_url}}/auth/signup",
+            "description": "Register a new user, company, or college account."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": ""
+                },
+                {
+                  "key": "password",
+                  "value": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Authenticate user and create session. Redirects based on role (user/company/college/admin)."
+          }
+        },
+        {
+          "name": "Login (Admin API)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Requested-With",
+                "value": "ReactAdmin"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}"
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Admin login endpoint for React-Admin integration. Returns JSON response."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/logout",
+            "description": "Log out current user and clear session."
+          }
+        },
+        {
+          "name": "Check Session (API)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/api/check-session",
+            "description": "API endpoint for React-Admin to check authentication status. Returns isAuthenticated boolean."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "",
+                  "description": "Email address to send OTP"
+                }
+              ]
+            },
+            "url": "{{base_url}}/auth/forgot-password",
+            "description": "Initiate password reset flow by sending OTP to email."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "otp",
+                  "value": "",
+                  "description": "6-digit OTP received via email"
+                }
+              ]
+            },
+            "url": "{{base_url}}/auth/verify-otp",
+            "description": "Verify OTP code during password reset flow."
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/resend-otp",
+            "description": "Resend OTP to user's email if still in forgot-password flow."
+          }
+        },
+        {
+          "name": "OTP Timer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/otp-timer",
+            "description": "API endpoint to check remaining OTP validity time."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "password",
+                  "value": "",
+                  "description": "New password"
+                },
+                {
+                  "key": "confirm_password",
+                  "value": "",
+                  "description": "Confirm new password"
+                }
+              ]
+            },
+            "url": "{{base_url}}/auth/reset-password",
+            "description": "Set new password after OTP verification."
+          }
+        },
+        {
+          "name": "Clear History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/clear-history",
+            "description": "Clear browser history and redirect to login with no-cache headers."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "description": "User-related endpoints for dashboard, profile, job search, applications, and favorites.",
+      "item": [
+        {
+          "name": "User Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/user_dashboard",
+            "description": "Display the user dashboard with job recommendations and statistics."
+          }
+        },
+        {
+          "name": "User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/profile",
+            "description": "Get user profile information."
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": ""
+                },
+                {
+                  "key": "email",
+                  "value": ""
+                },
+                {
+                  "key": "phone",
+                  "value": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/user/profile",
+            "description": "Update user profile with enhanced validation."
+          }
+        },
+        {
+          "name": "Job Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/job_search",
+            "description": "Search for jobs with enhanced validation and sanitization."
+          }
+        },
+        {
+          "name": "Job Search (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search query"
+                },
+                {
+                  "key": "job_type",
+                  "value": "",
+                  "description": "Filter by job type"
+                },
+                {
+                  "key": "location",
+                  "value": "",
+                  "description": "Filter by location"
+                }
+              ]
+            },
+            "url": "{{base_url}}/user/job_search",
+            "description": "Search for jobs with filters."
+          }
+        },
+        {
+          "name": "Job Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/job_details/:job_id",
+            "description": "Get detailed information about a specific job."
+          }
+        },
+        {
+          "name": "Apply for Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/apply_for_job/:job_id",
+            "description": "Submit job application for a specific job."
+          }
+        },
+        {
+          "name": "Apply for Job (Alt)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/apply1_for_job/:job_id",
+            "description": "Alternative endpoint to apply for a job."
+          }
+        },
+        {
+          "name": "Save Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/save_job/:job_id",
+            "description": "Save a job to favorites."
+          }
+        },
+        {
+          "name": "Save Job (Alt)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/save_job1/:job_id",
+            "description": "Alternative endpoint to save a job."
+          }
+        },
+        {
+          "name": "Favorites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/favorites",
+            "description": "Get list of saved/favorite jobs."
+          }
+        },
+        {
+          "name": "Remove Favorite",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/remove_favorite/:job_id",
+            "description": "Remove a job from favorites."
+          }
+        },
+        {
+          "name": "Application History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/application_history",
+            "description": "Get user's job application history."
+          }
+        },
+        {
+          "name": "Get Application Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/get_application_details/:application_id",
+            "description": "Get detailed information about a specific job application."
+          }
+        },
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/analytics",
+            "description": "Get user analytics including success rate and application trends."
+          }
+        },
+        {
+          "name": "Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/notifications",
+            "description": "Get user notifications with pagination."
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/mark_notification_read/:notification_id",
+            "description": "Mark a specific notification as read."
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/delete_notification/:notification_id",
+            "description": "Delete a specific notification."
+          }
+        },
+        {
+          "name": "Resume & Certifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/user/resume_certifications",
+            "description": "Get user's resume and certifications."
+          }
+        },
+        {
+          "name": "Upload Resume/Certification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Resume or certification file"
+                }
+              ]
+            },
+            "url": "{{base_url}}/user/resume_certifications",
+            "description": "Upload resume or certification document."
+          }
+        },
+        {
+          "name": "Delete Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/delete_resume/:resume_id",
+            "description": "Delete a specific resume."
+          }
+        },
+        {
+          "name": "Delete Certification",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/user/delete_certification/:certification_id",
+            "description": "Delete a specific certification."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Company",
+      "description": "Company-related endpoints for dashboard, job posting, and applicant management.",
+      "item": [
+        {
+          "name": "Company Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/company/company_dashboard?year=2024",
+              "host": ["{{base_url}}"],
+              "path": ["company", "company_dashboard"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "description": "Filter by year (optional)"
+                }
+              ]
+            },
+            "description": "Display company dashboard with job statistics and hiring metrics."
+          }
+        },
+        {
+          "name": "Job Posting List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/company/company_jobposting",
+            "description": "Get list of all jobs posted by the company."
+          }
+        },
+        {
+          "name": "Post New Job (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/company/company_post_new_job",
+            "description": "Get job posting form."
+          }
+        },
+        {
+          "name": "Post New Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "job-title",
+                  "value": "",
+                  "description": "Job title (3-250 chars)"
+                },
+                {
+                  "key": "description",
+                  "value": "",
+                  "description": "Job description (10-2000 chars)"
+                },
+                {
+                  "key": "skill-sets",
+                  "value": "",
+                  "description": "Required skills (max 1000 chars)"
+                },
+                {
+                  "key": "exp",
+                  "value": "0",
+                  "description": "Years of experience (0-50)"
+                },
+                {
+                  "key": "certifications",
+                  "value": "",
+                  "description": "Required certifications (max 1000 chars)"
+                },
+                {
+                  "key": "job-type",
+                  "value": "",
+                  "description": "Job type (full-time, part-time, etc.)"
+                },
+                {
+                  "key": "locations",
+                  "value": "",
+                  "description": "Job locations (max 1000 chars)"
+                },
+                {
+                  "key": "salary",
+                  "value": "",
+                  "description": "Salary (max 50 chars)"
+                },
+                {
+                  "key": "vacancy",
+                  "value": "1",
+                  "description": "Number of vacancies (1-1000)"
+                },
+                {
+                  "key": "form-url",
+                  "value": "",
+                  "description": "Questionnaire form URL (optional)"
+                },
+                {
+                  "key": "deadline",
+                  "value": "",
+                  "description": "Application deadline (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "url": "{{base_url}}/company/company_post_new_job",
+            "description": "Create a new job posting with validation."
+          }
+        }
+      ]
+    },
+    {
+      "name": "College",
+      "description": "College-related endpoints for dashboard, student tracking, and collaboration.",
+      "item": [
+        {
+          "name": "College Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/college/college_dashboard?year=2024",
+              "host": ["{{base_url}}"],
+              "path": ["college", "college_dashboard"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "description": "Filter by year (optional)"
+                }
+              ]
+            },
+            "description": "Display college dashboard with student registration and placement statistics."
+          }
+        },
+        {
+          "name": "College Profile (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/college/college_profile",
+            "description": "Get college profile information."
+          }
+        },
+        {
+          "name": "Update College Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "college-name",
+                  "value": "",
+                  "description": "College name (3-100 chars)"
+                },
+                {
+                  "key": "contact-email",
+                  "value": "",
+                  "description": "Contact email"
+                },
+                {
+                  "key": "college-description",
+                  "value": "",
+                  "description": "Description (max 1000 chars)"
+                },
+                {
+                  "key": "college-address",
+                  "value": "",
+                  "description": "Address (max 500 chars)"
+                },
+                {
+                  "key": "college-website",
+                  "value": "",
+                  "description": "Website URL (http/https)"
+                },
+                {
+                  "key": "college-logo",
+                  "value": "",
+                  "description": "Logo URL (http/https)"
+                }
+              ]
+            },
+            "url": "{{base_url}}/college/college_profile",
+            "description": "Update college profile with validation."
+          }
+        },
+        {
+          "name": "Student Tracking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/college/college_studenttracking",
+            "description": "Track student job applications and hiring status."
+          }
+        },
+        {
+          "name": "Referral",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/college/college_referall",
+            "description": "College referral page."
+          }
+        },
+        {
+          "name": "Collaboration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/college/college_collab",
+            "description": "View collaboration statistics including total students, placed students, and placement percentage."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin API endpoints for managing users, companies, jobs, and dashboard data.",
+      "item": [
+        {
+          "name": "Users",
+          "description": "User management endpoints",
+          "item": [
+            {
+              "name": "Get All Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users?q=&sort=name&order=asc",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "",
+                      "description": "Search query (name:, email:, or general search)"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "name",
+                      "description": "Sort field"
+                    },
+                    {
+                      "key": "order",
+                      "value": "asc",
+                      "description": "Sort order (asc/desc)"
+                    }
+                  ]
+                },
+                "description": "Get list of all users with optional search and sorting."
+              }
+            },
+            {
+              "name": "Get User Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/admin/users/:id",
+                "description": "Get detailed information about a specific user."
+              }
+            },
+            {
+              "name": "Create User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"is_banned\": false\n}"
+                },
+                "url": "{{base_url}}/admin/users",
+                "description": "Create a new user."
+              }
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"is_banned\": false\n}"
+                },
+                "url": "{{base_url}}/admin/users/:user_id",
+                "description": "Update user information or ban status."
+              }
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/admin/users/:user_id",
+                "description": "Delete a specific user and all related data."
+              }
+            },
+            {
+              "name": "Bulk Delete Users",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": []\n}"
+                },
+                "url": "{{base_url}}/admin/users/bulk",
+                "description": "Delete multiple users at once."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Companies",
+          "description": "Company management endpoints",
+          "item": [
+            {
+              "name": "Get All Companies",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/companies?q=&sort=company_name&order=asc",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "companies"],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "",
+                      "description": "Search query (company_name:, email:, industry:, or general)"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "company_name",
+                      "description": "Sort field"
+                    },
+                    {
+                      "key": "order",
+                      "value": "asc",
+                      "description": "Sort order (asc/desc)"
+                    }
+                  ]
+                },
+                "description": "Get list of all companies with optional search and sorting."
+              }
+            },
+            {
+              "name": "Get Company Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/admin/companies/:id",
+                "description": "Get detailed information about a specific company."
+              }
+            },
+            {
+              "name": "Create Company",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"company_name\": \"\",\n  \"email\": \"\",\n  \"password\": \"\",\n  \"address\": \"\",\n  \"website\": \"\",\n  \"logo\": \"\",\n  \"description\": \"\",\n  \"industry\": \"\",\n  \"is_banned\": false\n}"
+                },
+                "url": "{{base_url}}/admin/companies",
+                "description": "Create a new company with login credentials. Validates email domain via DNS MX records."
+              }
+            },
+            {
+              "name": "Update Company",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"company_name\": \"\",\n  \"is_banned\": false\n}"
+                },
+                "url": "{{base_url}}/admin/companies/:company_id",
+                "description": "Update company information or ban status."
+              }
+            },
+            {
+              "name": "Delete Company",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/admin/companies/:company_id",
+                "description": "Delete a company and all related jobs, applications, and data."
+              }
+            },
+            {
+              "name": "Bulk Delete Companies",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": []\n}"
+                },
+                "url": "{{base_url}}/admin/companies/bulk",
+                "description": "Delete multiple companies and their associated data."
+              }
+            },
+            {
+              "name": "Company Profile Form (GET)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/admin/company/company_profile",
+                "description": "Get company profile form page."
+              }
+            },
+            {
+              "name": "Submit Company Profile",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"company_name\": \"\",\n  \"email\": \"\"\n}"
+                },
+                "url": "{{base_url}}/admin/company/company_profile",
+                "description": "Submit company profile creation."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Jobs",
+          "description": "Job management endpoints",
+          "item": [
+            {
+              "name": "Get All Jobs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/jobs?q=&sort=title&order=asc",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "jobs"],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "",
+                      "description": "Search query (title:, job_type:, location:, status:, company:, or general)"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "title",
+                      "description": "Sort field"
+                    },
+                    {
+                      "key": "order",
+                      "value": "asc",
+                      "description": "Sort order (asc/desc)"
+                    }
+                  ]
+                },
+                "description": "Get list of all jobs with company names, search, and sorting."
+              }
+            },
+            {
+              "name": "Create Job",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"\",\n  \"description\": \"\",\n  \"job_type\": \"\",\n  \"skills\": \"\",\n  \"years_of_exp\": 0,\n  \"certifications\": \"\",\n  \"location\": \"\",\n  \"salary\": \"\",\n  \"total_vacancy\": 1,\n  \"filled_vacancy\": 0,\n  \"status\": \"open\",\n  \"form_url\": \"\",\n  \"deadline\": \"YYYY-MM-DD\",\n  \"created_by\": \"\"\n}"
+                },
+                "url": "{{base_url}}/admin/jobs",
+                "description": "Create a new job posting."
+              }
+            },
+            {
+              "name": "Update Job",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"\",\n  \"status\": \"open\",\n  \"deadline\": \"YYYY-MM-DD\"\n}"
+                },
+                "url": "{{base_url}}/admin/jobs/:job_id",
+                "description": "Update job information."
+              }
+            },
+            {
+              "name": "Delete Job",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/admin/jobs/:job_id",
+                "description": "Delete a job and all related applications and favorites."
+              }
+            },
+            {
+              "name": "Bulk Delete Jobs",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": []\n}"
+                },
+                "url": "{{base_url}}/admin/jobs/bulk",
+                "description": "Delete multiple jobs and their related data."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard",
+          "description": "Dashboard data endpoints",
+          "item": [
+            {
+              "name": "Get Dashboard Data",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/dashboard?range=weekly",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "dashboard"],
+                  "query": [
+                    {
+                      "key": "range",
+                      "value": "weekly",
+                      "description": "Time range: weekly, monthly, yearly, or ten_years"
+                    }
+                  ]
+                },
+                "description": "Get dashboard metrics (users, companies, jobs, applications) and trends data."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Root",
+      "description": "Root application endpoints",
+      "item": [
+        {
+          "name": "Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/",
+            "description": "Application home page."
+          }
+        }
+      ]
+    }
+  ]
+}

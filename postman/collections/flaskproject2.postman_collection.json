@@ -1,0 +1,1578 @@
+{
+	"info": {
+		"_postman_id": "f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+		"name": "flaskproject2",
+		"description": "API collection for the Flask recruitment platform. Includes authentication, user management, company management, job postings, college features, and admin routes.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Home",
+			"item": [
+				{
+					"name": "Home Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Returns the home page"
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Signup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "role",
+									"value": "user",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/signup",
+							"host": ["{{base_url}}"],
+							"path": ["signup"]
+						},
+						"description": "Register a new user account (user, company, or college)"
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						},
+						"description": "Authenticate user and create session"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": ["{{base_url}}"],
+							"path": ["logout"]
+						},
+						"description": "End user session and logout"
+					}
+				},
+				{
+					"name": "Check Session (API)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/check-session",
+							"host": ["{{base_url}}"],
+							"path": ["api", "check-session"]
+						},
+						"description": "API endpoint for React-Admin to check authentication status"
+					}
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["forgot-password"]
+						},
+						"description": "Request password reset OTP via email"
+					}
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "otp",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["verify-otp"]
+						},
+						"description": "Verify the OTP sent for password reset"
+					}
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/resend-otp",
+							"host": ["{{base_url}}"],
+							"path": ["resend-otp"]
+						},
+						"description": "Resend OTP for password reset"
+					}
+				},
+				{
+					"name": "OTP Timer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/otp-timer",
+							"host": ["{{base_url}}"],
+							"path": ["otp-timer"]
+						},
+						"description": "Get remaining time for OTP validity"
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "confirm_password",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["reset-password"]
+						},
+						"description": "Reset password after OTP verification"
+					}
+				},
+				{
+					"name": "Clear History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/clear-history",
+							"host": ["{{base_url}}"],
+							"path": ["clear-history"]
+						},
+						"description": "Clear browser history and redirect to login"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users API",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": ["{{base_url}}"],
+							"path": ["users"],
+							"query": [
+								{
+									"key": "q",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sort",
+									"value": "name",
+									"disabled": true
+								},
+								{
+									"key": "order",
+									"value": "asc",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of all users with optional search and sorting"
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:id",
+							"host": ["{{base_url}}"],
+							"path": ["users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get details of a specific user by UUID"
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"email\": \"\",\n    \"phone\": \"\",\n    \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": ["{{base_url}}"],
+							"path": ["users"]
+						},
+						"description": "Create a new user"
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"email\": \"\",\n    \"is_banned\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/:user_id",
+							"host": ["{{base_url}}"],
+							"path": ["users", ":user_id"],
+							"variable": [
+								{
+									"key": "user_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update user details or ban status"
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:user_id",
+							"host": ["{{base_url}}"],
+							"path": ["users", ":user_id"],
+							"variable": [
+								{
+									"key": "user_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a user by UUID"
+					}
+				},
+				{
+					"name": "Bulk Delete Users",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ids\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/bulk",
+							"host": ["{{base_url}}"],
+							"path": ["users", "bulk"]
+						},
+						"description": "Delete multiple users at once"
+					}
+				}
+			]
+		},
+		{
+			"name": "User Dashboard",
+			"item": [
+				{
+					"name": "User Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/user_dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["user_dashboard"]
+						},
+						"description": "Get user dashboard page"
+					}
+				},
+				{
+					"name": "User Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/analytics",
+							"host": ["{{base_url}}"],
+							"path": ["analytics"]
+						},
+						"description": "Get user analytics data"
+					}
+				},
+				{
+					"name": "User Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/profile",
+							"host": ["{{base_url}}"],
+							"path": ["profile"]
+						},
+						"description": "Get user profile page"
+					}
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{base_url}}/profile",
+							"host": ["{{base_url}}"],
+							"path": ["profile"]
+						},
+						"description": "Update user profile information"
+					}
+				},
+				{
+					"name": "User Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/notifications",
+							"host": ["{{base_url}}"],
+							"path": ["notifications"]
+						},
+						"description": "Get user notifications"
+					}
+				},
+				{
+					"name": "Mark Notification Read",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/mark_notification_read/:notification_id",
+							"host": ["{{base_url}}"],
+							"path": ["mark_notification_read", ":notification_id"],
+							"variable": [
+								{
+									"key": "notification_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Mark a specific notification as read"
+					}
+				},
+				{
+					"name": "Delete Notification",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/delete_notification/:notification_id",
+							"host": ["{{base_url}}"],
+							"path": ["delete_notification", ":notification_id"],
+							"variable": [
+								{
+									"key": "notification_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a specific notification"
+					}
+				},
+				{
+					"name": "Resume & Certifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/resume_certifications",
+							"host": ["{{base_url}}"],
+							"path": ["resume_certifications"]
+						},
+						"description": "Get user resume and certifications page"
+					}
+				},
+				{
+					"name": "Upload Resume/Certifications",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{base_url}}/resume_certifications",
+							"host": ["{{base_url}}"],
+							"path": ["resume_certifications"]
+						},
+						"description": "Upload resume or certifications"
+					}
+				},
+				{
+					"name": "Delete Resume",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/delete_resume/:resume_id",
+							"host": ["{{base_url}}"],
+							"path": ["delete_resume", ":resume_id"],
+							"variable": [
+								{
+									"key": "resume_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a resume by ID"
+					}
+				},
+				{
+					"name": "Delete Certification",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/delete_certification/:certification_id",
+							"host": ["{{base_url}}"],
+							"path": ["delete_certification", ":certification_id"],
+							"variable": [
+								{
+									"key": "certification_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a certification by ID"
+					}
+				},
+				{
+					"name": "Application History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/application_history",
+							"host": ["{{base_url}}"],
+							"path": ["application_history"]
+						},
+						"description": "Get user's job application history"
+					}
+				},
+				{
+					"name": "Get Application Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/get_application_details/:application_id",
+							"host": ["{{base_url}}"],
+							"path": ["get_application_details", ":application_id"],
+							"variable": [
+								{
+									"key": "application_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get details of a specific job application"
+					}
+				},
+				{
+					"name": "Job Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/job_search",
+							"host": ["{{base_url}}"],
+							"path": ["job_search"]
+						},
+						"description": "Search for jobs"
+					}
+				},
+				{
+					"name": "Job Search (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{base_url}}/job_search",
+							"host": ["{{base_url}}"],
+							"path": ["job_search"]
+						},
+						"description": "Search for jobs with filters"
+					}
+				},
+				{
+					"name": "Job Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/job_details/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["job_details", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get details of a specific job"
+					}
+				},
+				{
+					"name": "Apply for Job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/apply_for_job/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["apply_for_job", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Apply for a job"
+					}
+				},
+				{
+					"name": "Apply for Job (Alt)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/apply1_for_job/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["apply1_for_job", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Alternative endpoint to apply for a job"
+					}
+				},
+				{
+					"name": "Save Job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/save_job/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["save_job", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Save a job to favorites"
+					}
+				},
+				{
+					"name": "Save Job (Alt)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/save_job1/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["save_job1", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Alternative endpoint to save a job"
+					}
+				},
+				{
+					"name": "Favorites",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/favorites",
+							"host": ["{{base_url}}"],
+							"path": ["favorites"]
+						},
+						"description": "Get user's favorite/saved jobs"
+					}
+				},
+				{
+					"name": "Remove Favorite",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/remove_favorite/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["remove_favorite", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Remove a job from favorites"
+					}
+				}
+			]
+		},
+		{
+			"name": "Companies API",
+			"item": [
+				{
+					"name": "Get All Companies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/companies",
+							"host": ["{{base_url}}"],
+							"path": ["companies"],
+							"query": [
+								{
+									"key": "q",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sort",
+									"value": "company_name",
+									"disabled": true
+								},
+								{
+									"key": "order",
+									"value": "asc",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of all companies with optional search and sorting"
+					}
+				},
+				{
+					"name": "Get Company by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/companies/:id",
+							"host": ["{{base_url}}"],
+							"path": ["companies", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get details of a specific company by UUID"
+					}
+				},
+				{
+					"name": "Create Company",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company_name\": \"\",\n    \"email\": \"\",\n    \"password\": \"\",\n    \"address\": \"\",\n    \"website\": \"\",\n    \"logo\": \"\",\n    \"description\": \"\",\n    \"industry\": \"\",\n    \"is_banned\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/companies",
+							"host": ["{{base_url}}"],
+							"path": ["companies"]
+						},
+						"description": "Create a new company with login credentials"
+					}
+				},
+				{
+					"name": "Update Company",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company_name\": \"\",\n    \"email\": \"\",\n    \"is_banned\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/companies/:company_id",
+							"host": ["{{base_url}}"],
+							"path": ["companies", ":company_id"],
+							"variable": [
+								{
+									"key": "company_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update company details or ban status"
+					}
+				},
+				{
+					"name": "Delete Company",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/companies/:company_id",
+							"host": ["{{base_url}}"],
+							"path": ["companies", ":company_id"],
+							"variable": [
+								{
+									"key": "company_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a company and all related data"
+					}
+				},
+				{
+					"name": "Bulk Delete Companies",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ids\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/companies/bulk",
+							"host": ["{{base_url}}"],
+							"path": ["companies", "bulk"]
+						},
+						"description": "Delete multiple companies at once"
+					}
+				},
+				{
+					"name": "Company Profile Form (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/company/company_profile",
+							"host": ["{{base_url}}"],
+							"path": ["company", "company_profile"]
+						},
+						"description": "Get company profile form page"
+					}
+				},
+				{
+					"name": "Submit Company Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company_name\": \"\",\n    \"email\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/company/company_profile",
+							"host": ["{{base_url}}"],
+							"path": ["company", "company_profile"]
+						},
+						"description": "Submit company profile information"
+					}
+				}
+			]
+		},
+		{
+			"name": "Company Dashboard",
+			"item": [
+				{
+					"name": "Company Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/company_dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["company_dashboard"],
+							"query": [
+								{
+									"key": "year",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get company dashboard with metrics and application rates"
+					}
+				},
+				{
+					"name": "Company Job Posting",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/company_jobposting",
+							"host": ["{{base_url}}"],
+							"path": ["company_jobposting"]
+						},
+						"description": "Get company's job postings page"
+					}
+				},
+				{
+					"name": "Post New Job (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/company_post_new_job",
+							"host": ["{{base_url}}"],
+							"path": ["company_post_new_job"],
+							"query": [
+								{
+									"key": "job_id",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get job posting form (optionally with job_id for editing)"
+					}
+				},
+				{
+					"name": "Post New Job (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "job-title",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "skill-sets",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "exp",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "certifications",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "job-type",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "locations",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "salary",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "vacancy",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "form-url",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "deadline",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/company_post_new_job",
+							"host": ["{{base_url}}"],
+							"path": ["company_post_new_job"]
+						},
+						"description": "Create or update a job posting"
+					}
+				}
+			]
+		},
+		{
+			"name": "Jobs API",
+			"item": [
+				{
+					"name": "Get All Jobs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jobs",
+							"host": ["{{base_url}}"],
+							"path": ["jobs"],
+							"query": [
+								{
+									"key": "q",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sort",
+									"value": "title",
+									"disabled": true
+								},
+								{
+									"key": "order",
+									"value": "asc",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of all jobs with optional search and sorting"
+					}
+				},
+				{
+					"name": "Create Job",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"\",\n    \"description\": \"\",\n    \"job_type\": \"\",\n    \"skills\": \"\",\n    \"years_of_exp\": 0,\n    \"certifications\": \"\",\n    \"location\": \"\",\n    \"salary\": \"\",\n    \"total_vacancy\": 1,\n    \"filled_vacancy\": 0,\n    \"status\": \"open\",\n    \"form_url\": \"\",\n    \"deadline\": \"YYYY-MM-DD\",\n    \"created_by\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/jobs",
+							"host": ["{{base_url}}"],
+							"path": ["jobs"]
+						},
+						"description": "Create a new job posting"
+					}
+				},
+				{
+					"name": "Update Job",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"\",\n    \"description\": \"\",\n    \"status\": \"open\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/jobs/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["jobs", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update job details"
+					}
+				},
+				{
+					"name": "Delete Job",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jobs/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["jobs", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a job and all related applications"
+					}
+				},
+				{
+					"name": "Bulk Delete Jobs",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ids\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/jobs/bulk",
+							"host": ["{{base_url}}"],
+							"path": ["jobs", "bulk"]
+						},
+						"description": "Delete multiple jobs at once"
+					}
+				}
+			]
+		},
+		{
+			"name": "College Dashboard",
+			"item": [
+				{
+					"name": "College Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/college_dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["college_dashboard"],
+							"query": [
+								{
+									"key": "year",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get college dashboard with student metrics"
+					}
+				},
+				{
+					"name": "College Profile (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/college_profile",
+							"host": ["{{base_url}}"],
+							"path": ["college_profile"]
+						},
+						"description": "Get college profile page"
+					}
+				},
+				{
+					"name": "College Profile (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "college-name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "contact-email",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "college-description",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "college-address",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "college-website",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "college-logo",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/college_profile",
+							"host": ["{{base_url}}"],
+							"path": ["college_profile"]
+						},
+						"description": "Update college profile information"
+					}
+				},
+				{
+					"name": "College Student Tracking",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/college_studenttracking",
+							"host": ["{{base_url}}"],
+							"path": ["college_studenttracking"]
+						},
+						"description": "Track student job applications and placements"
+					}
+				},
+				{
+					"name": "College Referral",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/college_referall",
+							"host": ["{{base_url}}"],
+							"path": ["college_referall"]
+						},
+						"description": "College referral page"
+					}
+				},
+				{
+					"name": "College Collaboration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/college_collab",
+							"host": ["{{base_url}}"],
+							"path": ["college_collab"]
+						},
+						"description": "College collaboration and placement statistics"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin_dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["admin_dashboard"]
+						},
+						"description": "Get admin dashboard with statistics"
+					}
+				},
+				{
+					"name": "Manage Jobs (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/adminmn",
+							"host": ["{{base_url}}"],
+							"path": ["adminmn"]
+						},
+						"description": "Get admin job management page"
+					}
+				},
+				{
+					"name": "Manage Jobs (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "jobId",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "jobTitle",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "jobType",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "salary",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "deadline",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/adminmn",
+							"host": ["{{base_url}}"],
+							"path": ["adminmn"]
+						},
+						"description": "Create or update a job (admin)"
+					}
+				},
+				{
+					"name": "Delete Job (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/delete_job/:job_id",
+							"host": ["{{base_url}}"],
+							"path": ["delete_job", ":job_id"],
+							"variable": [
+								{
+									"key": "job_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a job (admin route)"
+					}
+				},
+				{
+					"name": "View Pending Applications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/view_pending_applications",
+							"host": ["{{base_url}}"],
+							"path": ["view_pending_applications"]
+						},
+						"description": "View all pending job applications"
+					}
+				},
+				{
+					"name": "Accept or Reject Application",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "action",
+									"value": "accept",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/accept_or_reject/:application_id",
+							"host": ["{{base_url}}"],
+							"path": ["accept_or_reject", ":application_id"],
+							"variable": [
+								{
+									"key": "application_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Accept or reject a job application"
+					}
+				},
+				{
+					"name": "Manage Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/manage_users",
+							"host": ["{{base_url}}"],
+							"path": ["manage_users"]
+						},
+						"description": "View and manage all users"
+					}
+				},
+				{
+					"name": "Delete User (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/delete_user/:user_id",
+							"host": ["{{base_url}}"],
+							"path": ["delete_user", ":user_id"],
+							"variable": [
+								{
+									"key": "user_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a user (admin route)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard API",
+			"item": [
+				{
+					"name": "Get Dashboard Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["dashboard"],
+							"query": [
+								{
+									"key": "range",
+									"value": "weekly",
+									"description": "Options: weekly, monthly, yearly, ten_years"
+								}
+							]
+						},
+						"description": "Get dashboard metrics and trends data"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}
